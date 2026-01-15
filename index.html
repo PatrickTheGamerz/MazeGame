@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MAZE</title>
+<style>
+  body {
+    background: #111;
+    color: #eee;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    user-select: none;
+  }
+  #title {
+    font-weight: bold;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  #wrapper {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  #maze {
+    display: grid;
+    gap: 2px;
+    margin-bottom: 8px;
+  }
+  .cell {
+    width: 22px;
+    height: 22px;
+    transition: background 0.12s, filter 0.12s;
+    position: relative;
+  }
+  .wall { background: #333; }
+  .floor { background: #222; }
+  .exit { background: #f44336; }
+  .botMarker {
+    position: absolute;
+    inset: 3px;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .dark {
+    filter: brightness(0.12);
+  }
+  .visible {
+    filter: brightness(1.0);
+  }
+  #info {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-top: 4px;
+    text-align: center;
+  }
+  #minimapWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  #minimapLabel {
+    font-size: 12px;
+    opacity: 0.8;
+    letter-spacing: 1px;
+  }
+  #minimap {
+    background: #050509;
+    border: 1px solid #333;
+  }
+  #mazeIdInput {
+    width: 120px;
+    background: #111;
+    color: #eee;
+    border: 1px solid #444;
+    padding: 2px 4px;
+    font-size: 12px;
+    text-align: center;
+    margin-top: 6px;
+  }
+  #mazeIdButton {
+    margin-top: 4px;
+    font-size: 11px;
+    padding: 2px 6px;
+    background: #222;
+    color: #eee;
+    border: 1px solid #555;
+    cursor: pointer;
+  }
+  #mazeIdStatus {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-top: 2px;
+    text-align: center;
+    min-height: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div id="title"></div>
+
+<div id="wrapper">
+  <div>
+    <div id="maze"></div>
+    <div id="info">LOOP 0</div>
+  </div>
+  <div id="minimapWrapper">
+    <div id="minimapLabel">BOT MAP</div>
+    <canvas id="minimap" width="168" height="168"></canvas>
+    <input id="mazeIdInput" type="number" min="0" max="99999" placeholder="MAZE ID">
+    <button id="mazeIdButton">SET MAZE ID</button>
+    <div id="mazeIdStatus"></div>
+  </div>
+</div>
+
+<script>
+const size = 21;
+let maze = [];
+let cells = [];
+let exitPos = {x:0, y:0};
+let mazeId = 0;
+let pendingMazeId = null;
+
+const mazeDiv = document.getElementById("maze");
+const info = document.getElementById("info");
+const title = document.getElementById("title");
+const minimap = document.getElementById("minimap");
+const mctx = minimap.getContext("2d");
+const mazeIdInput = document.getElementById("mazeIdInput");
+const mazeIdButton = document.getElementById("mazeIdButton");
+const mazeIdStatus = document.getElementById("mazeIdStatus");
+
+mazeDiv.style.gridTemplateColumns = `repeat(${size}, 22px)`;
+mazeDiv.style.gridTemplateRows = `repeat(${size}, 22px)`;
+
+const actions = [
+  {dx:0, dy:-1},
+  {dx:0, dy:1},
+  {dx:-1, dy:0},
+  {dx:1, dy:0}
+];
+
+const alpha = 0.25;
+const gamma = 0.98;
+let epsilon = 0.35;
+let episodes = 0;
+
+let memoryMap;
+let deadEndMap;
+let exitDiscovered = false;
+let valueMap;
+
+const Q = new Map();
+
+let bot = {x:0, y:0, lastMove:-1};
+let visited;
+
+let playerId = null;
+let ws = null;
+const remotePlayers = new Map(); // playerId -> {x,y,loop,color}
+const remoteColors = {};
+const colorPool = [
+  "rgba(255,200,0,0.6)",
+  "rgba(180,80,255,0.6)",
+  "rgba(80,255,120,0.6)",
+  "rgba(255,120,120,0.6)",
+  "rgba(120,200,255,0.6)"
+];
+
+function assignColor(pid) {
+  if (!remoteColors[pid]) {
+    remoteColors[pid] = colorPool[(Object.keys(remoteColors).length) % colorPool.length];
+  }
+  return remoteColors[pid];
+}
+
+function manhattan(x1,y1,x2,y2) {
+  return Math.abs(x1-x2) + Math.abs(y1-y2);
+}
+
+function visionKey(x, y) {
+  let s = "";
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= size || ny >= size) {
+        s += "3";
+      } else {
+        const t = maze[ny][nx];
+        if (nx === exitPos.x && ny === exitPos.y) s += "2";
+        else if (t === 1) s += "1";
+        else s += "0";
+      }
+    }
+  }
+  return s;
+}
+
+function stateKey(x,y,lastMoveDir) {
+  return x + "," + y + "," + visionKey(x,y) + "," + lastMoveDir;
+}
+
+function getQ(x,y,lastMoveDir) {
+  const key = stateKey(x,y,lastMoveDir);
+  if (!Q.has(key)) Q.set(key, [0,0,0,0]);
+  return Q.get(key);
+}
+
+function makeRNG(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+function randomFloorWith(rnd) {
+  let x,y;
+  do {
+    x = Math.floor(rnd()*size);
+    y = Math.floor(rnd()*size);
+  } while (maze[y][x] !== 0);
+  return {x,y};
+}
+
+function randomFloor() {
+  let x,y;
+  do {
+    x = Math.floor(Math.random()*size);
+    y = Math.floor(Math.random()*size);
+  } while (maze[y][x] !== 0);
+  return {x,y};
+}
+
+function generateMaze(id) {
+  if (typeof id === "number" && !isNaN(id)) {
+    mazeId = id;
+  } else {
+    mazeId = Math.floor(Math.random()*99999);
+  }
+  const rng = makeRNG(mazeId);
+  maze = Array(size).fill(0).map(() => Array(size).fill(1));
+  function carve(x, y) {
+    const dirs = [[2,0],[-2,0],[0,2],[0,-2]].sort(() => rng()-0.5);
+    for (const [dx,dy] of dirs) {
+      const nx = x+dx, ny = y+dy;
+      if (nx>0 && nx<size-1 && ny>0 && ny<size-1 && maze[ny][nx]===1) {
+        maze[ny][nx] = 0;
+        maze[y+dy/2][x+dx/2] = 0;
+        carve(nx,ny);
+      }
+    }
+  }
+  maze[1][1] = 0;
+  carve(1,1);
+  exitPos = randomFloorWith(rng);
+  title.textContent = "MAZE: " + mazeId;
+}
+
+function renderMaze() {
+  mazeDiv.innerHTML = "";
+  cells = [];
+  for (let y=0; y<size; y++) {
+    const row = [];
+    for (let x=0; x<size; x++) {
+      const c = document.createElement("div");
+      c.classList.add("cell");
+      c.classList.add(maze[y][x] === 1 ? "wall" : "floor");
+      if (x === exitPos.x && y === exitPos.y) c.classList.add("exit");
+      mazeDiv.appendChild(c);
+      row.push(c);
+    }
+    cells.push(row);
+  }
+}
+
+function clearBotMarkers() {
+  for (let y=0; y<size; y++) {
+    for (let x=0; x<size; x++) {
+      const cell = cells[y][x];
+      const markers = cell.querySelectorAll(".botMarker");
+      markers.forEach(m => m.remove());
+    }
+  }
+}
+
+function drawBots() {
+  clearBotMarkers();
+  const mainCell = cells[bot.y][bot.x];
+  const mainMarker = document.createElement("div");
+  mainMarker.className = "botMarker";
+  mainMarker.style.background = "rgba(0,230,255,1)";
+  mainMarker.style.opacity = "1.0";
+  mainCell.appendChild(mainMarker);
+
+  for (const [pid, data] of remotePlayers.entries()) {
+    const cell = cells[data.y][data.x];
+    const marker = document.createElement("div");
+    marker.className = "botMarker";
+    marker.style.background = assignColor(pid);
+    marker.style.opacity = "0.6";
+    cell.appendChild(marker);
+  }
+}
+
+function applyFog() {
+  for (let y=0; y<size; y++) {
+    for (let x=0; x<size; x++) {
+      cells[y][x].classList.add("dark");
+      cells[y][x].classList.remove("visible");
+      cells[y][x].style.filter = "";
+    }
+  }
+  for (let dy=-1; dy<=1; dy++) {
+    for (let dx=-1; dx<=1; dx++) {
+      const nx = bot.x + dx;
+      const ny = bot.y + dy;
+      if (nx>=0 && ny>=0 && nx<size && ny<size) {
+        cells[ny][nx].classList.remove("dark");
+        cells[ny][nx].classList.add("visible");
+      }
+    }
+  }
+  for (const [,data] of remotePlayers.entries()) {
+    for (let dy=-1; dy<=1; dy++) {
+      for (let dx=-1; dx<=1; dx++) {
+        const nx = data.x + dx;
+        const ny = data.y + dy;
+        if (nx>=0 && ny>=0 && nx<size && ny<size) {
+          if (!cells[ny][nx].classList.contains("visible")) {
+            cells[ny][nx].classList.remove("dark");
+            cells[ny][nx].style.filter = "brightness(0.5)";
+          }
+        }
+      }
+    }
+  }
+}
+
+function resetEpisode(success, winnerId = null) {
+  if (success) {
+    for (let y=0; y<size; y++) {
+      for (let x=0; x<size; x++) {
+        memoryMap[x][y] = memoryMap[x][y]*0.6 + visited[y][x]*0.4;
+      }
+    }
+    episodes++;
+    epsilon = Math.max(0.05, epsilon * 0.97);
+    if (pendingMazeId !== null) {
+      switchMaze(pendingMazeId);
+      return;
+    }
+  } else {
+    epsilon = Math.min(0.5, epsilon * 1.01);
+  }
+  if (winnerId !== null) {
+    info.textContent = "LOOP " + episodes + " — PLAYER " + winnerId + " REACHED EXIT";
+  } else {
+    info.textContent = "LOOP " + episodes;
+  }
+  visited = Array(size).fill(0).map(() => Array(size).fill(0));
+  const p = randomFloor();
+  bot.x = p.x;
+  bot.y = p.y;
+  bot.lastMove = -1;
+  drawBots();
+}
+
+function updateValueMap() {
+  for (let y=0; y<size; y++) {
+    for (let x=0; x<size; x++) {
+      const keyBase = x + "," + y;
+      let best = null;
+      for (let lm = -1; lm < 4; lm++) {
+        const key = keyBase + "," + visionKey(x,y) + "," + lm;
+        if (Q.has(key)) {
+          const arr = Q.get(key);
+          const m = Math.max(...arr);
+          if (best === null || m > best) best = m;
+        }
+      }
+      valueMap[x][y] = best;
+    }
+  }
+}
+
+function drawMinimap() {
+  const w = minimap.width;
+  const h = minimap.height;
+  const cw = w / size;
+  const ch = h / size;
+  mctx.clearRect(0,0,w,h);
+  for (let y=0; y<size; y++) {
+    for (let x=0; x<size; x++) {
+      const v = valueMap[x][y];
+      const mem = memoryMap[x][y];
+      const seen = mem > 0;
+      let r=0,g=0,b=0,a=0.2;
+      if (!seen) {
+        r=8; g=16; b=40; a=0.3;
+      } else {
+        if (maze[y][x] === 1) {
+          r=40; g=40; b=40; a=0.7;
+        } else {
+          const memClamped = Math.min(mem, 50);
+          const memT = memClamped / 50;
+          let baseR = 20 + 40*memT;
+          let baseG = 40 + 40*(1-memT);
+          let baseB = 70 + 30*(1-memT);
+          if (v === null || v === undefined) {
+            r = baseR;
+            g = baseG;
+            b = baseB;
+            a = 0.4;
+          } else {
+            const clamped = Math.max(-200, Math.min(200, v));
+            if (clamped >= 0) {
+              const t = clamped / 200;
+              r = baseR*(1-t) + 60*t;
+              g = baseG*(1-t) + 200*t;
+              b = baseB*(1-t) + 80*t;
+              a = 0.4 + 0.4*t;
+            } else {
+              const t = -clamped / 200;
+              r = baseR*(1-t) + 220*t;
+              g = baseG*(1-t) + 40*(1-t);
+              b = baseB*(1-t) + 40*(1-t);
+              a = 0.4 + 0.4*t;
+            }
+          }
+        }
+      }
+      mctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+      mctx.fillRect(x*cw, y*ch, cw, ch);
+    }
+  }
+  if (exitDiscovered) {
+    mctx.strokeStyle = "rgba(255,120,120,0.9)";
+    mctx.lineWidth = 2;
+    mctx.strokeRect(exitPos.x*cw+1, exitPos.y*ch+1, cw-2, ch-2);
+  }
+  const bx = bot.x*cw + cw/2;
+  const by = bot.y*ch + ch/2;
+  const radius = Math.max(cw,ch)*1.6;
+  const grad = mctx.createRadialGradient(bx,by,0,bx,by,radius);
+  grad.addColorStop(0, "rgba(0,230,255,0.9)");
+  grad.addColorStop(1, "rgba(0,230,255,0.0)");
+  mctx.fillStyle = grad;
+  mctx.beginPath();
+  mctx.arc(bx,by,radius,0,Math.PI*2);
+  mctx.fill();
+  mctx.fillStyle = "rgba(0,230,255,1)";
+  mctx.fillRect(bot.x*cw+cw*0.25, bot.y*ch+ch*0.25, cw*0.5, ch*0.5);
+
+  for (const [pid,data] of remotePlayers.entries()) {
+    const rx = data.x*cw + cw/2;
+    const ry = data.y*ch + ch/2;
+    const rrad = Math.max(cw,ch)*1.2;
+    const col = assignColor(pid);
+    const grad2 = mctx.createRadialGradient(rx,ry,0,rx,ry,rrad);
+    grad2.addColorStop(0, col.replace(/[\d.]+\)$/,"0.7)"));
+    grad2.addColorStop(1, col.replace(/[\d.]+\)$/,"0.0)"));
+    mctx.fillStyle = grad2;
+    mctx.beginPath();
+    mctx.arc(rx,ry,rrad,0,Math.PI*2);
+    mctx.fill();
+    mctx.fillStyle = col;
+    mctx.globalAlpha = 0.6;
+    mctx.fillRect(data.x*cw+cw*0.25, data.y*ch+ch*0.25, cw*0.5, ch*0.5);
+    mctx.globalAlpha = 1.0;
+  }
+}
+
+function countUnseenNeighbors(x, y) {
+  let count = 0;
+  for (const a of actions) {
+    const nx = x + a.dx;
+    const ny = y + a.dy;
+    if (nx>=0 && ny>=0 && nx<size && ny<size) {
+      if (maze[ny][nx] === 0 && memoryMap[x][y] === 0) {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
+function botStep() {
+  applyFog();
+  const sx = bot.x;
+  const sy = bot.y;
+  const prevDist = manhattan(sx, sy, exitPos.x, exitPos.y);
+  const qValues = getQ(sx, sy, bot.lastMove);
+  let actionIndex;
+  if (Math.random() < epsilon) {
+    actionIndex = Math.floor(Math.random()*4);
+  } else {
+    let maxQ = -Infinity;
+    actionIndex = 0;
+    for (let i=0;i<4;i++) {
+      if (qValues[i] > maxQ) {
+        maxQ = qValues[i];
+        actionIndex = i;
+      }
+    }
+  }
+  const action = actions[actionIndex];
+  const nx = sx + action.dx;
+  const ny = sy + action.dy;
+  let reward = -1.5;
+  let done = false;
+  let success = false;
+  if (bot.lastMove !== -1) {
+    const opposite =
+      (bot.lastMove===0 && actionIndex===1) ||
+      (bot.lastMove===1 && actionIndex===0) ||
+      (bot.lastMove===2 && actionIndex===3) ||
+      (bot.lastMove===3 && actionIndex===2);
+    if (opposite) reward -= 4;
+  }
+  if (nx<0 || ny<0 || nx>=size || ny>=size || maze[ny][nx]===1) {
+    reward -= 15;
+  } else {
+    bot.x = nx;
+    bot.y = ny;
+    visited[ny][nx]++;
+    if (deadEndMap[nx][ny]) {
+      reward -= 6;
+    }
+    if (visited[ny][nx] === 1 && memoryMap[nx][ny] === 0) {
+      reward += 2.0;
+    } else {
+      const memFactor = Math.min(memoryMap[nx][ny], 20) / 20;
+      reward -= (visited[ny][nx] * 0.6) + memFactor*1.5;
+    }
+    const frontier = countUnseenNeighbors(nx, ny);
+    if (frontier > 0 && visited[ny][nx] === 1) {
+      reward += 1.0 + 0.4 * frontier;
+    }
+    const newDist = manhattan(nx, ny, exitPos.x, exitPos.y);
+    const distWeight = exitDiscovered ? 2.5 : 1.5;
+    if (newDist < prevDist) {
+      reward += distWeight;
+    } else if (newDist > prevDist) {
+      reward -= distWeight;
+    }
+    if (visited[ny][nx] > 4 && countUnseenNeighbors(nx, ny) === 0) {
+      deadEndMap[nx][ny] = 1;
+      reward -= 8;
+    }
+    if (nx===exitPos.x && ny===exitPos.y) {
+      reward += 800;
+      done = true;
+      success = true;
+      exitDiscovered = true;
+      if (ws && playerId !== null) {
+        ws.send(JSON.stringify({ type:"exit", mazeId, playerId, loop:episodes }));
+      }
+    }
+  }
+  const qOld = qValues[actionIndex];
+  let maxNextQ = 0;
+  if (!done) {
+    const nextQ = getQ(bot.x, bot.y, actionIndex);
+    maxNextQ = Math.max(...nextQ);
+  }
+  qValues[actionIndex] = qOld + alpha * (reward + gamma * maxNextQ - qOld);
+  drawBots();
+  updateValueMap();
+  drawMinimap();
+  if (ws && playerId !== null) {
+    ws.send(JSON.stringify({ type:"state", mazeId, playerId, x:bot.x, y:bot.y, loop:episodes }));
+  }
+  if (done) {
+    resetEpisode(success, playerId);
+  } else {
+    bot.lastMove = actionIndex;
+  }
+}
+
+function switchMaze(id) {
+  pendingMazeId = null;
+  exitDiscovered = false;
+  generateMaze(id);
+  renderMaze();
+  memoryMap = Array(size).fill(0).map(() => Array(size).fill(0));
+  deadEndMap = Array(size).fill(0).map(() => Array(size).fill(0));
+  valueMap = Array(size).fill(0).map(() => Array(size).fill(null));
+  Q.clear();
+  visited = Array(size).fill(0).map(() => Array(size).fill(0));
+  const p = randomFloor();
+  bot.x = p.x;
+  bot.y = p.y;
+  bot.lastMove = -1;
+  remotePlayers.clear();
+  drawBots();
+  applyFog();
+  updateValueMap();
+  drawMinimap();
+  mazeIdStatus.textContent = "Maze set to ID " + mazeId + " after exit.";
+  if (ws && ws.readyState === WebSocket.OPEN && playerId !== null) {
+    ws.send(JSON.stringify({ type:"join", mazeId }));
+  }
+}
+
+mazeIdButton.addEventListener("click", () => {
+  const v = parseInt(mazeIdInput.value, 10);
+  if (isNaN(v) || v < 0 || v > 99999) {
+    mazeIdStatus.textContent = "Invalid ID. Use 0–99999.";
+    return;
+  }
+  pendingMazeId = v;
+  mazeIdStatus.textContent = "Pending change to ID " + v + " after next exit.";
+});
+
+setInterval(() => {
+  for (let y=0; y<size; y++) {
+    for (let x=0; x<size; x++) {
+      memoryMap[x][y] *= 0.95;
+      deadEndMap[x][y] *= 0.99;
+    }
+  }
+}, 60000);
+
+setInterval(botStep, 230);
+
+function setupWebSocket() {
+  ws = new WebSocket("ws://localhost:8080");
+  ws.onopen = () => {
+    if (mazeId !== null) {
+      ws.send(JSON.stringify({ type:"join", mazeId }));
+    }
+  };
+  ws.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+    if (msg.type === "welcome") {
+      playerId = msg.playerId;
+    }
+    if (msg.type === "playerJoined") {
+      assignColor(msg.playerId);
+    }
+    if (msg.type === "playerLeft") {
+      remotePlayers.delete(msg.playerId);
+    }
+    if (msg.type === "state") {
+      if (msg.playerId !== playerId) {
+        remotePlayers.set(msg.playerId, { x:msg.x, y:msg.y, loop:msg.loop });
+      }
+    }
+    if (msg.type === "exit") {
+      if (msg.playerId !== playerId) {
+        resetEpisode(false, msg.playerId);
+      }
+    }
+  };
+  ws.onclose = () => {
+    mazeIdStatus.textContent = "Disconnected from server.";
+  };
+}
+
+generateMaze();
+renderMaze();
+memoryMap = Array(size).fill(0).map(() => Array(size).fill(0));
+deadEndMap = Array(size).fill(0).map(() => Array(size).fill(0));
+valueMap = Array(size).fill(0).map(() => Array(size).fill(null));
+visited = Array(size).fill(0).map(() => Array(size).fill(0));
+const p0 = randomFloor();
+bot.x = p0.x;
+bot.y = p0.y;
+bot.lastMove = -1;
+drawBots();
+applyFog();
+updateValueMap();
+drawMinimap();
+setupWebSocket();
+</script>
+
+</body>
+</html>
