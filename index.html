@@ -2,27 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Random Wikipedia Explorer</title>
+  <title>Infinite AI Knowledge Explorer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Basic styling to make it look clean and readable -->
   <style>
     :root {
-      --bg: #0b1020;
-      --bg-alt: #151a2b;
-      --accent: #f5c84c;
-      --accent-soft: rgba(245, 200, 76, 0.15);
+      --bg: #050712;
+      --bg-alt: #0c1020;
+      --bg-soft: #151a2f;
+      --accent: #ffb347;
+      --accent-soft: rgba(255, 179, 71, 0.16);
+      --accent-strong: #ff8a47;
       --text-main: #f5f7ff;
-      --text-muted: #a3acc7;
+      --text-muted: #9ca4c5;
       --border-subtle: #262c42;
-      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.55);
-      --radius-lg: 18px;
+      --shadow-soft: 0 22px 60px rgba(0, 0, 0, 0.75);
+      --radius-lg: 20px;
       --radius-pill: 999px;
-      --transition-fast: 0.18s ease-out;
       --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
         sans-serif;
       --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
         Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --transition-fast: 0.18s ease-out;
     }
 
     * {
@@ -45,19 +46,19 @@
 
     .app-shell {
       width: 100%;
-      max-width: 960px;
+      max-width: 1120px;
       background: linear-gradient(145deg, #101528, #070a16);
-      border-radius: 26px;
+      border-radius: 28px;
       box-shadow: var(--shadow-soft);
       border: 1px solid rgba(255, 255, 255, 0.04);
       overflow: hidden;
       display: grid;
-      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.1fr);
       position: relative;
       isolation: isolate;
     }
 
-    @media (max-width: 840px) {
+    @media (max-width: 960px) {
       .app-shell {
         grid-template-columns: minmax(0, 1fr);
       }
@@ -68,19 +69,21 @@
       position: absolute;
       inset: -40%;
       background:
-        radial-gradient(circle at 0% 0%, rgba(245, 200, 76, 0.12), transparent 55%),
-        radial-gradient(circle at 100% 100%, rgba(76, 175, 255, 0.12), transparent 55%);
+        radial-gradient(circle at 0% 0%, rgba(255, 179, 71, 0.16), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(76, 175, 255, 0.18), transparent 55%);
       opacity: 0.9;
       pointer-events: none;
       z-index: -1;
     }
 
     .pane-main {
-      padding: 26px 26px 24px 26px;
+      padding: 26px 26px 22px 26px;
       border-right: 1px solid var(--border-subtle);
+      position: relative;
+      overflow: hidden;
     }
 
-    @media (max-width: 840px) {
+    @media (max-width: 960px) {
       .pane-main {
         border-right: none;
         border-bottom: 1px solid var(--border-subtle);
@@ -88,7 +91,7 @@
     }
 
     .pane-side {
-      padding: 22px 22px 20px 22px;
+      padding: 22px 22px 18px 22px;
       background: radial-gradient(circle at top left, #171d33 0, #070a16 55%);
       position: relative;
       overflow: hidden;
@@ -99,8 +102,8 @@
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(circle at 10% 0%, rgba(245, 200, 76, 0.12), transparent 55%),
-        radial-gradient(circle at 90% 100%, rgba(76, 175, 255, 0.16), transparent 55%);
+        radial-gradient(circle at 10% 0%, rgba(255, 179, 71, 0.16), transparent 55%),
+        radial-gradient(circle at 90% 100%, rgba(76, 175, 255, 0.2), transparent 55%);
       opacity: 0.7;
       pointer-events: none;
       mix-blend-mode: screen;
@@ -127,22 +130,22 @@
     }
 
     .logo-pill {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
-      background: radial-gradient(circle at 30% 20%, #ffffff, #f5c84c 40%, #f57f4c 100%);
+      background: radial-gradient(circle at 30% 20%, #ffffff, #ffb347 40%, #ff6f47 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       color: #050814;
-      font-weight: 700;
-      font-size: 16px;
+      font-weight: 800;
+      font-size: 18px;
       box-shadow: 0 0 0 1px rgba(5, 8, 20, 0.4),
         0 10px 25px rgba(0, 0, 0, 0.65);
     }
 
     .app-title {
-      font-size: 18px;
+      font-size: 19px;
       font-weight: 600;
       letter-spacing: 0.03em;
       display: flex;
@@ -169,7 +172,7 @@
       padding: 6px 12px;
       border-radius: var(--radius-pill);
       background: rgba(10, 16, 40, 0.9);
-      border: 1px solid rgba(245, 200, 76, 0.35);
+      border: 1px solid rgba(255, 179, 71, 0.45);
       color: var(--accent);
       font-size: 11px;
       letter-spacing: 0.08em;
@@ -182,37 +185,37 @@
       height: 7px;
       border-radius: 50%;
       background: var(--accent);
-      box-shadow: 0 0 0 4px rgba(245, 200, 76, 0.25);
+      box-shadow: 0 0 0 4px rgba(255, 179, 71, 0.25);
     }
 
     .pill span.label {
       opacity: 0.9;
     }
 
-    .article-card {
+    .topic-card {
       margin-top: 10px;
       padding: 18px 18px 16px 18px;
-      border-radius: 18px;
+      border-radius: 20px;
       background: radial-gradient(circle at top left, #181f3a 0, #090c18 55%);
       border: 1px solid rgba(255, 255, 255, 0.04);
-      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.6);
       position: relative;
       overflow: hidden;
     }
 
-    .article-card::before {
+    .topic-card::before {
       content: "";
       position: absolute;
       inset: -40%;
       background:
-        radial-gradient(circle at 0% 0%, rgba(245, 200, 76, 0.12), transparent 55%),
-        radial-gradient(circle at 100% 100%, rgba(76, 175, 255, 0.12), transparent 55%);
+        radial-gradient(circle at 0% 0%, rgba(255, 179, 71, 0.16), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(76, 175, 255, 0.16), transparent 55%);
       opacity: 0.4;
       pointer-events: none;
       z-index: -1;
     }
 
-    .article-meta-row {
+    .topic-meta-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -220,7 +223,7 @@
       margin-bottom: 10px;
     }
 
-    .article-tag {
+    .topic-tag {
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -234,7 +237,7 @@
       text-transform: uppercase;
     }
 
-    .article-tag-dot {
+    .topic-tag-dot {
       width: 6px;
       height: 6px;
       border-radius: 50%;
@@ -242,45 +245,74 @@
       box-shadow: 0 0 0 3px rgba(76, 175, 239, 0.25);
     }
 
-    .article-id {
+    .topic-id {
       font-family: var(--font-mono);
       font-size: 11px;
       color: var(--text-muted);
-      opacity: 0.8;
+      opacity: 0.85;
     }
 
-    .article-title {
-      font-size: 22px;
+    .topic-title {
+      font-size: 24px;
       font-weight: 650;
       line-height: 1.25;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
-    .article-description {
+    .topic-subtitle {
+      font-size: 13px;
+      color: var(--accent);
+      margin-bottom: 10px;
+      opacity: 0.95;
+    }
+
+    .topic-overview {
       font-size: 13px;
       color: var(--text-muted);
       line-height: 1.6;
-      max-height: 180px;
-      overflow-y: auto;
-      padding-right: 4px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(163, 172, 199, 0.6) transparent;
+      margin-bottom: 12px;
     }
 
-    .article-description::-webkit-scrollbar {
-      width: 6px;
+    .topic-section {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(163, 172, 199, 0.35);
     }
 
-    .article-description::-webkit-scrollbar-track {
-      background: transparent;
+    .topic-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
     }
 
-    .article-description::-webkit-scrollbar-thumb {
-      background: rgba(163, 172, 199, 0.6);
-      border-radius: 999px;
+    .topic-section-body {
+      font-size: 13px;
+      color: var(--text-main);
+      line-height: 1.6;
     }
 
-    .article-footer {
+    .topic-section-body p {
+      margin-bottom: 6px;
+    }
+
+    .topic-section-body ul {
+      margin: 4px 0 4px 18px;
+      padding-left: 0;
+    }
+
+    .topic-section-body li {
+      margin-bottom: 4px;
+    }
+
+    .topic-section-body strong {
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .topic-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -288,41 +320,29 @@
       margin-top: 14px;
     }
 
-    .article-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      border-radius: var(--radius-pill);
-      background: rgba(245, 200, 76, 0.12);
-      border: 1px solid rgba(245, 200, 76, 0.6);
-      color: var(--accent);
-      font-size: 12px;
-      text-decoration: none;
-      font-weight: 500;
-      transition: background var(--transition-fast), transform var(--transition-fast),
-        box-shadow var(--transition-fast);
+    .topic-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
     }
 
-    .article-link:hover {
-      background: rgba(245, 200, 76, 0.2);
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+    .topic-chip {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(5, 8, 20, 0.9);
+      border: 1px solid rgba(163, 172, 199, 0.4);
+      color: var(--text-muted);
     }
 
-    .article-link-icon {
-      font-size: 14px;
-      transform: translateY(1px);
-    }
-
-    .article-meta-small {
+    .topic-meta-small {
       font-size: 11px;
       color: var(--text-muted);
       text-align: right;
       line-height: 1.4;
     }
 
-    .article-meta-small span {
+    .topic-meta-small span {
       color: var(--accent);
       font-weight: 500;
     }
@@ -486,6 +506,24 @@
       color: var(--accent);
     }
 
+    .trace-block {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: rgba(5, 8, 20, 0.9);
+      border-radius: 12px;
+      border: 1px solid rgba(163, 172, 199, 0.4);
+      padding: 8px 10px;
+      line-height: 1.5;
+      margin-top: 6px;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .trace-line {
+      opacity: 0.9;
+      white-space: pre-wrap;
+    }
+
     .footer-note {
       margin-top: 10px;
       font-size: 10px;
@@ -494,122 +532,67 @@
       line-height: 1.5;
     }
 
-    .footer-note a {
+    .footer-note strong {
       color: var(--accent);
-      text-decoration: none;
-      border-bottom: 1px dotted rgba(245, 200, 76, 0.6);
+      font-weight: 600;
     }
 
-    .footer-note a:hover {
-      border-bottom-style: solid;
-    }
-
-    .skeleton {
-      animation: pulse 1.4s ease-in-out infinite;
-      background: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.06),
-        rgba(255, 255, 255, 0.12),
-        rgba(255, 255, 255, 0.06)
-      );
-      background-size: 200% 100%;
-      border-radius: 999px;
-    }
-
-    @keyframes pulse {
-      0% {
-        background-position: 200% 0;
-      }
-      100% {
-        background-position: -200% 0;
-      }
+    .footer-note span.key {
+      font-family: var(--font-mono);
+      color: var(--accent);
     }
 
     .hidden {
       display: none !important;
     }
-
-    .error-message {
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(120, 40, 40, 0.2);
-      border: 1px solid rgba(255, 120, 120, 0.4);
-      color: #ffb3b3;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .error-message code {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      background: rgba(5, 8, 20, 0.9);
-      padding: 2px 6px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 120, 120, 0.4);
-    }
   </style>
 </head>
 <body>
   <div class="app-shell">
-    <!-- MAIN PANE: Article content -->
+    <!-- MAIN PANE: AI topic -->
     <div class="pane-main">
       <header class="header">
         <div class="title-block">
           <div class="title-row">
-            <div class="logo-pill">W</div>
+            <div class="logo-pill">AI</div>
             <div class="app-title">
-              Random
-              <span class="accent">Wikipedia</span>
+              Infinite
+              <span class="accent">Knowledge</span>
               Explorer
             </div>
           </div>
           <div class="subtitle">
-            Every refresh → a new topic from the world’s largest encyclopedia
+            Every refresh → a new “AI‑generated” deep topic
           </div>
         </div>
 
         <div class="pill">
           <span class="pill-dot"></span>
-          <span class="label">Auto-refresh driven</span>
+          <span class="label">Client‑side pseudo‑AI engine</span>
         </div>
       </header>
 
-      <section class="article-card">
-        <div class="article-meta-row">
-          <div class="article-tag">
-            <span class="article-tag-dot"></span>
-            <span>Random article</span>
+      <section class="topic-card">
+        <div class="topic-meta-row">
+          <div class="topic-tag">
+            <span class="topic-tag-dot"></span>
+            <span>AI topic</span>
           </div>
-          <div class="article-id" id="article-id">
-            <!-- Filled by JS -->
-          </div>
+          <div class="topic-id" id="topic-id"></div>
         </div>
 
-        <h1 class="article-title" id="article-title">
-          <!-- Filled by JS -->
-        </h1>
+        <h1 class="topic-title" id="topic-title"></h1>
+        <div class="topic-subtitle" id="topic-subtitle"></div>
 
-        <div class="article-description" id="article-description">
-          <!-- Filled by JS -->
-        </div>
+        <p class="topic-overview" id="topic-overview"></p>
 
-        <div class="article-footer">
-          <a
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="article-link"
-            id="article-link"
-          >
-            <span>Open full article on Wikipedia</span>
-            <span class="article-link-icon">↗</span>
-          </a>
+        <div id="topic-sections"></div>
 
-          <div class="article-meta-small">
-            Source: <span>en.wikipedia.org</span><br />
-            Endpoint:
-            <span>/api/rest_v1/page/random/summary</span>
+        <div class="topic-footer">
+          <div class="topic-chip-row" id="topic-tags"></div>
+          <div class="topic-meta-small">
+            Engine: <span>Local generative template</span><br />
+            Mode: <span>Random topic per refresh</span>
           </div>
         </div>
 
@@ -620,85 +603,69 @@
             <span class="status-value" id="status-value"></span>
           </div>
           <div class="refresh-hint">
-            Refresh the page (<span>Ctrl+R</span> / <span>Cmd+R</span>) for a new topic
+            Refresh the page (<span>Ctrl+R</span> / <span>Cmd+R</span>) for a new “AI” topic
           </div>
-        </div>
-
-        <div class="error-message hidden" id="error-message">
-          Something went wrong while talking to
-          <code>api/rest_v1/page/random/summary</code>. Try refreshing the page in a
-          moment.
         </div>
       </section>
     </div>
 
-    <!-- SIDE PANE: Technical info / “debug” view -->
+    <!-- SIDE PANE: “AI debug” / reasoning -->
     <aside class="pane-side">
       <div class="side-header">
-        <div class="side-title">Request details</div>
+        <div class="side-title">AI reasoning trace</div>
         <div class="side-badge">
           <span class="dot"></span>
-          <span id="side-status-label">Fetching…</span>
+          <span id="side-status-label">Topic synthesized</span>
         </div>
       </div>
 
       <div class="side-body">
         <div class="side-section">
-          <div class="side-label">REST endpoint</div>
-          <div class="side-value">
-            <code>https://en.wikipedia.org/api/rest_v1/page/random/summary</code>
-          </div>
-        </div>
-
-        <div class="side-section">
-          <div class="side-label">Article metadata</div>
+          <div class="side-label">Topic metadata</div>
           <div class="side-mini-grid">
             <div class="mini-pill">
-              <div class="mini-pill-label">Page ID</div>
-              <div class="mini-pill-value" id="meta-pageid">—</div>
+              <div class="mini-pill-label">Domain</div>
+              <div class="mini-pill-value" id="meta-domain">—</div>
             </div>
             <div class="mini-pill">
-              <div class="mini-pill-label">Language</div>
-              <div class="mini-pill-value" id="meta-lang">en</div>
+              <div class="mini-pill-label">Complexity</div>
+              <div class="mini-pill-value" id="meta-complexity">—</div>
             </div>
             <div class="mini-pill">
-              <div class="mini-pill-label">Title length</div>
-              <div class="mini-pill-value" id="meta-title-length">—</div>
+              <div class="mini-pill-label">Sections</div>
+              <div class="mini-pill-value" id="meta-sections">—</div>
             </div>
             <div class="mini-pill">
-              <div class="mini-pill-label">Extract length</div>
-              <div class="mini-pill-value" id="meta-extract-length">—</div>
+              <div class="mini-pill-label">Seed</div>
+              <div class="mini-pill-value" id="meta-seed">—</div>
             </div>
           </div>
         </div>
 
         <div class="side-section">
-          <div class="side-label">How it works</div>
+          <div class="side-label">Generation strategy</div>
           <div class="side-value">
-            On every page load, a small script calls the Wikipedia REST API’s
-            <code>page/random/summary</code> endpoint, which returns a random article
-            summary in JSON. The response is then rendered into the card on the left.
+            This page simulates an “AI that knows everything” by combining
+            <code>topic templates</code>, <code>section patterns</code>, and
+            <code>semantic tags</code> into a rich, multi‑section explanation
+            on each refresh. No network calls, no API keys—just structured
+            randomness and handcrafted text blocks.
           </div>
         </div>
 
         <div class="side-section">
-          <div class="side-label">Tip</div>
-          <div class="side-value">
-            Want to keep exploring? Just refresh the page. Each reload triggers a new
-            request and a new random topic.
+          <div class="side-label">Trace</div>
+          <div class="trace-block" id="trace-block">
+            <!-- Filled by JS -->
           </div>
         </div>
 
         <p class="footer-note">
-          This is a lightweight client-side demo using the public Wikipedia REST API.
-          For more advanced usage, you can also use the
-          <a
-            href="https://www.mediawiki.org/wiki/API:Random"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            MediaWiki Action API random module
-          </a>.
+          This is a <strong>front‑end only</strong> mock of an AI knowledge
+          engine. You can later swap the generator with a real model call and
+          keep the same UI. For now, every refresh is powered by a local
+          <span class="key">topicTemplates[]</span> array and a tiny
+          <span class="key">generateTopic()</span> function.
         </p>
       </div>
     </aside>
@@ -706,140 +673,389 @@
 
   <script>
     (function () {
-      const API_URL =
-        "https://en.wikipedia.org/api/rest_v1/page/random/summary";
+      const topicTemplates = [
+        {
+          domain: "Artificial Intelligence",
+          complexity: "Advanced",
+          baseTitle: "Emergent Behavior in Multi‑Agent Systems",
+          subtitle:
+            "How simple rules between agents give rise to complex, unexpected global patterns.",
+          overview:
+            "Multi‑agent systems explore what happens when many autonomous entities interact under local rules. " +
+            "Instead of programming a single, centralized intelligence, we study how coordination, competition, and " +
+            "communication between agents can produce behaviors that no individual agent was explicitly designed to exhibit.",
+          sectionPatterns: [
+            {
+              title: "Core concepts",
+              paragraphs: [
+                "At the heart of emergent behavior is the idea that global order can arise from local interactions. " +
+                  "Each agent follows a relatively simple policy, yet the aggregate behavior appears strategic, adaptive, or even creative.",
+                "Key ingredients include <strong>local perception</strong>, <strong>limited communication</strong>, and " +
+                  "<strong>decentralized decision‑making</strong>. When these are combined with a shared environment and " +
+                  "feedback loops, surprising dynamics emerge."
+              ],
+              bullets: [
+                "Agents operate with partial information and bounded rationality.",
+                "No single agent has a full model of the entire system.",
+                "Global patterns are often discovered, not designed."
+              ]
+            },
+            {
+              title: "Examples of emergent behavior",
+              paragraphs: [
+                "Classic examples include flocking birds, schooling fish, and ant colonies. In each case, " +
+                  "individuals follow simple rules—such as alignment, cohesion, and separation—yet the group " +
+                  "moves as if it were a single, coordinated organism.",
+                "In digital environments, emergent behavior appears in online markets, multiplayer games, and " +
+                  "simulated societies where agents adapt to incentives and each other."
+              ],
+              bullets: [
+                "Flocking models (e.g., Boids) in computer graphics and games.",
+                "Traffic flow simulations with autonomous vehicles.",
+                "Virtual economies where player behavior shapes prices and scarcity."
+              ]
+            },
+            {
+              title: "Designing for emergence",
+              paragraphs: [
+                "Designers can intentionally create conditions that encourage emergence by focusing on " +
+                  "reward structures, interaction topologies, and constraints rather than micromanaging every outcome.",
+                "The challenge is to balance <strong>stability</strong> and <strong>novelty</strong>: too much order " +
+                  "and the system becomes predictable; too much chaos and it becomes unmanageable."
+              ],
+              bullets: [
+                "Shape incentives instead of prescribing exact behaviors.",
+                "Use local rules that scale gracefully with more agents.",
+                "Continuously observe and refine the environment’s feedback loops."
+              ]
+            }
+          ],
+          tags: [
+            "multi‑agent systems",
+            "emergence",
+            "complex systems",
+            "game design",
+            "collective intelligence"
+          ]
+        },
+        {
+          domain: "Cognitive Science",
+          complexity: "Intermediate",
+          baseTitle: "Cognitive Load and Interface Design",
+          subtitle:
+            "Why some interfaces feel effortless while others quietly exhaust your working memory.",
+          overview:
+            "Cognitive load theory describes how the limited capacity of working memory shapes our ability to learn, " +
+            "reason, and make decisions. Interfaces that respect these limits feel intuitive; those that ignore them " +
+            "create friction, confusion, and fatigue.",
+          sectionPatterns: [
+            {
+              title: "Types of cognitive load",
+              paragraphs: [
+                "Cognitive load is often divided into three categories: intrinsic, extraneous, and germane. " +
+                  "Intrinsic load comes from the inherent complexity of the task itself.",
+                "Extraneous load is introduced by the way information is presented—poor layouts, cluttered screens, " +
+                  "or confusing workflows. Germane load is the productive effort we invest in building mental models."
+              ],
+              bullets: [
+                "Intrinsic: unavoidable complexity of the content.",
+                "Extraneous: avoidable complexity from bad design.",
+                "Germane: effort that actually supports understanding."
+              ]
+            },
+            {
+              title: "Designing for lower extraneous load",
+              paragraphs: [
+                "Good interfaces reduce extraneous load by aligning with user expectations, using clear visual hierarchy, " +
+                  "and minimizing unnecessary decisions.",
+                "Micro‑copy, spacing, and grouping are not cosmetic details—they are cognitive scaffolding that " +
+                  "helps users allocate attention efficiently."
+              ],
+              bullets: [
+                "Group related controls and separate unrelated ones.",
+                "Use consistent patterns for navigation and actions.",
+                "Make the primary action visually dominant and obvious."
+              ]
+            },
+            {
+              title: "Supporting germane load",
+              paragraphs: [
+                "Interfaces can actively support learning by revealing structure, showing progress, and making " +
+                  "cause‑and‑effect relationships visible.",
+                "Instead of hiding complexity, good design sequences it, allowing users to build robust mental models " +
+                  "without being overwhelmed."
+              ],
+              bullets: [
+                "Use progressive disclosure for advanced options.",
+                "Provide meaningful feedback after each action.",
+                "Visualize state changes and system responses."
+              ]
+            }
+          ],
+          tags: [
+            "UX design",
+            "cognitive load",
+            "human factors",
+            "interaction design",
+            "mental models"
+          ]
+        },
+        {
+          domain: "Systems Design",
+          complexity: "Advanced",
+          baseTitle: "Designing Resilient Distributed Systems",
+          subtitle:
+            "How to build systems that bend under stress instead of breaking.",
+          overview:
+            "Resilient distributed systems are designed with the assumption that components will fail, networks will " +
+            "partition, and load will spike unexpectedly. Instead of chasing perfect uptime, they focus on graceful " +
+            "degradation, rapid recovery, and clear observability.",
+          sectionPatterns: [
+            {
+              title: "Failure as a design constraint",
+              paragraphs: [
+                "In distributed environments, failure is not an edge case—it is the default. Nodes crash, " +
+                  "messages are delayed, and partial outages are common.",
+                "Resilient architectures embrace this reality by isolating faults, using redundancy, and " +
+                  "designing protocols that tolerate uncertainty."
+              ],
+              bullets: [
+                "Assume the network is unreliable and slow.",
+                "Design idempotent operations where possible.",
+                "Prefer graceful degradation over total failure."
+              ]
+            },
+            {
+              title: "Patterns for resilience",
+              paragraphs: [
+                "Common patterns include circuit breakers, bulkheads, retries with backoff, and load shedding. " +
+                  "Each pattern addresses a different failure mode while keeping the system responsive.",
+                "Observability—through logs, metrics, and traces—is essential for understanding how the system behaves " +
+                  "under real‑world conditions."
+              ],
+              bullets: [
+                "Circuit breakers prevent cascading failures.",
+                "Bulkheads isolate critical resources.",
+                "Backoff strategies reduce thundering herds."
+              ]
+            },
+            {
+              title: "Human‑centered resilience",
+              paragraphs: [
+                "Technical resilience is incomplete without operational resilience. Runbooks, incident drills, and " +
+                  "clear ownership boundaries help teams respond effectively when things go wrong.",
+                "Post‑incident reviews focus on learning, not blame, turning each failure into design feedback."
+              ],
+              bullets: [
+                "Document failure modes and recovery steps.",
+                "Automate the boring, humanize the critical decisions.",
+                "Treat incidents as data for system evolution."
+              ]
+            }
+          ],
+          tags: [
+            "distributed systems",
+            "resilience",
+            "fault tolerance",
+            "observability",
+            "site reliability"
+          ]
+        },
+        {
+          domain: "Game Design",
+          complexity: "Intermediate",
+          baseTitle: "Designing Meaningful Progression Systems",
+          subtitle:
+            "Why good progression feels like growth, not just grinding numbers upward.",
+          overview:
+            "Progression systems are the backbone of long‑term engagement in many games. They translate time, skill, " +
+            "and experimentation into visible growth. When designed well, they create a sense of mastery and narrative; " +
+            "when designed poorly, they feel like chores.",
+          sectionPatterns: [
+            {
+              title: "Progression as feedback",
+              paragraphs: [
+                "Progression systems give players a continuous stream of feedback about their actions. " +
+                  "Levels, skill trees, and unlocks all communicate: 'what you did mattered.'",
+                "The pacing of rewards shapes how players perceive difficulty, fairness, and their own competence."
+              ],
+              bullets: [
+                "Short‑term rewards keep early sessions engaging.",
+                "Mid‑term goals anchor player intentions.",
+                "Long‑term arcs give the game a sense of journey."
+              ]
+            },
+            {
+              title: "Avoiding empty progression",
+              paragraphs: [
+                "If progression only increases numbers without changing play patterns, it quickly becomes hollow. " +
+                  "Players notice when upgrades are cosmetic in disguise.",
+                "Meaningful progression unlocks new verbs, strategies, or perspectives on the same space."
+              ],
+              bullets: [
+                "Tie upgrades to new mechanics, not just stats.",
+                "Use synergies between unlocks to encourage experimentation.",
+                "Let players express identity through their build choices."
+              ]
+            },
+            {
+              title: "Balancing agency and structure",
+              paragraphs: [
+                "Too much freedom can feel aimless; too much structure can feel constraining. " +
+                  "Good progression systems offer guided paths with room for detours.",
+                "Respec systems, soft resets, and multiple viable builds all support replayability and experimentation."
+              ],
+              bullets: [
+                "Offer clear milestones but multiple routes to reach them.",
+                "Allow players to recover from 'bad' choices.",
+                "Use the meta‑game to reframe repeated runs."
+              ]
+            }
+          ],
+          tags: [
+            "progression design",
+            "player psychology",
+            "reward systems",
+            "RPG mechanics",
+            "game loops"
+          ]
+        }
+      ];
 
-      const elTitle = document.getElementById("article-title");
-      const elDescription = document.getElementById("article-description");
-      const elLink = document.getElementById("article-link");
-      const elId = document.getElementById("article-id");
-      const elStatusDot = document.getElementById("status-dot");
-      const elStatusLabel = document.getElementById("status-label");
-      const elStatusValue = document.getElementById("status-value");
-      const elError = document.getElementById("error-message");
+      function seededRandom(seed) {
+        let x = Math.sin(seed) * 10000;
+        return x - Math.floor(x);
+      }
 
-      const elMetaPageId = document.getElementById("meta-pageid");
-      const elMetaLang = document.getElementById("meta-lang");
-      const elMetaTitleLength = document.getElementById("meta-title-length");
-      const elMetaExtractLength =
-        document.getElementById("meta-extract-length");
-      const elSideStatusLabel =
-        document.getElementById("side-status-label");
+      function pickRandom(arr, rng) {
+        if (!arr.length) return null;
+        const idx = Math.floor(rng() * arr.length);
+        return arr[idx];
+      }
 
-      function setLoadingState() {
+      function generateTrace(template, seed, sectionCount) {
+        const lines = [];
+        lines.push(
+          `seed=${seed} → domain="${template.domain}", complexity="${template.complexity}"`
+        );
+        lines.push(
+          `selectedTitle="${template.baseTitle}" · sections=${sectionCount}`
+        );
+        lines.push(
+          "strategy: combine overview + sectionPatterns + tags into a coherent explanation."
+        );
+        lines.push(
+          "note: this is a local generator; swap with a real model call to make it truly open‑ended."
+        );
+        return lines;
+      }
+
+      function renderTopic() {
+        const now = Date.now();
+        const seed = now % 100000;
+        const rng = () => seededRandom(seed + Math.random());
+
+        const template = pickRandom(topicTemplates, rng);
+        const sectionCount = 3 + Math.floor(rng() * 2);
+
+        const elTitle = document.getElementById("topic-title");
+        const elSubtitle = document.getElementById("topic-subtitle");
+        const elOverview = document.getElementById("topic-overview");
+        const elId = document.getElementById("topic-id");
+        const elSections = document.getElementById("topic-sections");
+        const elTags = document.getElementById("topic-tags");
+        const elStatusDot = document.getElementById("status-dot");
+        const elStatusLabel = document.getElementById("status-label");
+        const elStatusValue = document.getElementById("status-value");
+
+        const elMetaDomain = document.getElementById("meta-domain");
+        const elMetaComplexity = document.getElementById("meta-complexity");
+        const elMetaSections = document.getElementById("meta-sections");
+        const elMetaSeed = document.getElementById("meta-seed");
+        const elTraceBlock = document.getElementById("trace-block");
+
+        const startedAt = performance.now();
+
         elStatusDot.style.background = "#f5c84c";
         elStatusDot.style.boxShadow =
           "0 0 0 4px rgba(245, 200, 76, 0.25)";
-        elStatusLabel.textContent = "Fetching random article…";
+        elStatusLabel.textContent = "Synthesizing topic…";
         elStatusValue.textContent = "";
-        elSideStatusLabel.textContent = "Request in progress";
-        elError.classList.add("hidden");
 
-        elTitle.textContent = "Loading random topic…";
-        elDescription.textContent =
-          "Reaching out to Wikipedia’s random endpoint to pull in a fresh article summary.";
-        elId.textContent = "";
-      }
+        elTitle.textContent = template.baseTitle;
+        elSubtitle.textContent = template.subtitle;
+        elOverview.textContent = template.overview;
+        elId.textContent =
+          "Domain: " + template.domain + " · Complexity: " + template.complexity;
 
-      function setSuccessState() {
+        elSections.innerHTML = "";
+        const sectionsToUse = template.sectionPatterns.slice(0, sectionCount);
+
+        sectionsToUse.forEach((pattern, index) => {
+          const sectionEl = document.createElement("section");
+          sectionEl.className = "topic-section";
+
+          const titleEl = document.createElement("div");
+          titleEl.className = "topic-section-title";
+          titleEl.textContent = (index + 1) + ". " + pattern.title;
+
+          const bodyEl = document.createElement("div");
+          bodyEl.className = "topic-section-body";
+
+          pattern.paragraphs.forEach((p) => {
+            const pEl = document.createElement("p");
+            pEl.innerHTML = p;
+            bodyEl.appendChild(pEl);
+          });
+
+          if (pattern.bullets && pattern.bullets.length) {
+            const ulEl = document.createElement("ul");
+            pattern.bullets.forEach((b) => {
+              const liEl = document.createElement("li");
+              liEl.textContent = b;
+              ulEl.appendChild(liEl);
+            });
+            bodyEl.appendChild(ulEl);
+          }
+
+          sectionEl.appendChild(titleEl);
+          sectionEl.appendChild(bodyEl);
+          elSections.appendChild(sectionEl);
+        });
+
+        elTags.innerHTML = "";
+        template.tags.forEach((tag) => {
+          const chip = document.createElement("div");
+          chip.className = "topic-chip";
+          chip.textContent = tag;
+          elTags.appendChild(chip);
+        });
+
+        elMetaDomain.textContent = template.domain;
+        elMetaComplexity.textContent = template.complexity;
+        elMetaSections.textContent = sectionsToUse.length.toString();
+        elMetaSeed.textContent = seed.toString();
+
+        const traceLines = generateTrace(template, seed, sectionsToUse.length);
+        elTraceBlock.innerHTML = "";
+        traceLines.forEach((line) => {
+          const div = document.createElement("div");
+          div.className = "trace-line";
+          div.textContent = line;
+          elTraceBlock.appendChild(div);
+        });
+
+        const finishedAt = performance.now();
+        const elapsedMs = Math.round(finishedAt - startedAt);
+
         elStatusDot.style.background = "#4caf50";
         elStatusDot.style.boxShadow =
           "0 0 0 4px rgba(76, 175, 80, 0.25)";
-        elStatusLabel.textContent = "Loaded";
-        elSideStatusLabel.textContent = "Last request: success";
+        elStatusLabel.textContent = "Topic ready";
+        elStatusValue.textContent = elapsedMs + " ms";
       }
 
-      function setErrorState(message) {
-        elStatusDot.style.background = "#ff5252";
-        elStatusDot.style.boxShadow =
-          "0 0 0 4px rgba(255, 82, 82, 0.25)";
-        elStatusLabel.textContent = "Error";
-        elStatusValue.textContent = "";
-        elSideStatusLabel.textContent = "Last request: error";
-
-        elTitle.textContent = "Couldn’t load a random article";
-        elDescription.textContent =
-          "The request to Wikipedia’s random summary endpoint failed. Try refreshing the page in a moment.";
-        elId.textContent = "";
-        elError.textContent =
-          message ||
-          "Something went wrong while talking to api/rest_v1/page/random/summary. Try refreshing the page in a moment.";
-        elError.classList.remove("hidden");
-      }
-
-      function updateMeta(info) {
-        if (!info) return;
-
-        const pageId = info.pageid || info.pageId || "—";
-        const lang = info.lang || "en";
-        const title = info.title || "";
-        const extract = info.extract || "";
-
-        elMetaPageId.textContent = pageId;
-        elMetaLang.textContent = lang;
-        elMetaTitleLength.textContent = title.length.toString();
-        elMetaExtractLength.textContent = extract.length.toString();
-      }
-
-      async function fetchRandomArticle() {
-        setLoadingState();
-        const startedAt = performance.now();
-
-        try {
-          const response = await fetch(API_URL, {
-            method: "GET",
-            headers: {
-              "Accept": "application/json"
-            }
-          });
-
-          if (!response.ok) {
-            throw new Error(
-              "HTTP " + response.status + " " + response.statusText
-            );
-          }
-
-          const data = await response.json();
-          const finishedAt = performance.now();
-          const elapsedMs = Math.round(finishedAt - startedAt);
-
-          const title = data.title || "Untitled article";
-          const extract =
-            data.extract ||
-            "No summary available for this article. Open it on Wikipedia to read more.";
-          const pageUrl =
-            data.content_urls &&
-            data.content_urls.desktop &&
-            data.content_urls.desktop.page
-              ? data.content_urls.desktop.page
-              : data.canonical ||
-                data.url ||
-                "https://en.wikipedia.org/wiki/Special:Random";
-          const pageId = data.pageid || data.pageId || "—";
-          const lang = data.lang || "en";
-
-          elTitle.textContent = title;
-          elDescription.textContent = extract;
-          elLink.href = pageUrl;
-          elId.textContent = "Page ID: " + pageId + " · Lang: " + lang;
-
-          elStatusValue.textContent = elapsedMs + " ms";
-
-          updateMeta({
-            pageid: pageId,
-            lang: lang,
-            title: title,
-            extract: extract
-          });
-
-          setSuccessState();
-        } catch (err) {
-          console.error("Error fetching random article:", err);
-          setErrorState(err && err.message ? err.message : "");
-        }
-      }
-
-      fetchRandomArticle();
+      renderTopic();
     })();
   </script>
 </body>
