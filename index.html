@@ -1,685 +1,846 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>MAZE</title>
-<style>
-  body {
-    background: #111;
-    color: #eee;
-    font-family: sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 20px;
-    user-select: none;
-  }
-  #title {
-    font-weight: bold;
-    margin-bottom: 6px;
-    letter-spacing: 1px;
-  }
-  #wrapper {
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-  }
-  #maze {
-    display: grid;
-    gap: 2px;
-    margin-bottom: 8px;
-  }
-  .cell {
-    width: 22px;
-    height: 22px;
-    transition: background 0.12s, filter 0.12s;
-    position: relative;
-  }
-  .wall { background: #333; }
-  .floor { background: #222; }
-  .exit { background: #f44336; }
-  .botMarker {
-    position: absolute;
-    inset: 3px;
-    border-radius: 2px;
-    pointer-events: none;
-  }
-  .dark {
-    filter: brightness(0.12);
-  }
-  .visible {
-    filter: brightness(1.0);
-  }
-  #info {
-    font-size: 14px;
-    opacity: 0.9;
-    margin-top: 4px;
-    text-align: center;
-  }
-  #minimapWrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-  #minimapLabel {
-    font-size: 12px;
-    opacity: 0.8;
-    letter-spacing: 1px;
-  }
-  #minimap {
-    background: #050509;
-    border: 1px solid #333;
-  }
-  #mazeIdInput {
-    width: 120px;
-    background: #111;
-    color: #eee;
-    border: 1px solid #444;
-    padding: 2px 4px;
-    font-size: 12px;
-    text-align: center;
-    margin-top: 6px;
-  }
-  #mazeIdButton {
-    margin-top: 4px;
-    font-size: 11px;
-    padding: 2px 6px;
-    background: #222;
-    color: #eee;
-    border: 1px solid #555;
-    cursor: pointer;
-  }
-  #mazeIdStatus {
-    font-size: 11px;
-    opacity: 0.8;
-    margin-top: 2px;
-    text-align: center;
-    min-height: 14px;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>Random Wikipedia Explorer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Basic styling to make it look clean and readable -->
+  <style>
+    :root {
+      --bg: #0b1020;
+      --bg-alt: #151a2b;
+      --accent: #f5c84c;
+      --accent-soft: rgba(245, 200, 76, 0.15);
+      --text-main: #f5f7ff;
+      --text-muted: #a3acc7;
+      --border-subtle: #262c42;
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.55);
+      --radius-lg: 18px;
+      --radius-pill: 999px;
+      --transition-fast: 0.18s ease-out;
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+        Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: var(--font-main);
+      background: radial-gradient(circle at top, #1b2340 0, #050814 55%, #02030a 100%);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 960px;
+      background: linear-gradient(145deg, #101528, #070a16);
+      border-radius: 26px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      position: relative;
+      isolation: isolate;
+    }
+
+    @media (max-width: 840px) {
+      .app-shell {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .app-shell::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(245, 200, 76, 0.12), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(76, 175, 255, 0.12), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .pane-main {
+      padding: 26px 26px 24px 26px;
+      border-right: 1px solid var(--border-subtle);
+    }
+
+    @media (max-width: 840px) {
+      .pane-main {
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+    }
+
+    .pane-side {
+      padding: 22px 22px 20px 22px;
+      background: radial-gradient(circle at top left, #171d33 0, #070a16 55%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pane-side::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(245, 200, 76, 0.12), transparent 55%),
+        radial-gradient(circle at 90% 100%, rgba(76, 175, 255, 0.16), transparent 55%);
+      opacity: 0.7;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-pill {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 20%, #ffffff, #f5c84c 40%, #f57f4c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #050814;
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 0 0 1px rgba(5, 8, 20, 0.4),
+        0 10px 25px rgba(0, 0, 0, 0.65);
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .app-title span.accent {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      background: rgba(10, 16, 40, 0.9);
+      border: 1px solid rgba(245, 200, 76, 0.35);
+      color: var(--accent);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(245, 200, 76, 0.25);
+    }
+
+    .pill span.label {
+      opacity: 0.9;
+    }
+
+    .article-card {
+      margin-top: 10px;
+      padding: 18px 18px 16px 18px;
+      border-radius: 18px;
+      background: radial-gradient(circle at top left, #181f3a 0, #090c18 55%);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .article-card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(245, 200, 76, 0.12), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(76, 175, 255, 0.12), transparent 55%);
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .article-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .article-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(8, 14, 40, 0.9);
+      border: 1px solid rgba(163, 172, 199, 0.35);
+      color: var(--text-muted);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .article-tag-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #4cafef;
+      box-shadow: 0 0 0 3px rgba(76, 175, 239, 0.25);
+    }
+
+    .article-id {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      opacity: 0.8;
+    }
+
+    .article-title {
+      font-size: 22px;
+      font-weight: 650;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+
+    .article-description {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-height: 180px;
+      overflow-y: auto;
+      padding-right: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(163, 172, 199, 0.6) transparent;
+    }
+
+    .article-description::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .article-description::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .article-description::-webkit-scrollbar-thumb {
+      background: rgba(163, 172, 199, 0.6);
+      border-radius: 999px;
+    }
+
+    .article-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .article-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      background: rgba(245, 200, 76, 0.12);
+      border: 1px solid rgba(245, 200, 76, 0.6);
+      color: var(--accent);
+      font-size: 12px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background var(--transition-fast), transform var(--transition-fast),
+        box-shadow var(--transition-fast);
+    }
+
+    .article-link:hover {
+      background: rgba(245, 200, 76, 0.2);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+    }
+
+    .article-link-icon {
+      font-size: 14px;
+      transform: translateY(1px);
+    }
+
+    .article-meta-small {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: right;
+      line-height: 1.4;
+    }
+
+    .article-meta-small span {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      background: rgba(9, 14, 40, 0.9);
+      border: 1px solid rgba(163, 172, 199, 0.4);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4caf50;
+      box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.25);
+    }
+
+    .status-label {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .status-value {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      opacity: 0.9;
+    }
+
+    .refresh-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: right;
+      opacity: 0.9;
+    }
+
+    .refresh-hint span {
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+
+    .side-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .side-title {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .side-badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(5, 8, 20, 0.9);
+      border: 1px solid rgba(163, 172, 199, 0.4);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .side-badge span.dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #4cafef;
+    }
+
+    .side-body {
+      position: relative;
+      z-index: 1;
+    }
+
+    .side-section {
+      padding: 10px 0 6px 0;
+      border-bottom: 1px dashed rgba(163, 172, 199, 0.3);
+      margin-bottom: 10px;
+    }
+
+    .side-section:last-of-type {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .side-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .side-value {
+      font-size: 13px;
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    .side-value code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: rgba(5, 8, 20, 0.9);
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(163, 172, 199, 0.4);
+    }
+
+    .side-mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .mini-pill {
+      font-size: 11px;
+      padding: 6px 8px;
+      border-radius: 12px;
+      background: rgba(5, 8, 20, 0.9);
+      border: 1px solid rgba(163, 172, 199, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .mini-pill-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .mini-pill-value {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    .footer-note {
+      margin-top: 10px;
+      font-size: 10px;
+      color: var(--text-muted);
+      opacity: 0.85;
+      line-height: 1.5;
+    }
+
+    .footer-note a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px dotted rgba(245, 200, 76, 0.6);
+    }
+
+    .footer-note a:hover {
+      border-bottom-style: solid;
+    }
+
+    .skeleton {
+      animation: pulse 1.4s ease-in-out infinite;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.06),
+        rgba(255, 255, 255, 0.12),
+        rgba(255, 255, 255, 0.06)
+      );
+      background-size: 200% 100%;
+      border-radius: 999px;
+    }
+
+    @keyframes pulse {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .error-message {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(120, 40, 40, 0.2);
+      border: 1px solid rgba(255, 120, 120, 0.4);
+      color: #ffb3b3;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .error-message code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: rgba(5, 8, 20, 0.9);
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 120, 120, 0.4);
+    }
+  </style>
 </head>
 <body>
+  <div class="app-shell">
+    <!-- MAIN PANE: Article content -->
+    <div class="pane-main">
+      <header class="header">
+        <div class="title-block">
+          <div class="title-row">
+            <div class="logo-pill">W</div>
+            <div class="app-title">
+              Random
+              <span class="accent">Wikipedia</span>
+              Explorer
+            </div>
+          </div>
+          <div class="subtitle">
+            Every refresh → a new topic from the world’s largest encyclopedia
+          </div>
+        </div>
 
-<div id="title"></div>
+        <div class="pill">
+          <span class="pill-dot"></span>
+          <span class="label">Auto-refresh driven</span>
+        </div>
+      </header>
 
-<div id="wrapper">
-  <div>
-    <div id="maze"></div>
-    <div id="info">LOOP 0</div>
+      <section class="article-card">
+        <div class="article-meta-row">
+          <div class="article-tag">
+            <span class="article-tag-dot"></span>
+            <span>Random article</span>
+          </div>
+          <div class="article-id" id="article-id">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+
+        <h1 class="article-title" id="article-title">
+          <!-- Filled by JS -->
+        </h1>
+
+        <div class="article-description" id="article-description">
+          <!-- Filled by JS -->
+        </div>
+
+        <div class="article-footer">
+          <a
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="article-link"
+            id="article-link"
+          >
+            <span>Open full article on Wikipedia</span>
+            <span class="article-link-icon">↗</span>
+          </a>
+
+          <div class="article-meta-small">
+            Source: <span>en.wikipedia.org</span><br />
+            Endpoint:
+            <span>/api/rest_v1/page/random/summary</span>
+          </div>
+        </div>
+
+        <div class="status-row">
+          <div class="status-indicator">
+            <span class="status-dot" id="status-dot"></span>
+            <span class="status-label" id="status-label">Ready</span>
+            <span class="status-value" id="status-value"></span>
+          </div>
+          <div class="refresh-hint">
+            Refresh the page (<span>Ctrl+R</span> / <span>Cmd+R</span>) for a new topic
+          </div>
+        </div>
+
+        <div class="error-message hidden" id="error-message">
+          Something went wrong while talking to
+          <code>api/rest_v1/page/random/summary</code>. Try refreshing the page in a
+          moment.
+        </div>
+      </section>
+    </div>
+
+    <!-- SIDE PANE: Technical info / “debug” view -->
+    <aside class="pane-side">
+      <div class="side-header">
+        <div class="side-title">Request details</div>
+        <div class="side-badge">
+          <span class="dot"></span>
+          <span id="side-status-label">Fetching…</span>
+        </div>
+      </div>
+
+      <div class="side-body">
+        <div class="side-section">
+          <div class="side-label">REST endpoint</div>
+          <div class="side-value">
+            <code>https://en.wikipedia.org/api/rest_v1/page/random/summary</code>
+          </div>
+        </div>
+
+        <div class="side-section">
+          <div class="side-label">Article metadata</div>
+          <div class="side-mini-grid">
+            <div class="mini-pill">
+              <div class="mini-pill-label">Page ID</div>
+              <div class="mini-pill-value" id="meta-pageid">—</div>
+            </div>
+            <div class="mini-pill">
+              <div class="mini-pill-label">Language</div>
+              <div class="mini-pill-value" id="meta-lang">en</div>
+            </div>
+            <div class="mini-pill">
+              <div class="mini-pill-label">Title length</div>
+              <div class="mini-pill-value" id="meta-title-length">—</div>
+            </div>
+            <div class="mini-pill">
+              <div class="mini-pill-label">Extract length</div>
+              <div class="mini-pill-value" id="meta-extract-length">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-section">
+          <div class="side-label">How it works</div>
+          <div class="side-value">
+            On every page load, a small script calls the Wikipedia REST API’s
+            <code>page/random/summary</code> endpoint, which returns a random article
+            summary in JSON. The response is then rendered into the card on the left.
+          </div>
+        </div>
+
+        <div class="side-section">
+          <div class="side-label">Tip</div>
+          <div class="side-value">
+            Want to keep exploring? Just refresh the page. Each reload triggers a new
+            request and a new random topic.
+          </div>
+        </div>
+
+        <p class="footer-note">
+          This is a lightweight client-side demo using the public Wikipedia REST API.
+          For more advanced usage, you can also use the
+          <a
+            href="https://www.mediawiki.org/wiki/API:Random"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            MediaWiki Action API random module
+          </a>.
+        </p>
+      </div>
+    </aside>
   </div>
-  <div id="minimapWrapper">
-    <div id="minimapLabel">BOT MAP</div>
-    <canvas id="minimap" width="168" height="168"></canvas>
-    <input id="mazeIdInput" type="number" min="0" max="99999" placeholder="MAZE ID">
-    <button id="mazeIdButton">SET MAZE ID</button>
-    <div id="mazeIdStatus"></div>
-  </div>
-</div>
 
-<script>
-const size = 21;
-let maze = [];
-let cells = [];
-let exitPos = {x:0, y:0};
-let mazeId = 0;
-let pendingMazeId = null;
+  <script>
+    (function () {
+      const API_URL =
+        "https://en.wikipedia.org/api/rest_v1/page/random/summary";
 
-const mazeDiv = document.getElementById("maze");
-const info = document.getElementById("info");
-const title = document.getElementById("title");
-const minimap = document.getElementById("minimap");
-const mctx = minimap.getContext("2d");
-const mazeIdInput = document.getElementById("mazeIdInput");
-const mazeIdButton = document.getElementById("mazeIdButton");
-const mazeIdStatus = document.getElementById("mazeIdStatus");
+      const elTitle = document.getElementById("article-title");
+      const elDescription = document.getElementById("article-description");
+      const elLink = document.getElementById("article-link");
+      const elId = document.getElementById("article-id");
+      const elStatusDot = document.getElementById("status-dot");
+      const elStatusLabel = document.getElementById("status-label");
+      const elStatusValue = document.getElementById("status-value");
+      const elError = document.getElementById("error-message");
 
-mazeDiv.style.gridTemplateColumns = `repeat(${size}, 22px)`;
-mazeDiv.style.gridTemplateRows = `repeat(${size}, 22px)`;
+      const elMetaPageId = document.getElementById("meta-pageid");
+      const elMetaLang = document.getElementById("meta-lang");
+      const elMetaTitleLength = document.getElementById("meta-title-length");
+      const elMetaExtractLength =
+        document.getElementById("meta-extract-length");
+      const elSideStatusLabel =
+        document.getElementById("side-status-label");
 
-const actions = [
-  {dx:0, dy:-1},
-  {dx:0, dy:1},
-  {dx:-1, dy:0},
-  {dx:1, dy:0}
-];
+      function setLoadingState() {
+        elStatusDot.style.background = "#f5c84c";
+        elStatusDot.style.boxShadow =
+          "0 0 0 4px rgba(245, 200, 76, 0.25)";
+        elStatusLabel.textContent = "Fetching random article…";
+        elStatusValue.textContent = "";
+        elSideStatusLabel.textContent = "Request in progress";
+        elError.classList.add("hidden");
 
-const alpha = 0.25;
-const gamma = 0.98;
-let epsilon = 0.35;
-let episodes = 0;
-
-let memoryMap;
-let deadEndMap;
-let exitDiscovered = false;
-let valueMap;
-
-const Q = new Map();
-
-let bot = {x:0, y:0, lastMove:-1};
-let visited;
-
-let playerId = null;
-let ws = null;
-const remotePlayers = new Map(); // playerId -> {x,y,loop,color}
-const remoteColors = {};
-const colorPool = [
-  "rgba(255,200,0,0.6)",
-  "rgba(180,80,255,0.6)",
-  "rgba(80,255,120,0.6)",
-  "rgba(255,120,120,0.6)",
-  "rgba(120,200,255,0.6)"
-];
-
-function assignColor(pid) {
-  if (!remoteColors[pid]) {
-    remoteColors[pid] = colorPool[(Object.keys(remoteColors).length) % colorPool.length];
-  }
-  return remoteColors[pid];
-}
-
-function manhattan(x1,y1,x2,y2) {
-  return Math.abs(x1-x2) + Math.abs(y1-y2);
-}
-
-function visionKey(x, y) {
-  let s = "";
-  for (let dy = -1; dy <= 1; dy++) {
-    for (let dx = -1; dx <= 1; dx++) {
-      const nx = x + dx;
-      const ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= size || ny >= size) {
-        s += "3";
-      } else {
-        const t = maze[ny][nx];
-        if (nx === exitPos.x && ny === exitPos.y) s += "2";
-        else if (t === 1) s += "1";
-        else s += "0";
+        elTitle.textContent = "Loading random topic…";
+        elDescription.textContent =
+          "Reaching out to Wikipedia’s random endpoint to pull in a fresh article summary.";
+        elId.textContent = "";
       }
-    }
-  }
-  return s;
-}
 
-function stateKey(x,y,lastMoveDir) {
-  return x + "," + y + "," + visionKey(x,y) + "," + lastMoveDir;
-}
-
-function getQ(x,y,lastMoveDir) {
-  const key = stateKey(x,y,lastMoveDir);
-  if (!Q.has(key)) Q.set(key, [0,0,0,0]);
-  return Q.get(key);
-}
-
-function makeRNG(seed) {
-  let s = seed >>> 0;
-  return function() {
-    s = (s * 1664525 + 1013904223) >>> 0;
-    return s / 4294967296;
-  };
-}
-
-function randomFloorWith(rnd) {
-  let x,y;
-  do {
-    x = Math.floor(rnd()*size);
-    y = Math.floor(rnd()*size);
-  } while (maze[y][x] !== 0);
-  return {x,y};
-}
-
-function randomFloor() {
-  let x,y;
-  do {
-    x = Math.floor(Math.random()*size);
-    y = Math.floor(Math.random()*size);
-  } while (maze[y][x] !== 0);
-  return {x,y};
-}
-
-function generateMaze(id) {
-  if (typeof id === "number" && !isNaN(id)) {
-    mazeId = id;
-  } else {
-    mazeId = Math.floor(Math.random()*99999);
-  }
-  const rng = makeRNG(mazeId);
-  maze = Array(size).fill(0).map(() => Array(size).fill(1));
-  function carve(x, y) {
-    const dirs = [[2,0],[-2,0],[0,2],[0,-2]].sort(() => rng()-0.5);
-    for (const [dx,dy] of dirs) {
-      const nx = x+dx, ny = y+dy;
-      if (nx>0 && nx<size-1 && ny>0 && ny<size-1 && maze[ny][nx]===1) {
-        maze[ny][nx] = 0;
-        maze[y+dy/2][x+dx/2] = 0;
-        carve(nx,ny);
+      function setSuccessState() {
+        elStatusDot.style.background = "#4caf50";
+        elStatusDot.style.boxShadow =
+          "0 0 0 4px rgba(76, 175, 80, 0.25)";
+        elStatusLabel.textContent = "Loaded";
+        elSideStatusLabel.textContent = "Last request: success";
       }
-    }
-  }
-  maze[1][1] = 0;
-  carve(1,1);
-  exitPos = randomFloorWith(rng);
-  title.textContent = "MAZE: " + mazeId;
-}
 
-function renderMaze() {
-  mazeDiv.innerHTML = "";
-  cells = [];
-  for (let y=0; y<size; y++) {
-    const row = [];
-    for (let x=0; x<size; x++) {
-      const c = document.createElement("div");
-      c.classList.add("cell");
-      c.classList.add(maze[y][x] === 1 ? "wall" : "floor");
-      if (x === exitPos.x && y === exitPos.y) c.classList.add("exit");
-      mazeDiv.appendChild(c);
-      row.push(c);
-    }
-    cells.push(row);
-  }
-}
+      function setErrorState(message) {
+        elStatusDot.style.background = "#ff5252";
+        elStatusDot.style.boxShadow =
+          "0 0 0 4px rgba(255, 82, 82, 0.25)";
+        elStatusLabel.textContent = "Error";
+        elStatusValue.textContent = "";
+        elSideStatusLabel.textContent = "Last request: error";
 
-function clearBotMarkers() {
-  for (let y=0; y<size; y++) {
-    for (let x=0; x<size; x++) {
-      const cell = cells[y][x];
-      const markers = cell.querySelectorAll(".botMarker");
-      markers.forEach(m => m.remove());
-    }
-  }
-}
-
-function drawBots() {
-  clearBotMarkers();
-  const mainCell = cells[bot.y][bot.x];
-  const mainMarker = document.createElement("div");
-  mainMarker.className = "botMarker";
-  mainMarker.style.background = "rgba(0,230,255,1)";
-  mainMarker.style.opacity = "1.0";
-  mainCell.appendChild(mainMarker);
-
-  for (const [pid, data] of remotePlayers.entries()) {
-    const cell = cells[data.y][data.x];
-    const marker = document.createElement("div");
-    marker.className = "botMarker";
-    marker.style.background = assignColor(pid);
-    marker.style.opacity = "0.6";
-    cell.appendChild(marker);
-  }
-}
-
-function applyFog() {
-  for (let y=0; y<size; y++) {
-    for (let x=0; x<size; x++) {
-      cells[y][x].classList.add("dark");
-      cells[y][x].classList.remove("visible");
-      cells[y][x].style.filter = "";
-    }
-  }
-  for (let dy=-1; dy<=1; dy++) {
-    for (let dx=-1; dx<=1; dx++) {
-      const nx = bot.x + dx;
-      const ny = bot.y + dy;
-      if (nx>=0 && ny>=0 && nx<size && ny<size) {
-        cells[ny][nx].classList.remove("dark");
-        cells[ny][nx].classList.add("visible");
+        elTitle.textContent = "Couldn’t load a random article";
+        elDescription.textContent =
+          "The request to Wikipedia’s random summary endpoint failed. Try refreshing the page in a moment.";
+        elId.textContent = "";
+        elError.textContent =
+          message ||
+          "Something went wrong while talking to api/rest_v1/page/random/summary. Try refreshing the page in a moment.";
+        elError.classList.remove("hidden");
       }
-    }
-  }
-  for (const [,data] of remotePlayers.entries()) {
-    for (let dy=-1; dy<=1; dy++) {
-      for (let dx=-1; dx<=1; dx++) {
-        const nx = data.x + dx;
-        const ny = data.y + dy;
-        if (nx>=0 && ny>=0 && nx<size && ny<size) {
-          if (!cells[ny][nx].classList.contains("visible")) {
-            cells[ny][nx].classList.remove("dark");
-            cells[ny][nx].style.filter = "brightness(0.5)";
-          }
-        }
-      }
-    }
-  }
-}
 
-function resetEpisode(success, winnerId = null) {
-  if (success) {
-    for (let y=0; y<size; y++) {
-      for (let x=0; x<size; x++) {
-        memoryMap[x][y] = memoryMap[x][y]*0.6 + visited[y][x]*0.4;
-      }
-    }
-    episodes++;
-    epsilon = Math.max(0.05, epsilon * 0.97);
-    if (pendingMazeId !== null) {
-      switchMaze(pendingMazeId);
-      return;
-    }
-  } else {
-    epsilon = Math.min(0.5, epsilon * 1.01);
-  }
-  if (winnerId !== null) {
-    info.textContent = "LOOP " + episodes + " — PLAYER " + winnerId + " REACHED EXIT";
-  } else {
-    info.textContent = "LOOP " + episodes;
-  }
-  visited = Array(size).fill(0).map(() => Array(size).fill(0));
-  const p = randomFloor();
-  bot.x = p.x;
-  bot.y = p.y;
-  bot.lastMove = -1;
-  drawBots();
-}
+      function updateMeta(info) {
+        if (!info) return;
 
-function updateValueMap() {
-  for (let y=0; y<size; y++) {
-    for (let x=0; x<size; x++) {
-      const keyBase = x + "," + y;
-      let best = null;
-      for (let lm = -1; lm < 4; lm++) {
-        const key = keyBase + "," + visionKey(x,y) + "," + lm;
-        if (Q.has(key)) {
-          const arr = Q.get(key);
-          const m = Math.max(...arr);
-          if (best === null || m > best) best = m;
-        }
-      }
-      valueMap[x][y] = best;
-    }
-  }
-}
+        const pageId = info.pageid || info.pageId || "—";
+        const lang = info.lang || "en";
+        const title = info.title || "";
+        const extract = info.extract || "";
 
-function drawMinimap() {
-  const w = minimap.width;
-  const h = minimap.height;
-  const cw = w / size;
-  const ch = h / size;
-  mctx.clearRect(0,0,w,h);
-  for (let y=0; y<size; y++) {
-    for (let x=0; x<size; x++) {
-      const v = valueMap[x][y];
-      const mem = memoryMap[x][y];
-      const seen = mem > 0;
-      let r=0,g=0,b=0,a=0.2;
-      if (!seen) {
-        r=8; g=16; b=40; a=0.3;
-      } else {
-        if (maze[y][x] === 1) {
-          r=40; g=40; b=40; a=0.7;
-        } else {
-          const memClamped = Math.min(mem, 50);
-          const memT = memClamped / 50;
-          let baseR = 20 + 40*memT;
-          let baseG = 40 + 40*(1-memT);
-          let baseB = 70 + 30*(1-memT);
-          if (v === null || v === undefined) {
-            r = baseR;
-            g = baseG;
-            b = baseB;
-            a = 0.4;
-          } else {
-            const clamped = Math.max(-200, Math.min(200, v));
-            if (clamped >= 0) {
-              const t = clamped / 200;
-              r = baseR*(1-t) + 60*t;
-              g = baseG*(1-t) + 200*t;
-              b = baseB*(1-t) + 80*t;
-              a = 0.4 + 0.4*t;
-            } else {
-              const t = -clamped / 200;
-              r = baseR*(1-t) + 220*t;
-              g = baseG*(1-t) + 40*(1-t);
-              b = baseB*(1-t) + 40*(1-t);
-              a = 0.4 + 0.4*t;
+        elMetaPageId.textContent = pageId;
+        elMetaLang.textContent = lang;
+        elMetaTitleLength.textContent = title.length.toString();
+        elMetaExtractLength.textContent = extract.length.toString();
+      }
+
+      async function fetchRandomArticle() {
+        setLoadingState();
+        const startedAt = performance.now();
+
+        try {
+          const response = await fetch(API_URL, {
+            method: "GET",
+            headers: {
+              "Accept": "application/json"
             }
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              "HTTP " + response.status + " " + response.statusText
+            );
           }
+
+          const data = await response.json();
+          const finishedAt = performance.now();
+          const elapsedMs = Math.round(finishedAt - startedAt);
+
+          const title = data.title || "Untitled article";
+          const extract =
+            data.extract ||
+            "No summary available for this article. Open it on Wikipedia to read more.";
+          const pageUrl =
+            data.content_urls &&
+            data.content_urls.desktop &&
+            data.content_urls.desktop.page
+              ? data.content_urls.desktop.page
+              : data.canonical ||
+                data.url ||
+                "https://en.wikipedia.org/wiki/Special:Random";
+          const pageId = data.pageid || data.pageId || "—";
+          const lang = data.lang || "en";
+
+          elTitle.textContent = title;
+          elDescription.textContent = extract;
+          elLink.href = pageUrl;
+          elId.textContent = "Page ID: " + pageId + " · Lang: " + lang;
+
+          elStatusValue.textContent = elapsedMs + " ms";
+
+          updateMeta({
+            pageid: pageId,
+            lang: lang,
+            title: title,
+            extract: extract
+          });
+
+          setSuccessState();
+        } catch (err) {
+          console.error("Error fetching random article:", err);
+          setErrorState(err && err.message ? err.message : "");
         }
       }
-      mctx.fillStyle = `rgba(${r},${g},${b},${a})`;
-      mctx.fillRect(x*cw, y*ch, cw, ch);
-    }
-  }
-  if (exitDiscovered) {
-    mctx.strokeStyle = "rgba(255,120,120,0.9)";
-    mctx.lineWidth = 2;
-    mctx.strokeRect(exitPos.x*cw+1, exitPos.y*ch+1, cw-2, ch-2);
-  }
-  const bx = bot.x*cw + cw/2;
-  const by = bot.y*ch + ch/2;
-  const radius = Math.max(cw,ch)*1.6;
-  const grad = mctx.createRadialGradient(bx,by,0,bx,by,radius);
-  grad.addColorStop(0, "rgba(0,230,255,0.9)");
-  grad.addColorStop(1, "rgba(0,230,255,0.0)");
-  mctx.fillStyle = grad;
-  mctx.beginPath();
-  mctx.arc(bx,by,radius,0,Math.PI*2);
-  mctx.fill();
-  mctx.fillStyle = "rgba(0,230,255,1)";
-  mctx.fillRect(bot.x*cw+cw*0.25, bot.y*ch+ch*0.25, cw*0.5, ch*0.5);
 
-  for (const [pid,data] of remotePlayers.entries()) {
-    const rx = data.x*cw + cw/2;
-    const ry = data.y*ch + ch/2;
-    const rrad = Math.max(cw,ch)*1.2;
-    const col = assignColor(pid);
-    const grad2 = mctx.createRadialGradient(rx,ry,0,rx,ry,rrad);
-    grad2.addColorStop(0, col.replace(/[\d.]+\)$/,"0.7)"));
-    grad2.addColorStop(1, col.replace(/[\d.]+\)$/,"0.0)"));
-    mctx.fillStyle = grad2;
-    mctx.beginPath();
-    mctx.arc(rx,ry,rrad,0,Math.PI*2);
-    mctx.fill();
-    mctx.fillStyle = col;
-    mctx.globalAlpha = 0.6;
-    mctx.fillRect(data.x*cw+cw*0.25, data.y*ch+ch*0.25, cw*0.5, ch*0.5);
-    mctx.globalAlpha = 1.0;
-  }
-}
-
-function countUnseenNeighbors(x, y) {
-  let count = 0;
-  for (const a of actions) {
-    const nx = x + a.dx;
-    const ny = y + a.dy;
-    if (nx>=0 && ny>=0 && nx<size && ny<size) {
-      if (maze[ny][nx] === 0 && memoryMap[x][y] === 0) {
-        count++;
-      }
-    }
-  }
-  return count;
-}
-
-function botStep() {
-  applyFog();
-  const sx = bot.x;
-  const sy = bot.y;
-  const prevDist = manhattan(sx, sy, exitPos.x, exitPos.y);
-  const qValues = getQ(sx, sy, bot.lastMove);
-  let actionIndex;
-  if (Math.random() < epsilon) {
-    actionIndex = Math.floor(Math.random()*4);
-  } else {
-    let maxQ = -Infinity;
-    actionIndex = 0;
-    for (let i=0;i<4;i++) {
-      if (qValues[i] > maxQ) {
-        maxQ = qValues[i];
-        actionIndex = i;
-      }
-    }
-  }
-  const action = actions[actionIndex];
-  const nx = sx + action.dx;
-  const ny = sy + action.dy;
-  let reward = -1.5;
-  let done = false;
-  let success = false;
-  if (bot.lastMove !== -1) {
-    const opposite =
-      (bot.lastMove===0 && actionIndex===1) ||
-      (bot.lastMove===1 && actionIndex===0) ||
-      (bot.lastMove===2 && actionIndex===3) ||
-      (bot.lastMove===3 && actionIndex===2);
-    if (opposite) reward -= 4;
-  }
-  if (nx<0 || ny<0 || nx>=size || ny>=size || maze[ny][nx]===1) {
-    reward -= 15;
-  } else {
-    bot.x = nx;
-    bot.y = ny;
-    visited[ny][nx]++;
-    if (deadEndMap[nx][ny]) {
-      reward -= 6;
-    }
-    if (visited[ny][nx] === 1 && memoryMap[nx][ny] === 0) {
-      reward += 2.0;
-    } else {
-      const memFactor = Math.min(memoryMap[nx][ny], 20) / 20;
-      reward -= (visited[ny][nx] * 0.6) + memFactor*1.5;
-    }
-    const frontier = countUnseenNeighbors(nx, ny);
-    if (frontier > 0 && visited[ny][nx] === 1) {
-      reward += 1.0 + 0.4 * frontier;
-    }
-    const newDist = manhattan(nx, ny, exitPos.x, exitPos.y);
-    const distWeight = exitDiscovered ? 2.5 : 1.5;
-    if (newDist < prevDist) {
-      reward += distWeight;
-    } else if (newDist > prevDist) {
-      reward -= distWeight;
-    }
-    if (visited[ny][nx] > 4 && countUnseenNeighbors(nx, ny) === 0) {
-      deadEndMap[nx][ny] = 1;
-      reward -= 8;
-    }
-    if (nx===exitPos.x && ny===exitPos.y) {
-      reward += 800;
-      done = true;
-      success = true;
-      exitDiscovered = true;
-      if (ws && playerId !== null) {
-        ws.send(JSON.stringify({ type:"exit", mazeId, playerId, loop:episodes }));
-      }
-    }
-  }
-  const qOld = qValues[actionIndex];
-  let maxNextQ = 0;
-  if (!done) {
-    const nextQ = getQ(bot.x, bot.y, actionIndex);
-    maxNextQ = Math.max(...nextQ);
-  }
-  qValues[actionIndex] = qOld + alpha * (reward + gamma * maxNextQ - qOld);
-  drawBots();
-  updateValueMap();
-  drawMinimap();
-  if (ws && playerId !== null) {
-    ws.send(JSON.stringify({ type:"state", mazeId, playerId, x:bot.x, y:bot.y, loop:episodes }));
-  }
-  if (done) {
-    resetEpisode(success, playerId);
-  } else {
-    bot.lastMove = actionIndex;
-  }
-}
-
-function switchMaze(id) {
-  pendingMazeId = null;
-  exitDiscovered = false;
-  generateMaze(id);
-  renderMaze();
-  memoryMap = Array(size).fill(0).map(() => Array(size).fill(0));
-  deadEndMap = Array(size).fill(0).map(() => Array(size).fill(0));
-  valueMap = Array(size).fill(0).map(() => Array(size).fill(null));
-  Q.clear();
-  visited = Array(size).fill(0).map(() => Array(size).fill(0));
-  const p = randomFloor();
-  bot.x = p.x;
-  bot.y = p.y;
-  bot.lastMove = -1;
-  remotePlayers.clear();
-  drawBots();
-  applyFog();
-  updateValueMap();
-  drawMinimap();
-  mazeIdStatus.textContent = "Maze set to ID " + mazeId + " after exit.";
-  if (ws && ws.readyState === WebSocket.OPEN && playerId !== null) {
-    ws.send(JSON.stringify({ type:"join", mazeId }));
-  }
-}
-
-mazeIdButton.addEventListener("click", () => {
-  const v = parseInt(mazeIdInput.value, 10);
-  if (isNaN(v) || v < 0 || v > 99999) {
-    mazeIdStatus.textContent = "Invalid ID. Use 0–99999.";
-    return;
-  }
-  pendingMazeId = v;
-  mazeIdStatus.textContent = "Pending change to ID " + v + " after next exit.";
-});
-
-setInterval(() => {
-  for (let y=0; y<size; y++) {
-    for (let x=0; x<size; x++) {
-      memoryMap[x][y] *= 0.95;
-      deadEndMap[x][y] *= 0.99;
-    }
-  }
-}, 60000);
-
-setInterval(botStep, 230);
-
-function setupWebSocket() {
-  ws = new WebSocket("ws://localhost:8080");
-  ws.onopen = () => {
-    if (mazeId !== null) {
-      ws.send(JSON.stringify({ type:"join", mazeId }));
-    }
-  };
-  ws.onmessage = (ev) => {
-    let msg;
-    try { msg = JSON.parse(ev.data); } catch { return; }
-    if (msg.type === "welcome") {
-      playerId = msg.playerId;
-    }
-    if (msg.type === "playerJoined") {
-      assignColor(msg.playerId);
-    }
-    if (msg.type === "playerLeft") {
-      remotePlayers.delete(msg.playerId);
-    }
-    if (msg.type === "state") {
-      if (msg.playerId !== playerId) {
-        remotePlayers.set(msg.playerId, { x:msg.x, y:msg.y, loop:msg.loop });
-      }
-    }
-    if (msg.type === "exit") {
-      if (msg.playerId !== playerId) {
-        resetEpisode(false, msg.playerId);
-      }
-    }
-  };
-  ws.onclose = () => {
-    mazeIdStatus.textContent = "Disconnected from server.";
-  };
-}
-
-generateMaze();
-renderMaze();
-memoryMap = Array(size).fill(0).map(() => Array(size).fill(0));
-deadEndMap = Array(size).fill(0).map(() => Array(size).fill(0));
-valueMap = Array(size).fill(0).map(() => Array(size).fill(null));
-visited = Array(size).fill(0).map(() => Array(size).fill(0));
-const p0 = randomFloor();
-bot.x = p0.x;
-bot.y = p0.y;
-bot.lastMove = -1;
-drawBots();
-applyFog();
-updateValueMap();
-drawMinimap();
-setupWebSocket();
-</script>
-
+      fetchRandomArticle();
+    })();
+  </script>
 </body>
 </html>
