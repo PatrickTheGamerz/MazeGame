@@ -5,41 +5,29 @@
   <title>ORANGECRAFT Alpha 1.1</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
-    
-    /* VHS Overlay Effect */
     #vhs-filter {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       pointer-events: none; z-index: 500;
       background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                  linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-      background-size: 100% 3px, 3px 100%;
-      opacity: 0.4;
+                  linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+      background-size: 100% 3px, 3px 100%; opacity: 0.5;
     }
-
     #crosshair{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;z-index:100;display:none}
-    #crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.8)}
+    #crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.9)}
     #crosshair::before{top:9px;left:0;width:20px;height:2px}#crosshair::after{top:0;left:9px;width:2px;height:20px}
-    
     #hud{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
     #hotbar-display{display:flex;background:rgba(0,0,0,0.5);border:2px solid #555;padding:2px;margin-bottom:10px}
     .slot{width:36px;height:36px;border:2px solid #888;background:rgba(100,100,100,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px}
     .slot.active{border:2px solid #fff;box-shadow:0 0 10px #fff}
-    .item-count{position:absolute;bottom:2px;right:4px;font-size:12px;text-shadow:1px 1px #000;pointer-events:none}
-    
-    .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.7);z-index:200}
+    .item-count{position:absolute;bottom:2px;right:4px;font-size:12px;text-shadow:1px 1px #000}
+    .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.8);z-index:200;backdrop-filter:blur(4px)}
     .title{font-size:4rem;color:#FFA500;text-shadow:4px 4px 0 #333;margin-bottom:20px;font-weight:bold;font-family: Impact;}
-    .splash{position:absolute;top:70px;right:-60px;color:#FF0;font-size:1.5rem;animation:pulse 0.5s infinite alternate;transform:rotate(-20deg);}
-    @keyframes pulse{from{transform:rotate(-20deg) scale(1)}to{transform:rotate(-20deg) scale(1.1)}}
-    
     .btn{width:310px;padding:12px;margin:6px;background:#777;border:2px solid #000;border-top-color:#aaa;border-left-color:#aaa;color:#fff;cursor:pointer;text-align:center;font-size:1.1rem}
     .btn:hover{background:#888}
-
-    /* Inventory Container */
-    .inv-container{background:#c6c6c6;padding:15px;border:3px solid #000;display:flex;flex-direction:column;pointer-events:auto;color:#000;box-shadow: 10px 10px 0 rgba(0,0,0,0.4)}
+    .inv-container{background:#c6c6c6;padding:15px;border:3px solid #000;display:flex;flex-direction:column;pointer-events:auto;color:#000}
     .inv-slot{width:36px;height:36px;background:#8b8b8b;border:2px solid #555;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;position:relative;cursor:pointer}
     .inv-main{display:grid;grid-template-columns:repeat(9,36px);gap:4px;justify-content:center;margin-top:10px}
-    
-    #drag-icon{position:fixed;pointer-events:none;z-index:600;width:36px;height:36px;display:none;border:1px solid #fff}
+    #drag-icon{position:fixed;pointer-events:none;z-index:600;width:36px;height:36px;display:none;border:2px solid #fff}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -50,9 +38,8 @@
   <div id="hud"><div id="hotbar-display"></div></div>
 
   <div id="main-menu" class="menu-overlay" style="display:flex">
-    <div class="title">ORANGECRAFT<div class="splash">Alpha 1.1</div></div>
+    <div class="title">ORANGECRAFT<div style="font-size:1rem; color:#ff0">Alpha 1.1</div></div>
     <div class="btn" onclick="startGame()">Singleplayer</div>
-    <div class="btn" style="color:#666">Multiplayer</div>
     <div class="btn" onclick="location.reload()">Reset World</div>
   </div>
 
@@ -60,89 +47,85 @@
     <div class="inv-container">
       <div style="display:flex; justify-content:space-between; margin-bottom:10px">
         <div style="width:100px; height:130px; background:#000; border:2px solid #555"></div>
-        <div style="text-align:center">
-          <div style="font-size:12px; font-weight:bold; margin-bottom:4px">Crafting</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px" id="p-craft-grid">
-            <div class="inv-slot" data-s="c0"></div><div class="inv-slot" data-s="c1"></div>
-            <div class="inv-slot" data-s="c2"></div><div class="inv-slot" data-s="c3"></div>
+        <div style="text-align:center"><div style="font-size:12px; font-weight:bold">Crafting</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px" id="p-craft">
+            <div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div>
           </div>
         </div>
       </div>
-      <div class="inv-main" id="m-inv-grid"></div>
-      <div class="inv-main" id="h-inv-grid" style="margin-top:10px"></div>
+      <div class="inv-main" id="m-inv"></div>
+      <div class="inv-main" id="h-inv" style="margin-top:10px"></div>
     </div>
   </div>
 
   <script>
-    // --- 1. DATA ---
-    const colors = { grass:'#7cfc00', dirt:'#866043', stone:'#7a7a7a', wood:'#674e37', planks:'#9a7f59', bedrock:'#222' };
+    // --- 1. DATA & TEXTURES ---
+    const colors = { grass:'#7cfc00', dirt:'#866043', stone:'#7a7a7a', wood:'#674e37', innerWood:'#d2b48c', leaves:'#32cd32', planks:'#9a7f59', bedrock:'#222' };
     let inventory = Array(36).fill(null).map(()=>({type:null, count:0}));
-    let pCraft = Array(4).fill(null).map(()=>({type:null, count:0}));
     let activeSlot = 0, dragItem = null, gameState = "MENU";
+    let drops = []; // Block drops in world
 
-    // --- 2. THREE.JS ENGINE ---
+    // --- 2. ENGINE ---
     const sc = new THREE.Scene();
     sc.background = new THREE.Color(0x87CEEB);
-    sc.fog = new THREE.FogExp2(0x87CEEB, 0.12); // Alpha Fog
+    sc.fog = new THREE.FogExp2(0x87CEEB, 0.1); 
+    // cam near at 0.1 prevents clipping into blocks
     const cam = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const rnd = new THREE.WebGLRenderer({antialias:false});
     rnd.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(rnd.domElement);
 
     const amb = new THREE.AmbientLight(0xffffff, 0.7); sc.add(amb);
-    const sun = new THREE.DirectionalLight(0xffffff, 0.4); sun.position.set(10,20,10); sc.add(sun);
+    const sun = new THREE.DirectionalLight(0xffffff, 0.4); sun.position.set(50,100,50); sc.add(sun);
 
-    // Blocks
-    let blks = [], bMap = new Map();
     const boxG = new THREE.BoxGeometry(1,1,1);
+    let blks = [], bMap = new Map();
+
     function addB(x,y,z,type){
-      const mat = new THREE.MeshLambertMaterial({color:colors[type]});
-      const b = new THREE.Mesh(boxG, mat);
+      let mat;
+      if(type === 'wood') {
+        const side = new THREE.MeshLambertMaterial({color:colors.wood});
+        const top = new THREE.MeshLambertMaterial({color:colors.innerWood});
+        mat = [side, side, top, top, side, side];
+      } else {
+        mat = new THREE.MeshLambertMaterial({color:colors[type]});
+      }
+      let b = new THREE.Mesh(boxG, mat);
       b.position.set(x,y,z); b.name = type;
       sc.add(b); blks.push(b); bMap.set(`${Math.round(x)},${Math.round(y)},${Math.round(z)}`, b);
     }
 
-    // Generate Alpha World
+    // World Gen
     for(let x=-12; x<12; x++) for(let z=-12; z<12; z++){
-      let h = Math.floor(Math.sin(x/5)*2 + Math.cos(z/5)*2);
+      let h = Math.floor(Math.sin(x/6)*2 + Math.cos(z/6)*2);
       addB(x,h,z,'grass'); addB(x,h-1,z,'dirt'); addB(x,-5,z,'bedrock');
-      if(Math.random()<0.02) for(let t=1; t<5; t++) addB(x,h+t,z,'wood');
+      if(Math.random()<0.02) {
+        for(let t=1; t<5; t++) addB(x,h+t,z,'wood');
+        for(let lx=-1; lx<=1; lx++) for(let lz=-1; lz<=1; lz++) addB(x+lx,h+5,z+lz,'leaves');
+      }
     }
 
-    // --- 3. UI & INTERACTION ---
+    // --- 3. UI & INVENTORY ---
     function updateUI(){
-      const hDisp = document.getElementById('hotbar-display');
-      const hInv = document.getElementById('h-inv-grid');
-      const mInv = document.getElementById('m-inv-grid');
-      hDisp.innerHTML = ''; hInv.innerHTML = ''; mInv.innerHTML = '';
-
+      const hD = document.getElementById('hotbar-display'), hI = document.getElementById('h-inv'), mI = document.getElementById('m-inv');
+      hD.innerHTML = ''; hI.innerHTML = ''; mI.innerHTML = '';
       inventory.forEach((item, i)=>{
-        let slot = document.createElement('div'); slot.className = 'inv-slot';
-        if(item.type){ slot.style.background = colors[item.type]; slot.innerHTML = `<span class="item-count">${item.count}</span>`; }
-        slot.onmousedown = ()=> handleSlotClick(inventory, i);
-        
-        if(i < 9) {
-          hInv.appendChild(slot);
-          let hs = document.createElement('div'); hs.className = 'slot' + (i===activeSlot?' active':'');
-          if(item.type){ hs.style.background = colors[item.type]; hs.innerHTML = `<span class="item-count">${item.count}</span>`; }
-          hDisp.appendChild(hs);
-        } else mInv.appendChild(slot);
+        let s = document.createElement('div'); s.className = 'inv-slot';
+        if(item.type){ s.style.background = colors[item.type]; s.innerHTML = `<span class="item-count">${item.count}</span>`; }
+        s.onmousedown = ()=> handleSlot(inventory, i);
+        if(i < 9){ 
+          hI.appendChild(s); 
+          let slot = document.createElement('div'); slot.className = 'slot' + (i===activeSlot?' active':'');
+          if(item.type){ slot.style.background = colors[item.type]; slot.innerHTML = `<span class="item-count">${item.count}</span>`; }
+          hD.appendChild(slot);
+        } else mI.appendChild(s);
       });
     }
 
-    function handleSlotClick(arr, idx){
-      if(dragItem){
-        let temp = {...arr[idx]};
-        arr[idx] = {...dragItem.item};
-        dragItem.source[dragItem.idx] = temp;
-        dragItem = null;
-        document.getElementById('drag-icon').style.display='none';
-      } else if(arr[idx].type){
-        dragItem = {item: {...arr[idx]}, source: arr, idx: idx};
-        arr[idx] = {type:null, count:0};
-        let icon = document.getElementById('drag-icon');
-        icon.style.display='block'; icon.style.background = colors[dragItem.item.type];
-      }
+    function handleSlot(arr, idx){
+      if(dragItem){ let t = {...arr[idx]}; arr[idx] = {...dragItem.item}; dragItem.source[dragItem.idx] = t; dragItem = null; document.getElementById('drag-icon').style.display='none'; }
+      else if(arr[idx].type){ dragItem = {item:{...arr[idx]}, source:arr, idx:idx}; arr[idx] = {type:null, count:0}; 
+      let d = document.getElementById('drag-icon'); d.style.display='block'; d.style.background = colors[dragItem.item.type]; }
       updateUI();
     }
 
@@ -158,7 +141,7 @@
       updateUI();
     }
 
-    // --- 4. PHYSICS & MOVEMENT ---
+    // --- 4. PHYSICS & DROPS ---
     let keys = {}, vel = new THREE.Vector3();
     const isSolid = (x,y,z) => bMap.has(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`);
 
@@ -167,30 +150,36 @@
       if(gameState === "PLAYING"){
         let speed = 0.12, dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y=0; dir.normalize();
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
-
-        let moveX=0, moveZ=0;
-        if(keys['KeyW']){ moveX += dir.x*speed; moveZ += dir.z*speed; }
-        if(keys['KeyS']){ moveX -= dir.x*speed; moveZ -= dir.z*speed; }
-        if(keys['KeyA']){ moveX += side.x*speed; moveZ += side.z*speed; }
-        if(keys['KeyD']){ moveX -= side.x*speed; moveZ -= side.z*speed; }
-
-        if(!isSolid(cam.position.x + moveX, cam.position.y-1.5, cam.position.z)) cam.position.x += moveX;
-        if(!isSolid(cam.position.x, cam.position.y-1.5, cam.position.z + moveZ)) cam.position.z += moveZ;
+        if(keys['KeyW']){ if(!isSolid(cam.position.x+dir.x*0.3, cam.position.y-1, cam.position.z+dir.z*0.3)) cam.position.addScaledVector(dir, speed); }
+        if(keys['KeyS']){ if(!isSolid(cam.position.x-dir.x*0.3, cam.position.y-1, cam.position.z-dir.z*0.3)) cam.position.addScaledVector(dir, -speed); }
+        if(keys['KeyA']){ if(!isSolid(cam.position.x+side.x*0.3, cam.position.y-1, cam.position.z+side.z*0.3)) cam.position.addScaledVector(side, speed); }
+        if(keys['KeyD']){ if(!isSolid(cam.position.x-side.x*0.3, cam.position.y-1, cam.position.z-side.z*0.3)) cam.position.addScaledVector(side, -speed); }
 
         vel.y -= 0.015; cam.position.y += vel.y;
-        if(isSolid(cam.position.x, cam.position.y-1.6, cam.position.z)){
-          cam.position.y = Math.floor(cam.position.y-1.6) + 2.6;
-          vel.y = 0; if(keys['Space']) vel.y = 0.25;
-        }
+        if(isSolid(cam.position.x, cam.position.y-1.6, cam.position.z)){ cam.position.y = Math.floor(cam.position.y-1.6) + 2.6; vel.y = 0; if(keys['Space']) vel.y = 0.25; }
+        
+        // Handle Drops Physics
+        drops.forEach((d, i)=>{
+          d.velY -= 0.01; d.mesh.position.y += d.velY;
+          if(bMap.has(`${Math.round(d.mesh.position.x)},${Math.floor(d.mesh.position.y-0.2)},${Math.round(d.mesh.position.z)}`)){
+            d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.7; d.velY = 0;
+          }
+          d.mesh.rotation.y += 0.05;
+          if(cam.position.distanceTo(d.mesh.position) < 1.5){
+            sc.remove(d.mesh); drops.splice(i, 1);
+            let slot = inventory.find(s=>s.type === d.type && s.count < 64) || inventory.find(s=>!s.type);
+            if(slot){ slot.type = d.type; slot.count++; updateUI(); }
+          }
+        });
       }
       rnd.render(sc, cam);
     }
 
-    // Inputs
+    // --- 5. INPUTS ---
     document.addEventListener('keydown', e=>{ 
       keys[e.code]=true; 
-      if(e.code==='KeyE') setMenu(gameState==='INV'?'PLAYING':'INV');
-      if(e.code==='Escape') setMenu('MENU');
+      if(e.code==='KeyE'){ if(gameState==='INV') setMenu('PLAYING'); else setMenu('INV'); }
+      if(e.code==='Escape' && gameState==='PLAYING') setMenu('MENU');
       if(e.key >= '1' && e.key <= '9'){ activeSlot = parseInt(e.key)-1; updateUI(); }
     });
     document.addEventListener('keyup', e=> keys[e.code]=false);
@@ -203,7 +192,6 @@
     });
     cam.rotation.order = "YXZ";
 
-    // Breaking/Placing
     document.addEventListener('mousedown', e=>{
       if(gameState!=="PLAYING") return;
       const ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(0,0), cam);
@@ -211,10 +199,17 @@
       if(hits.length>0 && hits[0].distance < 5){
         let b = hits[0].object;
         if(e.button===0 && b.name!=='bedrock'){
+          // Stone check
+          if(b.name === 'stone') return; // Hand mining stone results in nothing
+          if(b.name === 'leaves') { sc.remove(b); bMap.delete(`${Math.round(b.position.x)},${Math.round(b.position.y)},${Math.round(b.position.z)}`); return; }
+          
+          // Drop block
+          let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), b.material);
+          drop.position.copy(b.position); sc.add(drop);
+          drops.push({mesh:drop, type:b.name, velY:0.1});
+          
           sc.remove(b); bMap.delete(`${Math.round(b.position.x)},${Math.round(b.position.y)},${Math.round(b.position.z)}`);
           blks.splice(blks.indexOf(b),1);
-          for(let i=0; i<36; i++) if(!inventory[i].type || inventory[i].type === b.name){ inventory[i].type=b.name; inventory[i].count++; break; }
-          updateUI();
         } else if(e.button===2){
           let item = inventory[activeSlot];
           if(item.type && item.count > 0){
