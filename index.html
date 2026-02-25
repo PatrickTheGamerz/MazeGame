@@ -2,136 +2,107 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Browser Voxel Builder - V2</title>
+  <title>ORANGECRAFT</title>
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background-color: #87CEEB;
-      font-family: 'Courier New', Courier, monospace; /* Minecraft-ish font */
-      user-select: none;
-    }
+    /* UI Styling */
+    body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', Courier, monospace; user-select: none; }
     
     /* Crosshair */
-    #crosshair {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 20px;
-      height: 20px;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      z-index: 100;
-      display: none;
-    }
-    #crosshair::before, #crosshair::after {
-      content: '';
-      position: absolute;
-      background: rgba(255, 255, 255, 0.9);
-    }
+    #crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; display: none; }
+    #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.9); }
     #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
     #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
     
-    /* Main Menu UI */
-    #main-menu {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Dirt_block.png/240px-Dirt_block.png');
-      background-size: 100px 100px;
-      background-color: #555;
-      background-blend-mode: multiply;
-      z-index: 200;
-    }
+    /* HUD */
+    #hud { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: none; color: white; text-shadow: 2px 2px 0 #000; font-size: 24px; font-weight: bold; width: 400px; justify-content: space-between; z-index: 100; }
     
-    .title {
-      font-size: 4rem;
-      color: #fff;
-      text-shadow: 4px 4px 0px #000;
-      margin-bottom: 40px;
-      font-weight: bold;
-    }
+    /* Menus */
+    .menu-overlay { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); z-index: 200; }
+    #pause-menu { display: none; background: rgba(0,0,0,0.6); }
+    
+    .title { font-size: 5rem; color: #FFA500; text-shadow: 6px 6px 0px #553300; margin-bottom: 10px; font-weight: bold; position: relative; }
+    
+    /* Yellow Splash Text */
+    .splash { position: absolute; top: 60px; right: -50px; color: #FFFF00; font-size: 1.5rem; text-shadow: 2px 2px 0px #333; transform: rotate(-20deg); animation: pulse 0.5s infinite alternate; }
+    @keyframes pulse { from { transform: rotate(-20deg) scale(1); } to { transform: rotate(-20deg) scale(1.1); } }
 
-    .btn {
-      width: 400px;
-      padding: 15px;
-      margin: 5px;
-      background-color: #777;
-      border: 2px solid #000;
-      border-top-color: #aaa;
-      border-left-color: #aaa;
-      color: white;
-      font-size: 1.2rem;
-      font-family: inherit;
-      text-align: center;
-      cursor: pointer;
-      text-shadow: 2px 2px 0px #333;
-    }
+    .btn { width: 400px; padding: 15px; margin: 10px; background-color: #777; border: 3px solid #000; border-top-color: #aaa; border-left-color: #aaa; color: white; font-size: 1.5rem; font-family: inherit; text-align: center; cursor: pointer; text-shadow: 2px 2px 0px #333; }
     .btn:hover { background-color: #999; }
-    .btn:active {
-      border-top-color: #000;
-      border-left-color: #000;
-      border-bottom-color: #aaa;
-      border-right-color: #aaa;
-    }
-    .disabled { color: #aaa; cursor: not-allowed; }
-    .disabled:hover { background-color: #777; }
+    .btn:active { border-top-color: #000; border-left-color: #000; border-bottom-color: #aaa; border-right-color: #aaa; }
   </style>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+  
   <div id="crosshair"></div>
   
-  <div id="main-menu">
-    <div class="title">VOXELCRAFT</div>
-    <div class="btn" id="btn-singleplayer">Singleplayer</div>
-    <div class="btn disabled">Multiplayer (Requires Server)</div>
-    <div class="btn disabled">Options</div>
+  <div id="hud">
+    <div>♥♥♥♥♥♥♥♥♥♥</div>
+    <div>🍖🍖🍖🍖🍖🍖🍖🍖🍖🍖</div>
+  </div>
+
+  <div id="main-menu" class="menu-overlay">
+    <div class="title">ORANGECRAFT<div class="splash">Now with day/night!</div></div>
+    <div class="btn" id="btn-start">Singleplayer</div>
+    <div class="btn" style="color:#aaa; cursor:not-allowed;">Multiplayer</div>
+  </div>
+
+  <div id="pause-menu" class="menu-overlay">
+    <div class="title" style="font-size: 3rem; color: white; text-shadow: 4px 4px 0px #000;">Game Paused</div>
+    <div class="btn" id="btn-resume">Resume Game</div>
+    <div class="btn" style="color:#aaa; cursor:not-allowed;">Options</div>
   </div>
 
   <script>
-    // --- 1. Scene Setup ---
+    // --- 1. Texture Generator (Builds 32x32 pixel textures instantly) ---
+    function generateTexture(baseColor, variance) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 32; canvas.height = 32;
+      const ctx = canvas.getContext('2d');
+      for (let x = 0; x < 32; x++) {
+        for (let y = 0; y < 32; y++) {
+          let noise = Math.random() * variance - (variance/2);
+          ctx.fillStyle = `rgb(${baseColor[0]+noise}, ${baseColor[1]+noise}, ${baseColor[2]+noise})`;
+          ctx.fillRect(x, y, 1, 1);
+        }
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.magFilter = THREE.NearestFilter; // Makes it pixelated!
+      return tex;
+    }
+
+    const matGrass = new THREE.MeshLambertMaterial({ map: generateTexture([85, 170, 85], 40) });
+    const matDirt = new THREE.MeshLambertMaterial({ map: generateTexture([139, 69, 19], 30) });
+    const matStone = new THREE.MeshLambertMaterial({ map: generateTexture([136, 136, 136], 50) });
+
+    // --- 2. Scene & Environment ---
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB); // Sky color
-    scene.fog = new THREE.Fog(0x87CEEB, 20, 60);
+    scene.fog = new THREE.FogExp2(0x87CEEB, 0.02);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: false }); // Pixelated look
+    const renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // --- 2. Lighting ---
-    const ambientLight = new THREE.AmbientLight(0xcccccc, 0.6);
+    // Day/Night Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    dirLight.position.set(20, 50, 20);
-    scene.add(dirLight);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    scene.add(sunLight);
 
-    // --- 3. Materials (Colors simulating blocks) ---
-    const grassMat = new THREE.MeshLambertMaterial({ color: 0x55aa55 });
-    const dirtMat = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
-    const stoneMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
+    // --- 3. Terrain Generation ---
+    const blocks = [];
     const boxGeo = new THREE.BoxGeometry(1, 1, 1);
     
-    const blocks = []; // To store physics/raycasting objects
-
-    // --- 4. Hilly Terrain Generation ---
-    const chunkSize = 30;
-    for (let x = -chunkSize/2; x < chunkSize/2; x++) {
-      for (let z = -chunkSize/2; z < chunkSize/2; z++) {
-        // Using basic math to simulate rolling hills (instead of complex noise libraries)
-        let height = Math.floor(Math.sin(x / 6) * 3 + Math.cos(z / 5) * 3);
+    const mapSize = 40;
+    for (let x = -mapSize/2; x < mapSize/2; x++) {
+      for (let z = -mapSize/2; z < mapSize/2; z++) {
+        let height = Math.floor(Math.sin(x / 8) * 4 + Math.cos(z / 6) * 4);
         
-        // Build a column of blocks
-        for (let y = height - 4; y <= height; y++) {
-          let material = stoneMat; // Bottom is stone
-          if (y === height) material = grassMat; // Top is grass
-          else if (y > height - 3) material = dirtMat; // Middle is dirt
+        for (let y = height - 3; y <= height; y++) {
+          let material = matStone;
+          if (y === height) material = matGrass;
+          else if (y > height - 2) material = matDirt;
 
           const block = new THREE.Mesh(boxGeo, material);
           block.position.set(x, y, z);
@@ -141,73 +112,70 @@
       }
     }
 
-    // --- 5. Custom First-Person Controls ---
+    // --- 4. Controls & Menus ---
     let isLocked = false;
-    const menu = document.getElementById('main-menu');
+    let gameStarted = false;
+    const mainMenu = document.getElementById('main-menu');
+    const pauseMenu = document.getElementById('pause-menu');
     const crosshair = document.getElementById('crosshair');
+    const hud = document.getElementById('hud');
 
-    // Clicking Singleplayer locks the mouse to the game
-    document.getElementById('btn-singleplayer').addEventListener('click', () => {
-      document.body.requestPointerLock();
-    });
+    document.getElementById('btn-start').addEventListener('click', () => { gameStarted = true; document.body.requestPointerLock(); });
+    document.getElementById('btn-resume').addEventListener('click', () => document.body.requestPointerLock());
 
     document.addEventListener('pointerlockchange', () => {
-      if (document.pointerLockElement === document.body) {
-        isLocked = true;
-        menu.style.display = 'none';
+      isLocked = document.pointerLockElement === document.body;
+      if (isLocked) {
+        mainMenu.style.display = 'none';
+        pauseMenu.style.display = 'none';
         crosshair.style.display = 'block';
-      } else {
-        isLocked = false;
-        menu.style.display = 'flex';
+        hud.style.display = 'flex';
+      } else if (gameStarted) {
+        pauseMenu.style.display = 'flex';
         crosshair.style.display = 'none';
+        hud.style.display = 'none';
       }
     });
 
     // Mouse Look
     const euler = new THREE.Euler(0, 0, 0, 'YXZ');
-    document.addEventListener('mousemove', (event) => {
+    document.addEventListener('mousemove', (e) => {
       if (!isLocked) return;
       euler.setFromQuaternion(camera.quaternion);
-      euler.y -= event.movementX * 0.002;
-      euler.x -= event.movementY * 0.002;
-      euler.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, euler.x)); // Prevent looking past straight up/down
+      euler.y -= e.movementX * 0.002;
+      euler.x -= e.movementY * 0.002;
+      euler.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, euler.x));
       camera.quaternion.setFromEuler(euler);
     });
 
-    // Keyboard Movement
+    // Keys
     const keys = { w: false, a: false, s: false, d: false, space: false };
     document.addEventListener('keydown', (e) => {
-      if(e.code === 'KeyW') keys.w = true;
-      if(e.code === 'KeyA') keys.a = true;
-      if(e.code === 'KeyS') keys.s = true;
-      if(e.code === 'KeyD') keys.d = true;
+      if(e.code === 'KeyW') keys.w = true; if(e.code === 'KeyA') keys.a = true;
+      if(e.code === 'KeyS') keys.s = true; if(e.code === 'KeyD') keys.d = true;
       if(e.code === 'Space') keys.space = true;
     });
     document.addEventListener('keyup', (e) => {
-      if(e.code === 'KeyW') keys.w = false;
-      if(e.code === 'KeyA') keys.a = false;
-      if(e.code === 'KeyS') keys.s = false;
-      if(e.code === 'KeyD') keys.d = false;
+      if(e.code === 'KeyW') keys.w = false; if(e.code === 'KeyA') keys.a = false;
+      if(e.code === 'KeyS') keys.s = false; if(e.code === 'KeyD') keys.d = false;
       if(e.code === 'Space') keys.space = false;
     });
 
-    // --- 6. Placing & Breaking Blocks ---
+    // --- 5. Building / Breaking ---
     const raycaster = new THREE.Raycaster();
     const center = new THREE.Vector2(0, 0);
 
-    document.addEventListener('mousedown', (event) => {
+    document.addEventListener('mousedown', (e) => {
       if (!isLocked) return;
       raycaster.setFromCamera(center, camera);
       const intersects = raycaster.intersectObjects(blocks);
 
       if (intersects.length > 0 && intersects[0].distance < 6) {
-        if (event.button === 0) { 
-          // Left Click: Break
+        if (e.button === 0) { // Left Click Break
           scene.remove(intersects[0].object);
           blocks.splice(blocks.indexOf(intersects[0].object), 1);
-        } else if (event.button === 2) { 
-          // Right Click: Place Stone
-          const block = new THREE.Mesh(boxGeo, stoneMat);
+        } else if (e.button === 2) { // Right Click Place
+          const block = new THREE.Mesh(boxGeo, matStone);
           block.position.copy(intersects[0].point).add(intersects[0].face.normal);
           block.position.floor().addScalar(0.5);
           scene.add(block);
@@ -216,68 +184,78 @@
       }
     });
 
-    // --- 7. Physics & Game Loop ---
-    camera.position.set(0, 10, 0);
+    // --- 6. Physics & Game Loop ---
+    camera.position.set(0, 15, 0);
     const velocity = new THREE.Vector3();
-    const direction = new THREE.Vector3();
     let canJump = false;
-    let prevTime = performance.now();
+    let time = performance.now();
+    let dayTime = 0; // For Day/Night Cycle
 
     function animate() {
       requestAnimationFrame(animate);
-      const time = performance.now();
-      const delta = (time - prevTime) / 1000;
+      const now = performance.now();
+      const delta = (now - time) / 1000;
+      time = now;
 
       if (isLocked) {
-        // Gravity & Friction
-        velocity.x -= velocity.x * 10.0 * delta;
+        // Fix: Local Movement Math
+        const moveSpeed = 40.0 * delta;
+        velocity.x -= velocity.x * 10.0 * delta; // Friction
         velocity.z -= velocity.z * 10.0 * delta;
-        velocity.y -= 25.0 * delta; // Gravity force
+        velocity.y -= 30.0 * delta; // Gravity
 
-        direction.z = Number(keys.w) - Number(keys.s);
-        direction.x = Number(keys.d) - Number(keys.a);
-        direction.normalize();
+        // Calculate direction based on camera rotation
+        const dir = new THREE.Vector3();
+        camera.getWorldDirection(dir);
+        dir.y = 0; dir.normalize();
 
-        // Apply movement relative to where we are looking
-        const speed = 40.0;
-        if (keys.w || keys.s) velocity.z -= direction.z * speed * delta;
-        if (keys.a || keys.d) velocity.x -= direction.x * speed * delta;
+        const right = new THREE.Vector3();
+        right.crossVectors(camera.up, dir).normalize();
 
-        camera.translateZ(velocity.z * delta);
-        camera.translateX(velocity.x * delta);
+        if (keys.w) { velocity.x += dir.x * moveSpeed; velocity.z += dir.z * moveSpeed; }
+        if (keys.s) { velocity.x -= dir.x * moveSpeed; velocity.z -= dir.z * moveSpeed; }
+        if (keys.a) { velocity.x += right.x * moveSpeed; velocity.z += right.z * moveSpeed; }
+        if (keys.d) { velocity.x -= right.x * moveSpeed; velocity.z -= right.z * moveSpeed; }
+
+        camera.position.x += velocity.x * delta;
+        camera.position.z += velocity.z * delta;
         camera.position.y += velocity.y * delta;
 
-        // Jump
-        if (keys.space && canJump) {
-          velocity.y = 10.0;
-          canJump = false;
-        }
+        if (keys.space && canJump) { velocity.y = 12.0; canJump = false; }
 
-        // --- Crude Collision Detection ---
-        // We cast a ray straight down from the camera to see if we hit the ground
+        // Better Floor Collision
         raycaster.set(camera.position, new THREE.Vector3(0, -1, 0));
-        const floorIntersects = raycaster.intersectObjects(blocks);
-        
-        if (floorIntersects.length > 0 && floorIntersects[0].distance < 1.5) {
-          // Hit the ground
-          velocity.y = Math.max(0, velocity.y); // Stop falling
-          camera.position.y = floorIntersects[0].point.y + 1.5; // Keep player head above ground
+        const floorHits = raycaster.intersectObjects(blocks);
+        if (floorHits.length > 0 && floorHits[0].distance < 1.6) {
+          velocity.y = 0;
+          camera.position.y = floorHits[0].point.y + 1.6;
           canJump = true;
-        } else {
-          canJump = false; // We are in the air
-        }
+        } else { canJump = false; }
+        
+        // Void respawn
+        if(camera.position.y < -20) { camera.position.set(0, 20, 0); velocity.y = 0; }
       }
 
-      prevTime = time;
+      // Day/Night Cycle animation
+      dayTime += delta * 0.1;
+      const sunY = Math.sin(dayTime);
+      sunLight.position.set(Math.cos(dayTime) * 50, sunY * 50, 0);
+      
+      if(sunY > 0) {
+        scene.background = new THREE.Color(0x87CEEB); // Day sky
+        scene.fog.color.setHex(0x87CEEB);
+        ambientLight.intensity = 0.5;
+      } else {
+        scene.background = new THREE.Color(0x0a0a1a); // Night sky
+        scene.fog.color.setHex(0x0a0a1a);
+        ambientLight.intensity = 0.1;
+      }
+
       renderer.render(scene, camera);
     }
     animate();
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
   </script>
 </body>
 </html>
