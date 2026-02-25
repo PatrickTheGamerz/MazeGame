@@ -2,39 +2,46 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>1-File Browser Minecraft</title>
+    <title>1-File Browser Minecraft - FIXED</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: Arial; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; transform: translate(-50%, -50%); pointer-events: none; }
+        /* CSS to hide scrollbars and style the UI */
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: 'Courier New', Courier, monospace; user-select: none; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; transform: translate(-50%, -50%); pointer-events: none; z-index: 100;}
         #crosshair::before, #crosshair::after { content: ''; position: absolute; background: white; }
         #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
         #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
-        #ui { position: absolute; bottom: 20px; left: 20px; color: white; text-shadow: 2px 2px 0 #000; font-size: 24px; pointer-events: none; }
-        #instructions { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; z-index: 10; }
+        #ui { position: absolute; bottom: 20px; left: 20px; color: white; text-shadow: 2px 2px 0 #000; font-size: 24px; pointer-events: none; z-index: 100;}
+        #instructions { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; z-index: 200; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-
     <div id="instructions">
-        <h1>Browser Craft</h1>
-        <p>Click to play!</p>
-        <p>WASD to move | Space to jump | Click to Break | Right-Click to Place</p>
-        <p>Press 1 (Grass), 2 (Dirt), 3 (Stone)</p>
+        <h1>Browser Craft - V2</h1>
+        <p>Click anywhere to start!</p>
+        <p>WASD to move | Space to jump | Left-Click: Break | Right-Click: Place</p>
+        <p>Keys 1, 2, 3 to change blocks</p>
     </div>
     <div id="crosshair"></div>
-    <div id="ui">Selected: <span id="blockName" style="color:#55ff55;">Grass</span></div>
+    <div id="ui">Inventory: <span id="blockName" style="color:#55ff55;">Grass</span></div>
 
 <script>
-    // --- 1. SETUP ENGINE & WORLD ---
+    // --- 1. SETUP ENGINE ---
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB); // Sky blue
-    scene.fog = new THREE.Fog(0x87CEEB, 10, 50); // Add some fog
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 10, 50); // Fog to hide the edges of the world
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
+
+    // Keep the game sized correctly if you resize the browser window
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 
     // Lighting
     const light = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -42,46 +49,60 @@
     scene.add(light);
     scene.add(new THREE.AmbientLight(0x555555));
 
-    // --- 2. BLOCKS & INVENTORY ---
+    // --- 2. BLOCKS & WORLD GENERATION ---
     const materials = {
-        grass: new THREE.MeshLambertMaterial({ color: 0x3bba3b }), // Green
-        dirt: new THREE.MeshLambertMaterial({ color: 0x8b5a2b }),  // Brown
-        stone: new THREE.MeshLambertMaterial({ color: 0x808080 })  // Gray
+        grass: new THREE.MeshLambertMaterial({ color: 0x3bba3b }), 
+        dirt: new THREE.MeshLambertMaterial({ color: 0x8b5a2b }),  
+        stone: new THREE.MeshLambertMaterial({ color: 0x808080 })  
     };
-    
     const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
-    const blocks = []; // To keep track of what we can stand on/break
+    
+    // Create black outlines to make it look like Minecraft!
+    const edgesGeometry = new THREE.EdgesGeometry(blockGeometry);
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+
+    const blocks = [];
     let currentBlock = 'grass';
 
-    // Function to create a block
     function createBlock(x, y, z, type) {
         const mesh = new THREE.Mesh(blockGeometry, materials[type]);
         mesh.position.set(x, y, z);
-        mesh.blockType = type; // Custom property
+        mesh.blockType = type;
+        
+        // Add the black outline to the block
+        const line = new THREE.LineSegments(edgesGeometry, lineMaterial);
+        mesh.add(line);
+        
         scene.add(mesh);
         blocks.push(mesh);
     }
 
-    // Generate a 15x15 chunk of world
-    for (let x = -7; x <= 7; x++) {
-        for (let z = -7; z <= 7; z++) {
+    // Generate a 20x20 Terrain chunk
+    for (let x = -10; x <= 10; x++) {
+        for (let z = -10; z <= 10; z++) {
             createBlock(x, 0, z, 'grass');
             createBlock(x, -1, z, 'dirt');
             createBlock(x, -2, z, 'stone');
-            if (Math.random() > 0.8) createBlock(x, 1, z, 'grass'); // Random hills
+            if (Math.random() > 0.85) createBlock(x, 1, z, 'grass'); // Random hills
         }
     }
 
-    // --- 3. CONTROLS & PHYSICS ---
-    let pitch = 0, yaw = 0;
-    const velocity = new THREE.Vector3();
-    const direction = new THREE.Vector3();
+    // --- 3. PLAYER CONTROLS & PHYSICS ---
+    const player = new THREE.Object3D();
+    player.position.set(0, 5, 0); // Drop the player in from the sky
+    scene.add(player);
+    player.add(camera);
+    camera.position.set(0, 1.6, 0); // Set camera to eye-height
+
+    const keys = { w: false, a: false, s: false, d: false };
+    let velocityY = 0;
     let isGrounded = false;
-    const keys = { w: false, a: false, s: false, d: false, space: false };
+    let pitch = 0, yaw = 0;
 
-    camera.position.set(0, 3, 0); // Start slightly above the ground
+    // FIX: Completely disable the right-click menu!
+    document.addEventListener('contextmenu', e => e.preventDefault());
 
-    // Mouse looking
+    // Mouse Looking
     document.body.addEventListener('mousemove', (event) => {
         if (document.pointerLockElement === document.body) {
             yaw -= event.movementX * 0.002;
@@ -91,30 +112,32 @@
         }
     });
 
-    // Keyboard inputs
+    // Keyboard Input
     document.addEventListener('keydown', (e) => {
-        if (e.code === 'KeyW') keys.w = true;
-        if (e.code === 'KeyA') keys.a = true;
-        if (e.code === 'KeyS') keys.s = true;
-        if (e.code === 'KeyD') keys.d = true;
-        if (e.code === 'Space' && isGrounded) velocity.y = 8; // Jump!
+        const k = e.key.toLowerCase();
+        if (k === 'w') keys.w = true;
+        if (k === 'a') keys.a = true;
+        if (k === 's') keys.s = true;
+        if (k === 'd') keys.d = true;
+        if (k === ' ' && isGrounded) velocityY = 8; // Jump
         
-        // Inventory selection
-        if (e.code === 'Digit1') { currentBlock = 'grass'; updateUI('Grass', '#55ff55'); }
-        if (e.code === 'Digit2') { currentBlock = 'dirt'; updateUI('Dirt', '#b87333'); }
-        if (e.code === 'Digit3') { currentBlock = 'stone'; updateUI('Stone', '#aaaaaa'); }
+        if (k === '1') { currentBlock = 'grass'; updateUI('Grass', '#55ff55'); }
+        if (k === '2') { currentBlock = 'dirt'; updateUI('Dirt', '#b87333'); }
+        if (k === '3') { currentBlock = 'stone'; updateUI('Stone', '#aaaaaa'); }
     });
 
     document.addEventListener('keyup', (e) => {
-        if (e.code === 'KeyW') keys.w = false;
-        if (e.code === 'KeyA') keys.a = false;
-        if (e.code === 'KeyS') keys.s = false;
-        if (e.code === 'KeyD') keys.d = false;
+        const k = e.key.toLowerCase();
+        if (k === 'w') keys.w = false;
+        if (k === 'a') keys.a = false;
+        if (k === 's') keys.s = false;
+        if (k === 'd') keys.d = false;
     });
 
     function updateUI(name, color) {
-        document.getElementById('blockName').innerText = name;
-        document.getElementById('blockName').style.color = color;
+        const ui = document.getElementById('blockName');
+        ui.innerText = name;
+        ui.style.color = color;
     }
 
     // --- 4. PLACING & BREAKING BLOCKS ---
@@ -122,29 +145,28 @@
     document.addEventListener('mousedown', (event) => {
         if (document.pointerLockElement !== document.body) return;
 
-        // Shoot a ray directly from the center of the camera
         raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-        const intersects = raycaster.intersectObjects(blocks);
+        
+        // Pass 'false' to ignore block outlines, only check solid blocks
+        const intersects = raycaster.intersectObjects(blocks, false); 
 
         if (intersects.length > 0) {
             const target = intersects[0];
-            // Don't interact with blocks more than 5 units away
-            if (target.distance > 5) return; 
+            if (target.distance > 6) return; // Can't reach blocks that are too far
 
-            // Left Click (0) to Break
-            if (event.button === 0) {
+            if (event.button === 0) { 
+                // Left click: Break block
                 scene.remove(target.object);
                 blocks.splice(blocks.indexOf(target.object), 1);
-            }
-            // Right Click (2) to Place
-            else if (event.button === 2) {
+            } else if (event.button === 2) { 
+                // Right click: Place block
                 const placePos = target.object.position.clone().add(target.face.normal);
                 createBlock(placePos.x, placePos.y, placePos.z, currentBlock);
             }
         }
     });
 
-    // Lock pointer to play
+    // Lock pointer to play the game
     const instructions = document.getElementById('instructions');
     instructions.addEventListener('click', () => {
         document.body.requestPointerLock();
@@ -159,57 +181,67 @@
         requestAnimationFrame(animate);
 
         const time = performance.now();
-        const delta = (time - prevTime) / 1000;
+        // Limit delta so physics don't break if you switch browser tabs
+        const delta = Math.min((time - prevTime) / 1000, 0.1); 
         prevTime = time;
 
         if (document.pointerLockElement === document.body) {
-            // Physics & Gravity
-            velocity.y -= 25 * delta; // Gravity
-            velocity.x -= velocity.x * 10 * delta; // Friction
-            velocity.z -= velocity.z * 10 * delta;
+            // FIX: Movement logic decoupled from up/down viewing angle!
+            const speed = 5;
+            let moveX = 0;
+            let moveZ = 0;
 
-            direction.z = Number(keys.w) - Number(keys.s);
-            direction.x = Number(keys.d) - Number(keys.a);
-            direction.normalize(); // Ensure consistent movement speed
+            if (keys.w) moveZ -= 1;
+            if (keys.s) moveZ += 1;
+            if (keys.a) moveX -= 1;
+            if (keys.d) moveX += 1;
 
-            if (keys.w || keys.s) velocity.z -= direction.z * 50 * delta;
-            if (keys.a || keys.d) velocity.x -= direction.x * 50 * delta;
+            // Normalize diagonal movement
+            if (moveX !== 0 || moveZ !== 0) {
+                const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
+                moveX /= length;
+                moveZ /= length;
+            }
 
-            // Apply horizontal movement
-            camera.translateX(velocity.x * delta);
-            camera.translateZ(velocity.z * delta);
+            const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+            const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
 
-            // Simple floor collision checks
-            isGrounded = false;
-            let playerX = Math.round(camera.position.x);
-            let playerZ = Math.round(camera.position.z);
-            let floorHeight = -100;
+            player.position.x += (forward.x * moveZ + right.x * moveX) * speed * delta;
+            player.position.z += (forward.z * moveZ + right.z * moveX) * speed * delta;
 
-            // Find the highest block below the player
-            blocks.forEach(block => {
-                if (block.position.x === playerX && block.position.z === playerZ) {
-                    if (block.position.y > floorHeight) floorHeight = block.position.y;
+            // Gravity
+            velocityY -= 25 * delta;
+            player.position.y += velocityY * delta;
+
+            // Collision Detection
+            let pX = Math.round(player.position.x);
+            let pZ = Math.round(player.position.z);
+            let floorY = -100;
+
+            // Check grid directly under player
+            for (let i = 0; i < blocks.length; i++) {
+                let b = blocks[i].position;
+                if (b.x === pX && b.z === pZ) {
+                    if (b.y > floorY) floorY = b.y;
                 }
-            });
+            }
 
-            // Player height is 1.5 units above the block they stand on
-            const targetY = floorHeight + 1.5; 
-
-            // If falling and hit the floor
-            if (camera.position.y + (velocity.y * delta) <= targetY) {
-                velocity.y = 0;
-                camera.position.y = targetY;
+            const topOfBlock = floorY + 0.5; // Account for center-origin blocks
+            if (player.position.y <= topOfBlock) {
+                player.position.y = topOfBlock;
+                velocityY = 0;
                 isGrounded = true;
             } else {
-                camera.position.y += velocity.y * delta;
+                isGrounded = false;
             }
-            
-            // "Kill floor" if you fall out of the world
-            if (camera.position.y < -20) {
-                camera.position.set(0, 5, 0);
-                velocity.y = 0;
+
+            // Fall off the map = teleport back to start
+            if (player.position.y < -20) {
+                player.position.set(0, 10, 0);
+                velocityY = 0;
             }
         }
+
         renderer.render(scene, camera);
     }
     animate();
