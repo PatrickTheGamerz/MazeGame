@@ -6,46 +6,49 @@
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     
-    /* --- SUPER VHS OVERLAY --- */
-    #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:500; overflow:hidden; }
-    #vhs-scanlines { position:absolute; width:100%; height:100%; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.2) 50%); background-size: 100% 4px; opacity: 0.4; }
-    #vhs-fringe { position:absolute; width:100%; height:100%; background: linear-gradient(90deg, rgba(255,0,0,0.04), rgba(0,255,0,0.02), rgba(0,0,255,0.04)); background-size: 3px 100%; }
-    #vhs-static { position:absolute; width:100%; height:100%; opacity:0.07; background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/White_noise.png'); animation: noise 0.1s infinite; }
-    @keyframes noise { 0% { transform:translate(0,0) } 50% { transform:translate(-2%,1%) } 100% { transform:translate(1%,-1%) } }
+    /* --- 1:1 VHS MASTER FILTER --- */
+    #vhs-container { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; }
+    #vhs-scanlines { position:absolute; width:100%; height:100%; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.3) 50%); background-size: 100% 3px; opacity: 0.6; }
+    #vhs-warp { position:absolute; bottom:0; width:100%; height:15px; background: rgba(255,255,255,0.1); filter: blur(2px); opacity: 0.4; animation: tracking 0.2s infinite; }
+    #vhs-noise { position:absolute; width:100%; height:100%; opacity:0.1; background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/White_noise.png'); animation: noise 0.1s infinite; }
+    #vhs-color { position:absolute; width:100%; height:100%; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(255,0,0,0.05), rgba(0,255,0,0.02), rgba(0,0,255,0.05)); }
+    
+    @keyframes tracking { 0% { height: 10px; opacity: 0.3; } 50% { height: 18px; opacity: 0.5; } 100% { height: 10px; opacity: 0.3; } }
+    @keyframes noise { 0% { transform:translate(0,0) } 50% { transform:translate(-1%,2%) } 100% { transform:translate(2%,-1%) } }
 
     #crosshair{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;z-index:100;display:none}
     #crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.9)}
     #crosshair::before{top:9px;left:0;width:20px;height:2px}#crosshair::after{top:0;left:9px;width:2px;height:20px}
     
     #hud{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
-    #hotbar-display{display:flex;background:rgba(0,0,0,0.6);border:4px solid #333;padding:2px;margin-bottom:10px}
+    #hotbar-display{display:flex;background:rgba(0,0,0,0.7);border:4px solid #333;padding:2px;margin-bottom:10px}
     .slot{width:36px;height:36px;border:2px solid #888;background:rgba(100,100,100,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px}
     .slot.active{border:2px solid #fff;box-shadow:0 0 15px #fff}
     .item-count{position:absolute;bottom:2px;right:4px;font-size:12px;text-shadow:1px 1px #000;color:white}
     
-    .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.7);z-index:200}
+    .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.8);z-index:200}
     .title{font-size:5rem;color:#FFA500;text-shadow:4px 4px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
-    .splash{position:absolute;top:70px;right:-60px;color:#FF0;font-size:1.5rem;animation:pulse 0.5s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px #000;}
-    @keyframes pulse{from{transform:rotate(-20deg) scale(1)}to{transform:rotate(-20deg) scale(1.1)}}
+    .splash{position:absolute;top:75px;right:-80px;color:#FF0;font-size:1.4rem;animation:pulse 0.5s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px #000; font-family: 'Courier New'}
+    @keyframes pulse{from{transform:rotate(-20deg) scale(1)}to{transform:rotate(-20deg) scale(1.15)}}
     
-    .btn{width:310px;padding:12px;margin:6px;background:#777;border:3px solid #000;border-top-color:#aaa;border-left-color:#aaa;color:#fff;cursor:pointer;text-align:center;font-size:1.2rem}
-    .btn:hover{background:#888}
+    .btn{width:320px;padding:12px;margin:6px;background:#666;border:3px solid #000;border-top-color:#999;border-left-color:#999;color:#fff;cursor:pointer;text-align:center;font-size:1.2rem}
+    .btn:hover{background:#777}
 
-    .inv-container{background:#c6c6c6;padding:15px;border:4px solid #000;display:flex;flex-direction:column;pointer-events:auto;color:#000;box-shadow: 8px 8px 0 rgba(0,0,0,0.5)}
+    .inv-container{background:#c6c6c6;padding:15px;border:4px solid #000;display:flex;flex-direction:column;pointer-events:auto;color:#000;box-shadow: 10px 10px 0 rgba(0,0,0,0.5)}
     .inv-slot{width:36px;height:36px;background:#8b8b8b;border:2px solid #555;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;position:relative;cursor:pointer}
     .inv-main{display:grid;grid-template-columns:repeat(9,36px);gap:4px;justify-content:center;margin-top:10px}
-    #drag-icon{position:fixed;pointer-events:none;z-index:600;width:32px;height:32px;display:none;border:2px solid #fff}
+    #drag-icon{position:fixed;pointer-events:none;z-index:1100;width:32px;height:32px;display:none;border:2px solid #fff}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body oncontextmenu="return false;">
-  <div id="vhs-master"><div id="vhs-scanlines"></div><div id="vhs-fringe"></div><div id="vhs-static"></div></div>
+  <div id="vhs-container"><div id="vhs-scanlines"></div><div id="vhs-noise"></div><div id="vhs-warp"></div><div id="vhs-color"></div></div>
   <div id="crosshair"></div>
   <div id="drag-icon"></div>
   <div id="hud"><div id="hotbar-display"></div></div>
 
   <div id="main-menu" class="menu-overlay" style="display:flex">
-    <div class="title">ORANGECRAFT<div class="splash" id="splash-text">Alpha 1.1</div></div>
+    <div class="title">ORANGECRAFT<div class="splash" id="splash-text"></div></div>
     <div class="btn" onclick="startGame()">Singleplayer</div>
     <div class="btn" onclick="location.reload()">Reset World</div>
   </div>
@@ -59,7 +62,7 @@
   <div id="inventory-screen" class="menu-overlay">
     <div class="inv-container">
       <div style="display:flex; justify-content:space-between; margin-bottom:10px">
-        <div style="width:100px; height:120px; background:#444; border:2px solid #000"></div>
+        <div style="width:100px; height:120px; background:#333; border:2px solid #000"></div>
         <div style="text-align:center; color:#333; font-weight:bold">Crafting<br>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px; margin-top:5px" id="p-craft-grid">
             <div class="inv-slot" data-idx="0"></div><div class="inv-slot" data-idx="1"></div>
@@ -74,11 +77,10 @@
   </div>
 
   <script>
-    // --- 1. CONFIG & SPLASHES ---
-    const colors = { grass:'#7cfc00', dirt:'#866043', stone:'#7a7a7a', wood:'#674e37', insideWood:'#d2b48c', leaves:'#32cd32', planks:'#9a7f59', bedrock:'#222' };
-    const splashes = ["Uses LWJGL!", "90% bug free!", "Punching wood!", "Made in Sweden!", "Indev!", "Alpha 1.1!", "Keyboard compatible!", "Pixels!", "Creeper is a spy!", "polynomial!"];
-    const miningHardness = { grass: 0.4, dirt: 0.5, wood: 1.5, stone: 3.0, planks: 1.0, leaves: 0.2 };
-
+    // --- 1. DATA & SPLASHES ---
+    const colors = { grass:'#7cfc00', dirt:'#866043', stone:'#7a7a7a', wood:'#674e37', insideWood:'#d2b48c', leaves:'#32cd32', planks:'#9a7f59', bedrock:'#222', stick: '#4b3c23', crafting_table: '#644628' };
+    const splashes = ["Alpha 1.1!", "Found footage!", "Uses LWJGL!", "90% bug free!", "Polynomial!", "Totally Swedish!", "Pixels!", "Punching trees!", "CRT vibes!", "Snapping to grid!"];
+    
     let inventory = Array(36).fill(null).map(() => ({type: null, count: 0}));
     let crafting = Array(4).fill(null).map(() => ({type: null, count: 0}));
     let activeSlot = 0, dragItem = null, gameState = "MAIN_MENU", drops = [];
@@ -93,13 +95,13 @@
     rnd.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(rnd.domElement);
 
-    const amb = new THREE.AmbientLight(0xffffff, 0.8); sc.add(amb);
+    const amb = new THREE.AmbientLight(0xffffff, 0.85); sc.add(amb);
     const sun = new THREE.DirectionalLight(0xffffff, 0.3); sun.position.set(10, 20, 10); sc.add(sun);
 
     const boxG = new THREE.BoxGeometry(1, 1, 1);
     let blks = [], bMap = new Map();
 
-    // Crack material overlay
+    // Crack materials
     const crackMats = Array(10).fill(null).map((_, i) => {
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
         const ctx = canvas.getContext('2d'); ctx.strokeStyle = "rgba(0,0,0,0.8)"; ctx.lineWidth = 1;
@@ -122,6 +124,7 @@
       sc.add(b); blks.push(b); bMap.set(`${b.position.x},${b.position.y},${b.position.z}`, b);
     }
 
+    // World Gen
     for(let x=-10; x<10; x++) for(let z=-10; z<10; z++){
       let h = Math.floor(Math.sin(x/5)*2 + Math.cos(z/5)*2);
       addB(x, h, z, 'grass'); addB(x, h-1, z, 'dirt');
@@ -157,26 +160,31 @@
     function createSlot(item, onDown) {
       let d = document.createElement('div'); d.className = 'inv-slot';
       if(item.type) { d.style.background = colors[item.type]; d.innerHTML = `<span class="item-count">${item.count}</span>`; }
-      d.onmousedown = onDown; d.ondblclick = () => collectStacks(item.type); return d;
+      d.onmousedown = onDown;
+      d.ondblclick = () => { if(item.type) collectStacks(item.type); };
+      return d;
     }
 
     function collectStacks(type) {
-        if(!type) return;
-        let total = 0;
-        inventory.forEach(s => { if(s.type === type) { total += s.count; s.type = null; s.count = 0; } });
-        let target = inventory.find(s => !s.type);
-        if(target) { target.type = type; target.count = Math.min(64, total); }
-        updateUI();
+      let total = 0;
+      inventory.forEach(s => { if(s.type === type) { total += s.count; s.type = null; s.count = 0; } });
+      let target = inventory.find(s => !s.type);
+      if(target) { target.type = type; target.count = Math.min(64, total); }
+      updateUI();
     }
 
     function handleSlotAction(arr, idx, e) {
       if (e.button === 0) { // Left
-        if (dragItem) { let t = {...arr[idx]}; arr[idx] = {...dragItem.item}; dragItem.source[dragItem.idx] = t; dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
-        else if (arr[idx].type) { dragItem = {item: {...arr[idx]}, source: arr, idx: idx}; arr[idx] = {type: null, count: 0}; let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.background = colors[dragItem.item.type]; }
-      } else if (e.button === 2 && dragItem) { // Right (Split 1)
+        if (dragItem) {
+          let t = {...arr[idx]}; arr[idx] = {...dragItem.item}; dragItem.source[dragItem.idx] = t; dragItem = null; document.getElementById('drag-icon').style.display = 'none';
+        } else if (arr[idx].type) {
+          dragItem = {item: {...arr[idx]}, source: arr, idx: idx}; arr[idx] = {type: null, count: 0};
+          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.background = colors[dragItem.item.type];
+        }
+      } else if (e.button === 2 && dragItem) { // Right (Place 1)
         if (!arr[idx].type || arr[idx].type === dragItem.item.type) {
-            arr[idx].type = dragItem.item.type; arr[idx].count++; dragItem.item.count--;
-            if (dragItem.item.count === 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
+          arr[idx].type = dragItem.item.type; arr[idx].count++; dragItem.item.count--;
+          if (dragItem.item.count === 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
         }
       }
       updateUI();
@@ -184,19 +192,26 @@
 
     function checkRecipes() {
       const out = document.getElementById('craft-output'); out.style.background = '#8b8b8b'; out.innerHTML = '';
-      let wood = crafting.filter(c => c.type === 'wood' && c.count > 0);
-      if (wood.length === 1 && crafting.filter(c => c.type).length === 1) {
+      let g = crafting.map(c => c.type);
+      
+      // 1 Wood -> 4 Planks
+      if (crafting.filter(c => c.type).length === 1 && g.includes('wood')) {
         out.style.background = colors.planks; out.innerHTML = '<span class="item-count">4</span>';
-        out.onclick = () => { crafting.forEach(c => { if(c.count > 0) c.count--; if(c.count === 0) c.type = null; }); inventory.find(s => !s.type || (s.type === 'planks' && s.count < 61)).type = 'planks'; inventory.find(s => s.type === 'planks').count += 4; updateUI(); };
+        out.onclick = () => { crafting.forEach(c => { if(c.count > 0) c.count--; if(c.count === 0) c.type = null; }); inventory.find(s => !s.type).type = 'planks'; inventory.find(s => s.type === 'planks').count += 4; updateUI(); };
       }
-      // Sticks recipe (vertical planks)
-      if (crafting[0].type==='planks' && crafting[2].type==='planks' && !crafting[1].type && !crafting[3].type) {
+      // 2 Planks -> 4 Sticks
+      if (g[0]==='planks' && g[2]==='planks' && !g[1] && !g[3]) {
         out.style.background = colors.stick; out.innerHTML = '<span class="item-count">4</span>';
-        out.onclick = () => { crafting[0].count--; crafting[2].count--; if(crafting[0].count===0) crafting[0].type=null; if(crafting[2].count===0) crafting[2].type=null; inventory.find(s => !s.type || s.type==='stick').type='stick'; inventory.find(s => s.type==='stick').count += 4; updateUI(); };
+        out.onclick = () => { crafting[0].count--; crafting[2].count--; if(crafting[0].count===0) crafting[0].type=null; if(crafting[2].count===0) crafting[2].type=null; inventory.find(s => !s.type).type = 'stick'; inventory.find(s => s.type === 'stick').count += 4; updateUI(); };
+      }
+      // 4 Planks -> 1 Crafting Table
+      if (g.every(type => type === 'planks')) {
+        out.style.background = colors.crafting_table; out.innerHTML = '<span class="item-count">1</span>';
+        out.onclick = () => { crafting.forEach(c => { c.count--; if(c.count===0) c.type=null; }); inventory.find(s => !s.type).type = 'crafting_table'; inventory.find(s => s.type === 'crafting_table').count++; updateUI(); };
       }
     }
 
-    // --- 4. PHYSICS & MINING ---
+    // --- 4. PHYSICS & MOVEMENT ---
     let keys = {}, vel = new THREE.Vector3();
     const isSolid = (x, y, z) => bMap.has(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`);
 
@@ -227,7 +242,7 @@
 
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
-          if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) d.velY = 0;
+          if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; }
           d.mesh.rotation.y += 0.05;
           if(cam.position.distanceTo(d.mesh.position) < 2.5) {
             d.mesh.position.lerp(cam.position, 0.2);
@@ -235,13 +250,12 @@
           }
         });
 
-        // Mining Progress
         if(miningTarget) {
-            miningProgress += 0.016; let hardness = miningHardness[miningTarget.name] || 1;
+            miningProgress += 0.016; let hardness = (miningTarget.name==='stone')?3:(miningTarget.name==='wood')?1.5:0.5;
             let stage = Math.floor((miningProgress / hardness) * 10);
             if(stage >= 10) {
-                let name = miningTarget.name;
-                sc.remove(miningTarget); bMap.delete(`${miningTarget.position.x},${miningTarget.position.y},${miningTarget.position.z}`);
+                let name = miningTarget.name; sc.remove(miningTarget);
+                bMap.delete(`${miningTarget.position.x},${miningTarget.position.y},${miningTarget.position.z}`);
                 let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), miningTarget.material); drop.position.copy(miningTarget.position); sc.add(drop); drops.push({mesh: drop, type: name, velY: 0.1});
                 miningTarget = null; crackMesh.visible = false;
             } else { crackMesh.material = crackMats[stage]; }
@@ -250,14 +264,14 @@
       rnd.render(sc, cam);
     }
 
+    // --- 5. INPUTS ---
     document.addEventListener('keydown', e => {
       keys[e.code] = true;
-      if(e.code === 'KeyE') setMenu(gameState === "INV" ? "PLAYING" : "INV");
+      if(e.code === 'KeyE') { if(gameState === "INV") setMenu('PLAYING'); else setMenu('INV'); }
       if(e.code === 'KeyQ' && gameState === "PLAYING") { let item = inventory[activeSlot]; if (item.type && item.count > 0) { let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({color:colors[item.type]})); drop.position.copy(cam.position).addScaledVector(cam.getWorldDirection(new THREE.Vector3()), 1); sc.add(drop); drops.push({mesh: drop, type: item.type, velY: 0.1}); item.count--; if(item.count === 0) item.type = null; updateUI(); } }
       if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key) - 1; updateUI(); }
     });
     document.addEventListener('keyup', e => { keys[e.code] = false; if(e.code==='KeyW'||e.code==='KeyS'||e.code==='KeyA'||e.code==='KeyD') miningTarget=null; });
-
     document.addEventListener('mousemove', e => {
       if(gameState === "PLAYING") { cam.rotation.y -= e.movementX*0.002; cam.rotation.x -= e.movementY*0.002; cam.rotation.x = Math.max(-1.5, Math.min(1.5, cam.rotation.x)); }
       if(dragItem) { document.getElementById('drag-icon').style.left = e.clientX-16+'px'; document.getElementById('drag-icon').style.top = e.clientY-16+'px'; }
@@ -270,15 +284,14 @@
       let hits = ray.intersectObjects(blks);
       if(hits.length > 0 && hits[0].distance < 5) {
         let b = hits[0].object;
-        if(e.button === 0 && b.name !== 'bedrock') {
-            miningTarget = b; miningProgress = 0; crackMesh.position.copy(b.position); crackMesh.visible = true;
-        } else if(e.button === 2) {
+        if(e.button === 0 && b.name !== 'bedrock') { miningTarget = b; miningProgress = 0; crackMesh.position.copy(b.position); crackMesh.visible = true; }
+        else if(e.button === 2) {
           let item = inventory[activeSlot];
-          if(item.type && item.count > 0) {
+          if(item.type && item.count > 0 && item.type !== 'stick') {
             let p = b.position.clone().add(hits[0].face.normal);
-            let playerX = Math.round(cam.position.x), playerZ = Math.round(cam.position.z), pFeet = Math.floor(cam.position.y - 1.6), pHead = Math.floor(cam.position.y);
-            if(Math.round(p.x) === playerX && Math.round(p.z) === playerZ && (Math.round(p.y) === pFeet || Math.round(p.y) === pHead)) return;
-            if(!bMap.has(`${Math.round(p.x)},${Math.round(p.y)},${Math.round(p.z)}`)) { addB(p.x, p.y, p.z, item.type); item.count--; if(item.count === 0) item.type = null; updateUI(); }
+            let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
+            if(pX === Math.round(cam.position.x) && pZ === Math.round(cam.position.z) && (pY === Math.floor(cam.position.y-1.6) || pY === Math.floor(cam.position.y))) return;
+            if(!bMap.has(`${pX},${pY},${pZ}`)) { addB(pX, pY, pZ, item.type); item.count--; if(item.count === 0) item.type = null; updateUI(); }
           }
         }
       }
