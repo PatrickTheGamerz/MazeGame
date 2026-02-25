@@ -8,33 +8,33 @@
     
     /* --- 1:1 AUTHENTIC VHS MASTER --- */
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; }
-    #vhs-scanlines { position:absolute; width:100%; height:100%; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.3) 50%); background-size: 100% 3px; opacity: 0.7; }
-    #vhs-noise { position:absolute; width:100%; height:100%; opacity:0.12; background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/White_noise.png'); animation: noiseJitter 0.15s infinite; }
-    #vhs-fringe { position:absolute; width:100%; height:100%; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(255,0,0,0.08), rgba(0,255,0,0.02), rgba(0,0,255,0.08)); }
-    #vhs-tracking { position:absolute; bottom:5%; width:100%; height:12px; background: rgba(255,255,255,0.2); filter: blur(8px); opacity: 0.5; animation: tracking 8s linear infinite; }
+    #vhs-scanlines { position:absolute; width:100%; height:100%; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.3) 50%); background-size: 100% 3px; opacity: 0.8; }
+    #vhs-noise { position:absolute; width:100%; height:100%; opacity:0.15; background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/White_noise.png'); animation: noiseJitter 0.15s infinite; }
+    #vhs-fringe { position:absolute; width:100%; height:100%; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(255,0,0,0.1), rgba(0,255,0,0.03), rgba(0,0,255,0.1)); }
+    #vhs-tracking { position:absolute; bottom:5%; width:100%; height:15px; background: rgba(255,255,255,0.25); filter: blur(10px); opacity: 0.6; animation: tracking 6s linear infinite; }
     
-    @keyframes tracking { 0% { bottom: -10%; } 20% { bottom: 110%; } 100% { bottom: 110%; } }
-    @keyframes noiseJitter { 0% { transform:translate(0,0) } 50% { transform:translate(-1%,1%) } 100% { transform:translate(1%,-1%) } }
+    @keyframes tracking { 0% { bottom: -15%; } 15% { bottom: 115%; } 100% { bottom: 115%; } }
+    @keyframes noiseJitter { 0% { transform:translate(0,0) } 50% { transform:translate(-1.5%,1.5%) } 100% { transform:translate(1.5%,-1.5%) } }
 
     #crosshair{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;z-index:100;display:none}
-    #crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255, crosshair,0.9)}
-    #crosshair::before{top:9px;left:0;width:20px;height:2px;background:#fff}#crosshair::after{top:0;left:9px;width:2px;height:20px;background:#fff}
+    #crosshair::before,#crosshair::after{content:'';position:absolute;background:#fff}
+    #crosshair::before{top:9px;left:0;width:20px;height:2px}#crosshair::after{top:0;left:9px;width:2px;height:20px}
     
     #hud{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
-    #hotbar-display{display:flex;background:rgba(0,0,0,0.75);border:4px solid #333;padding:2px;margin-bottom:10px}
-    .slot{width:36px;height:36px;border:2px solid #888;background:rgba(100,100,100,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px}
-    .slot.active{border:2px solid #fff;box-shadow:0 0 15px #fff}
+    #hotbar-display{display:flex;background:rgba(0,0,0,0.8);border:4px solid #222;padding:2px;margin-bottom:10px}
+    .slot{width:36px;height:36px;border:2px solid #666;background:rgba(80,80,80,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px}
+    .slot.active{border:2px solid #fff;box-shadow:0 0 20px rgba(255,255,255,0.5)}
     .item-count{position:absolute;bottom:2px;right:4px;font-size:12px;text-shadow:1px 1px #000;color:white}
     
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
     .title{font-size:5rem;color:#FFA500;text-shadow:4px 4px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
     .splash{position:absolute;top:75px;right:-80px;color:#FF0;font-size:1.4rem;animation:pulse 0.5s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px #000; font-family: 'Courier New'}
-    @keyframes pulse{from{transform:rotate(-20deg) scale(1)}to{transform:rotate(-20deg) scale(1.15)}}
+    @keyframes pulse{from{transform:rotate(-20deg) scale(1)}to{transform:rotate(-20deg) scale(1.2)}}
     
-    .btn{width:320px;padding:12px;margin:6px;background:#666;border:3px solid #000;border-top-color:#999;border-left-color:#999;color:#fff;cursor:pointer;text-align:center;font-size:1.2rem}
-    .btn:hover{background:#777}
+    .btn{width:320px;padding:12px;margin:6px;background:#555;border:4px solid #000;border-top-color:#888;border-left-color:#888;color:#fff;cursor:pointer;text-align:center;font-size:1.2rem}
+    .btn:hover{background:#666}
 
-    .inv-container{background:#c6c6c6;padding:15px;border:4px solid #000;display:flex;flex-direction:column;pointer-events:auto;color:#000;box-shadow: 10px 10px 0 rgba(0,0,0,0.5)}
+    .inv-container{background:#c6c6c6;padding:15px;border:4px solid #000;display:flex;flex-direction:column;pointer-events:auto;color:#000;box-shadow: 10px 10px 0 rgba(0,0,0,0.6)}
     .inv-slot{width:36px;height:36px;background:#8b8b8b;border:2px solid #555;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;position:relative;cursor:pointer}
     .inv-main{display:grid;grid-template-columns:repeat(9,36px);gap:4px;justify-content:center;margin-top:10px}
     #drag-icon{position:fixed;pointer-events:none;z-index:1100;width:32px;height:32px;display:none;border:2px solid #fff}
@@ -62,7 +62,7 @@
   <div id="inventory-screen" class="menu-overlay">
     <div class="inv-container">
       <div style="display:flex; justify-content:space-between; margin-bottom:10px">
-        <div style="width:100px; height:120px; background:#333; border:2px solid #000"></div>
+        <div style="width:100px; height:120px; background:#222; border:2px solid #000"></div>
         <div style="text-align:center; color:#333; font-weight:bold">Crafting<br>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px; margin-top:5px" id="p-craft-grid">
             <div class="inv-slot" data-idx="0"></div><div class="inv-slot" data-idx="1"></div>
@@ -77,19 +77,17 @@
   </div>
 
   <script>
-    // --- DATA ---
+    // --- 1. DATA & ALPHA SPLASHES ---
     const colors = { grass:'#7cfc00', dirt:'#866043', stone:'#7a7a7a', wood:'#674e37', insideWood:'#d2b48c', leaves:'#32cd32', planks:'#9a7f59', bedrock:'#222', stick: '#4b3c23', crafting_table: '#644628' };
-    const splashes = ["Alpha 1.1!", "90% bug free!", "Uses LWJGL!", "Polynomial!", "Swedish design!", "Punching wood!", "Pixels!", "Creeper is a spy!", "VHS Alpha!", "Smooth Camera!"];
+    const splashes = ["Alpha 1.1!", "Found footage!", "Uses LWJGL!", "90% bug free!", "Polynomial!", "Swedish style!", "Pixels!", "CRT Quality!", "Punching wood!", "Don't look back!"];
     
     let inventory = Array(36).fill(null).map(() => ({type: null, count: 0}));
     let crafting = Array(4).fill(null).map(() => ({type: null, count: 0}));
     let activeSlot = 0, dragItem = null, gameState = "MAIN_MENU", drops = [];
     let miningTarget = null, miningProgress = 0;
-
-    // Camera smoothing variables
     let targetRotation = new THREE.Euler(0, 0, 0, "YXZ");
 
-    // --- ENGINE ---
+    // --- 2. ENGINE ---
     const sc = new THREE.Scene();
     sc.background = new THREE.Color(0x87CEEB);
     sc.fog = new THREE.FogExp2(0x87CEEB, 0.14);
@@ -98,7 +96,7 @@
     rnd.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(rnd.domElement);
 
-    const amb = new THREE.AmbientLight(0xffffff, 0.9); sc.add(amb);
+    const amb = new THREE.AmbientLight(0xffffff, 0.95); sc.add(amb);
     const sun = new THREE.DirectionalLight(0xffffff, 0.3); sun.position.set(10, 20, 10); sc.add(sun);
 
     const boxG = new THREE.BoxGeometry(1, 1, 1);
@@ -136,14 +134,13 @@
       }
     }
 
+    // --- 3. UI & INVENTORY (CLEAN 0 ITEMS) ---
     function updateUI(){
       const hDisp = document.getElementById('hotbar-display'), hInv = document.getElementById('h-inv-grid'), mInv = document.getElementById('m-inv-grid'), cGrid = document.getElementById('p-craft-grid');
       hDisp.innerHTML = ''; hInv.innerHTML = ''; mInv.innerHTML = '';
       
       inventory.forEach((item, i) => {
-        // CLEANUP GHOST 0 ITEMS
         if(item.count <= 0) { item.type = null; item.count = 0; }
-        
         let slot = createSlot(item, (e) => handleSlotAction(inventory, i, e));
         if(i < 9) {
           hInv.appendChild(slot);
@@ -198,46 +195,70 @@
     function checkRecipes() {
       const out = document.getElementById('craft-output'); out.style.background = '#8b8b8b'; out.innerHTML = '';
       let g = crafting.map(c => c.type);
+      // Wood -> Planks
       if (crafting.filter(c => c.type).length === 1 && g.includes('wood')) {
         out.style.background = colors.planks; out.innerHTML = '<span class="item-count">4</span>';
-        out.onclick = () => { crafting.forEach(c => { if(c.count > 0) c.count--; if(c.count <= 0) c.type = null; }); inventory.find(s => !s.type || (s.type==='planks'&&s.count<61)).type = 'planks'; inventory.find(s => s.type === 'planks').count += 4; updateUI(); };
+        out.onclick = () => { crafting.forEach(c => { if(c.count > 0) c.count--; }); inventory.find(s => !s.type || (s.type==='planks'&&s.count<61)).type = 'planks'; inventory.find(s => s.type === 'planks').count += 4; updateUI(); };
       }
+      // Planks -> Stick
       if (g[0]==='planks' && g[2]==='planks' && !g[1] && !g[3]) {
         out.style.background = colors.stick; out.innerHTML = '<span class="item-count">4</span>';
         out.onclick = () => { crafting[0].count--; crafting[2].count--; inventory.find(s => !s.type || (s.type==='stick'&&s.count<61)).type = 'stick'; inventory.find(s => s.type === 'stick').count += 4; updateUI(); };
       }
+      // 4 Planks -> Crafting Table
+      if (g.every(t => t === 'planks')) {
+        out.style.background = colors.crafting_table; out.innerHTML = '<span class="item-count">1</span>';
+        out.onclick = () => { crafting.forEach(c => c.count--); inventory.find(s => !s.type).type = 'crafting_table'; inventory.find(s => s.type === 'crafting_table').count++; updateUI(); };
+      }
     }
 
-    let keys = {}, vel = new THREE.Vector3();
-    const isSolid = (x, y, z) => bMap.has(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`);
-
+    // --- 4. THE KEY FIX (INSTANT ESC) ---
     function startGame() { cam.position.set(0, 5, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); }
+    
     function setMenu(s) {
       gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
-      document.getElementById('hud').style.display = s === "PLAYING" ? 'flex' : 'none';
+      document.getElementById('hud').style.display = (s === "PLAYING" || s === "INV") ? 'flex' : 'none';
       document.getElementById('crosshair').style.display = s === "PLAYING" ? 'block' : 'none';
       if(s === "PLAYING") document.body.requestPointerLock();
-      else { document.exitPointerLock(); if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex'; else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex'; else document.getElementById('main-menu').style.display = 'flex'; }
+      else {
+        document.exitPointerLock();
+        if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex';
+        else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex';
+        else if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex';
+      }
       updateUI();
     }
+
+    document.addEventListener('pointerlockchange', () => {
+      // INSTANT POPUP: If we lose pointer lock, we open the menu immediately
+      if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU');
+    });
+
+    // --- 5. SMOOTH CAMERA & LOOP ---
+    let keys = {}, vel = new THREE.Vector3();
+    const isSolid = (x, y, z) => bMap.has(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`);
 
     function animate() {
       requestAnimationFrame(animate);
       
       // Smooth camera lerp
-      cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.25;
-      cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.25;
+      cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.22;
+      cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.22;
 
-      if(gameState === "PLAYING") {
+      // GAME CONTINUES DURING INVENTORY (s !== "MAIN_MENU" and s !== "PAUSE_MENU")
+      if(gameState !== "MAIN_MENU" && gameState !== "PAUSE_MENU") {
         let speed = 0.12, dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; dir.normalize();
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
-        if(keys['KeyW']) if(!isSolid(cam.position.x+dir.x*0.4, cam.position.y-1, cam.position.z+dir.z*0.4)) cam.position.addScaledVector(dir, speed);
-        if(keys['KeyS']) if(!isSolid(cam.position.x-dir.x*0.4, cam.position.y-1, cam.position.z-dir.z*0.4)) cam.position.addScaledVector(dir, -speed);
-        if(keys['KeyA']) if(!isSolid(cam.position.x+side.x*0.4, cam.position.y-1, cam.position.z+side.z*0.4)) cam.position.addScaledVector(side, speed);
-        if(keys['KeyD']) if(!isSolid(cam.position.x-side.x*0.4, cam.position.y-1, cam.position.z-side.z*0.4)) cam.position.addScaledVector(side, -speed);
         
+        if(gameState === "PLAYING") {
+          if(keys['KeyW']) if(!isSolid(cam.position.x+dir.x*0.4, cam.position.y-1, cam.position.z+dir.z*0.4)) cam.position.addScaledVector(dir, speed);
+          if(keys['KeyS']) if(!isSolid(cam.position.x-dir.x*0.4, cam.position.y-1, cam.position.z-dir.z*0.4)) cam.position.addScaledVector(dir, -speed);
+          if(keys['KeyA']) if(!isSolid(cam.position.x+side.x*0.4, cam.position.y-1, cam.position.z+side.z*0.4)) cam.position.addScaledVector(side, speed);
+          if(keys['KeyD']) if(!isSolid(cam.position.x-side.x*0.4, cam.position.y-1, cam.position.z-side.z*0.4)) cam.position.addScaledVector(side, -speed);
+        }
+
         vel.y -= 0.015; cam.position.y += vel.y;
-        if(isSolid(cam.position.x, cam.position.y - 1.6, cam.position.z)) { cam.position.y = Math.floor(cam.position.y - 1.6) + 2.6; vel.y = 0; if(keys['Space']) vel.y = 0.25; }
+        if(isSolid(cam.position.x, cam.position.y - 1.6, cam.position.z)) { cam.position.y = Math.floor(cam.position.y - 1.6) + 2.6; vel.y = 0; if(keys['Space'] && gameState === "PLAYING") vel.y = 0.25; }
 
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
@@ -249,12 +270,11 @@
           }
         });
 
-        if(miningTarget) {
+        if(miningTarget && gameState === "PLAYING") {
             miningProgress += 0.016; let hardness = (miningTarget.name==='stone')?2.5:(miningTarget.name==='wood')?1.2:0.4;
             let stage = Math.floor((miningProgress / hardness) * 10);
             if(stage >= 10) {
-                let name = miningTarget.name;
-                sc.remove(miningTarget); bMap.delete(`${miningTarget.position.x},${miningTarget.position.y},${miningTarget.position.z}`);
+                let name = miningTarget.name; sc.remove(miningTarget); bMap.delete(`${miningTarget.position.x},${miningTarget.position.y},${miningTarget.position.z}`);
                 let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), miningTarget.material); drop.position.copy(miningTarget.position); sc.add(drop); drops.push({mesh: drop, type: name, velY: 0.1});
                 miningTarget = null; crackMesh.visible = false;
             } else { crackMesh.material = crackMats[stage]; }
@@ -265,17 +285,14 @@
 
     document.addEventListener('keydown', e => {
       keys[e.code] = true;
-      if(e.code === 'KeyE') { if(gameState === "INV") setMenu('PLAYING'); else setMenu('INV'); }
-      if(e.code === 'Escape' && gameState === "PLAYING") setMenu('PAUSE_MENU');
+      if(e.code === 'KeyE') { if(gameState === "INV") setMenu('PLAYING'); else if(gameState === "PLAYING") setMenu('INV'); }
+      // ESC is handled by pointerlockchange above for instant response
       if(e.code === 'KeyQ' && gameState === "PLAYING") { let item = inventory[activeSlot]; if (item.type && item.count > 0) { let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({color:colors[item.type]})); drop.position.copy(cam.position).addScaledVector(cam.getWorldDirection(new THREE.Vector3()), 1); sc.add(drop); drops.push({mesh: drop, type: item.type, velY: 0.1}); item.count--; updateUI(); } }
       if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key) - 1; updateUI(); }
     });
     document.addEventListener('keyup', e => { keys[e.code] = false; if(e.code==='KeyW'||e.code==='KeyS'||e.code==='KeyA'||e.code==='KeyD') { miningTarget=null; crackMesh.visible = false; } });
     document.addEventListener('mousemove', e => {
-      if(gameState === "PLAYING") {
-        targetRotation.y -= e.movementX*0.002; targetRotation.x -= e.movementY*0.002;
-        targetRotation.x = Math.max(-1.5, Math.min(1.5, targetRotation.x));
-      }
+      if(gameState === "PLAYING") { targetRotation.y -= e.movementX*0.002; targetRotation.x -= e.movementY*0.002; targetRotation.x = Math.max(-1.5, Math.min(1.5, targetRotation.x)); }
       if(dragItem) { document.getElementById('drag-icon').style.left = e.clientX-16+'px'; document.getElementById('drag-icon').style.top = e.clientY-16+'px'; }
     });
     cam.rotation.order = "YXZ";
