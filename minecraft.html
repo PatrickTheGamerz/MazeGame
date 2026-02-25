@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>1-File Browser Minecraft</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: Arial; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; transform: translate(-50%, -50%); pointer-events: none; }
+        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: white; }
+        #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
+        #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
+        #ui { position: absolute; bottom: 20px; left: 20px; color: white; text-shadow: 2px 2px 0 #000; font-size: 24px; pointer-events: none; }
+        #instructions { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; z-index: 10; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="instructions">
+        <h1>Browser Craft</h1>
+        <p>Click to play!</p>
+        <p>WASD to move | Space to jump | Click to Break | Right-Click to Place</p>
+        <p>Press 1 (Grass), 2 (Dirt), 3 (Stone)</p>
+    </div>
+    <div id="crosshair"></div>
+    <div id="ui">Selected: <span id="blockName" style="color:#55ff55;">Grass</span></div>
+
+<script>
+    // --- 1. SETUP ENGINE & WORLD ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB); // Sky blue
+    scene.fog = new THREE.Fog(0x87CEEB, 10, 50); // Add some fog
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Lighting
+    const light = new THREE.DirectionalLight(0xffffff, 0.8);
+    light.position.set(10, 20, 10);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x555555));
+
+    // --- 2. BLOCKS & INVENTORY ---
+    const materials = {
+        grass: new THREE.MeshLambertMaterial({ color: 0x3bba3b }), // Green
+        dirt: new THREE.MeshLambertMaterial({ color: 0x8b5a2b }),  // Brown
+        stone: new THREE.MeshLambertMaterial({ color: 0x808080 })  // Gray
+    };
+    
+    const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const blocks = []; // To keep track of what we can stand on/break
+    let currentBlock = 'grass';
+
+    // Function to create a block
+    function createBlock(x, y, z, type) {
+        const mesh = new THREE.Mesh(blockGeometry, materials[type]);
+        mesh.position.set(x, y, z);
+        mesh.blockType = type; // Custom property
+        scene.add(mesh);
+        blocks.push(mesh);
+    }
+
+    // Generate a 15x15 chunk of world
+    for (let x = -7; x <= 7; x++) {
+        for (let z = -7; z <= 7; z++) {
+            createBlock(x, 0, z, 'grass');
+            createBlock(x, -1, z, 'dirt');
+            createBlock(x, -2, z, 'stone');
+            if (Math.random() > 0.8) createBlock(x, 1, z, 'grass'); // Random hills
+        }
+    }
+
+    // --- 3. CONTROLS & PHYSICS ---
+    let pitch = 0, yaw = 0;
+    const velocity = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+    let isGrounded = false;
+    const keys = { w: false, a: false, s: false, d: false, space: false };
+
+    camera.position.set(0, 3, 0); // Start slightly above the ground
+
+    // Mouse looking
+    document.body.addEventListener('mousemove', (event) => {
+        if (document.pointerLockElement === document.body) {
+            yaw -= event.movementX * 0.002;
+            pitch -= event.movementY * 0.002;
+            pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch)); // Prevent doing flips
+            camera.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
+        }
+    });
+
+    // Keyboard inputs
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyW') keys.w = true;
+        if (e.code === 'KeyA') keys.a = true;
+        if (e.code === 'KeyS') keys.s = true;
+        if (e.code === 'KeyD') keys.d = true;
+        if (e.code === 'Space' && isGrounded) velocity.y = 8; // Jump!
+        
+        // Inventory selection
+        if (e.code === 'Digit1') { currentBlock = 'grass'; updateUI('Grass', '#55ff55'); }
+        if (e.code === 'Digit2') { currentBlock = 'dirt'; updateUI('Dirt', '#b87333'); }
+        if (e.code === 'Digit3') { currentBlock = 'stone'; updateUI('Stone', '#aaaaaa'); }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'KeyW') keys.w = false;
+        if (e.code === 'KeyA') keys.a = false;
+        if (e.code === 'KeyS') keys.s = false;
+        if (e.code === 'KeyD') keys.d = false;
+    });
+
+    function updateUI(name, color) {
+        document.getElementById('blockName').innerText = name;
+        document.getElementById('blockName').style.color = color;
+    }
+
+    // --- 4. PLACING & BREAKING BLOCKS ---
+    const raycaster = new THREE.Raycaster();
+    document.addEventListener('mousedown', (event) => {
+        if (document.pointerLockElement !== document.body) return;
+
+        // Shoot a ray directly from the center of the camera
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        const intersects = raycaster.intersectObjects(blocks);
+
+        if (intersects.length > 0) {
+            const target = intersects[0];
+            // Don't interact with blocks more than 5 units away
+            if (target.distance > 5) return; 
+
+            // Left Click (0) to Break
+            if (event.button === 0) {
+                scene.remove(target.object);
+                blocks.splice(blocks.indexOf(target.object), 1);
+            }
+            // Right Click (2) to Place
+            else if (event.button === 2) {
+                const placePos = target.object.position.clone().add(target.face.normal);
+                createBlock(placePos.x, placePos.y, placePos.z, currentBlock);
+            }
+        }
+    });
+
+    // Lock pointer to play
+    const instructions = document.getElementById('instructions');
+    instructions.addEventListener('click', () => {
+        document.body.requestPointerLock();
+    });
+    document.addEventListener('pointerlockchange', () => {
+        instructions.style.display = document.pointerLockElement === document.body ? 'none' : 'flex';
+    });
+
+    // --- 5. THE GAME LOOP ---
+    let prevTime = performance.now();
+    function animate() {
+        requestAnimationFrame(animate);
+
+        const time = performance.now();
+        const delta = (time - prevTime) / 1000;
+        prevTime = time;
+
+        if (document.pointerLockElement === document.body) {
+            // Physics & Gravity
+            velocity.y -= 25 * delta; // Gravity
+            velocity.x -= velocity.x * 10 * delta; // Friction
+            velocity.z -= velocity.z * 10 * delta;
+
+            direction.z = Number(keys.w) - Number(keys.s);
+            direction.x = Number(keys.d) - Number(keys.a);
+            direction.normalize(); // Ensure consistent movement speed
+
+            if (keys.w || keys.s) velocity.z -= direction.z * 50 * delta;
+            if (keys.a || keys.d) velocity.x -= direction.x * 50 * delta;
+
+            // Apply horizontal movement
+            camera.translateX(velocity.x * delta);
+            camera.translateZ(velocity.z * delta);
+
+            // Simple floor collision checks
+            isGrounded = false;
+            let playerX = Math.round(camera.position.x);
+            let playerZ = Math.round(camera.position.z);
+            let floorHeight = -100;
+
+            // Find the highest block below the player
+            blocks.forEach(block => {
+                if (block.position.x === playerX && block.position.z === playerZ) {
+                    if (block.position.y > floorHeight) floorHeight = block.position.y;
+                }
+            });
+
+            // Player height is 1.5 units above the block they stand on
+            const targetY = floorHeight + 1.5; 
+
+            // If falling and hit the floor
+            if (camera.position.y + (velocity.y * delta) <= targetY) {
+                velocity.y = 0;
+                camera.position.y = targetY;
+                isGrounded = true;
+            } else {
+                camera.position.y += velocity.y * delta;
+            }
+            
+            // "Kill floor" if you fall out of the world
+            if (camera.position.y < -20) {
+                camera.position.set(0, 5, 0);
+                velocity.y = 0;
+            }
+        }
+        renderer.render(scene, camera);
+    }
+    animate();
+</script>
+</body>
+</html>
