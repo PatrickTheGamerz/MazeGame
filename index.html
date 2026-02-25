@@ -6,22 +6,25 @@
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     
-    /* --- VHS OVERLAY --- */
+    /* --- INTENSIFIED VHS EFFECTS --- */
     #vhs-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       pointer-events: none; z-index: 500;
       background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                  linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05));
-      background-size: 100% 4px, 4px 100%;
-      opacity: 0.3;
+                  linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      background-size: 100% 4px, 4px 100%; opacity: 0.5;
     }
-    #vhs-noise {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 501; opacity: 0.08;
+    #vhs-static {
+      position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:501;
       background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/White_noise.png');
-      animation: noiseAnim 0.2s infinite;
+      opacity: 0.06; animation: noise 0.1s infinite;
     }
-    @keyframes noiseAnim { 0% { transform: translate(0,0) } 50% { transform: translate(-5%,-2%) } 100% { transform: translate(2%,5%) } }
+    #vhs-line {
+      position: fixed; top: 0; left:0; width:100%; height:2px; background: rgba(255,255,255,0.2);
+      z-index: 502; pointer-events: none; animation: scan 8s linear infinite;
+    }
+    @keyframes scan { 0% { top: -10% } 100% { top: 110% } }
+    @keyframes noise { 0%, 100% { transform:translate(0,0) } 25% { transform:translate(-1%,1%) } 50% { transform:translate(1%,-1%) } }
 
     #crosshair{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;z-index:100;display:none}
     #crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.9)}
@@ -35,7 +38,7 @@
     
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.7);z-index:200}
     .title{font-size:5rem;color:#FFA500;text-shadow:4px 4px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
-    .splash{position:absolute;top:70px;right:-60px;color:#FF0;font-size:1.5rem;animation:pulse 0.5s infinite alternate;transform:rotate(-20deg);}
+    .splash{position:absolute;top:70px;right:-60px;color:#FF0;font-size:1.5rem;animation:pulse 0.5s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px #000;}
     @keyframes pulse{from{transform:rotate(-20deg) scale(1)}to{transform:rotate(-20deg) scale(1.1)}}
     
     .btn{width:310px;padding:12px;margin:6px;background:#777;border:3px solid #000;border-top-color:#aaa;border-left-color:#aaa;color:#fff;cursor:pointer;text-align:center;font-size:1.2rem}
@@ -44,26 +47,20 @@
     .inv-container{background:#c6c6c6;padding:15px;border:4px solid #000;display:flex;flex-direction:column;pointer-events:auto;color:#000;box-shadow: 8px 8px 0 rgba(0,0,0,0.5)}
     .inv-slot{width:36px;height:36px;background:#8b8b8b;border:2px solid #555;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;position:relative;cursor:pointer}
     .inv-main{display:grid;grid-template-columns:repeat(9,36px);gap:4px;justify-content:center;margin-top:10px}
-    #drag-icon{position:fixed;pointer-events:none;z-index:600;width:36px;height:36px;display:none;border:2px solid #fff}
+    #drag-icon{position:fixed;pointer-events:none;z-index:600;width:32px;height:32px;display:none;border:2px solid #fff}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
-<body>
-  <div id="vhs-overlay"></div><div id="vhs-noise"></div>
+<body oncontextmenu="return false;">
+  <div id="vhs-overlay"></div><div id="vhs-static"></div><div id="vhs-line"></div>
   <div id="crosshair"></div>
   <div id="drag-icon"></div>
   <div id="hud"><div id="hotbar-display"></div></div>
 
   <div id="main-menu" class="menu-overlay" style="display:flex">
-    <div class="title">ORANGECRAFT<div class="splash">Alpha 1.1</div></div>
+    <div class="title">ORANGECRAFT<div class="splash" id="splash-text">Alpha 1.1</div></div>
     <div class="btn" onclick="startGame()">Singleplayer</div>
     <div class="btn" onclick="location.reload()">Reset World</div>
-  </div>
-
-  <div id="pause-menu" class="menu-overlay">
-    <div style="font-size:1.5rem;margin-bottom:20px; text-shadow:2px 2px #000">Game Menu</div>
-    <div class="btn" onclick="setMenu('PLAYING')">Back to Game</div>
-    <div class="btn" onclick="setMenu('MAIN_MENU')">Quit to Title</div>
   </div>
 
   <div id="inventory-screen" class="menu-overlay">
@@ -71,9 +68,11 @@
       <div style="display:flex; justify-content:space-between; margin-bottom:10px">
         <div style="width:100px; height:120px; background:#444; border:2px solid #000"></div>
         <div style="text-align:center; color:#333; font-weight:bold">Crafting<br>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px; margin-top:5px" id="p-craft">
-            <div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px; margin-top:5px" id="p-craft-grid">
+            <div class="inv-slot" data-idx="0"></div><div class="inv-slot" data-idx="1"></div>
+            <div class="inv-slot" data-idx="2"></div><div class="inv-slot" data-idx="3"></div>
           </div>
+          <div style="margin-top:5px">→ <span id="craft-output" class="inv-slot" style="display:inline-block; vertical-align:middle"></span></div>
         </div>
       </div>
       <div class="inv-main" id="m-inv-grid"></div>
@@ -82,22 +81,25 @@
   </div>
 
   <script>
-    // --- 1. SETUP DATA ---
+    // --- 1. DATA & SPLASHES ---
     const colors = { grass: '#7cfc00', dirt: '#866043', stone: '#7a7a7a', wood: '#674e37', insideWood: '#d2b48c', leaves: '#32cd32', planks: '#9a7f59', bedrock: '#222' };
+    const splashVariants = ["VHS Edition!", "Alpha 1.1 Vibes!", "Don't look back!", "Punch the trees!", "Now with Splitting!", "Scary Fog!", "90% CRT!", "Orange is Blocky!"];
+    
     let inventory = Array(36).fill(null).map(() => ({type: null, count: 0}));
+    let crafting = Array(4).fill(null).map(() => ({type: null, count: 0}));
     let activeSlot = 0, dragItem = null, gameState = "MAIN_MENU", drops = [];
 
     // --- 2. ENGINE ---
     const sc = new THREE.Scene();
     sc.background = new THREE.Color(0x87CEEB);
-    sc.fog = new THREE.FogExp2(0x87CEEB, 0.1);
+    sc.fog = new THREE.FogExp2(0x87CEEB, 0.12);
     const cam = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const rnd = new THREE.WebGLRenderer({antialias:false});
     rnd.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(rnd.domElement);
 
-    const amb = new THREE.AmbientLight(0xffffff, 0.75); sc.add(amb);
-    const sun = new THREE.DirectionalLight(0xffffff, 0.4); sun.position.set(10, 20, 10); sc.add(sun);
+    const amb = new THREE.AmbientLight(0xffffff, 0.8); sc.add(amb);
+    const sun = new THREE.DirectionalLight(0xffffff, 0.3); sun.position.set(10, 20, 10); sc.add(sun);
 
     const boxG = new THREE.BoxGeometry(1, 1, 1);
     let blks = [], bMap = new Map();
@@ -108,36 +110,31 @@
         const side = new THREE.MeshLambertMaterial({color: colors.wood});
         const top = new THREE.MeshLambertMaterial({color: colors.insideWood});
         mat = [side, side, top, top, side, side];
-      } else {
-        mat = new THREE.MeshLambertMaterial({color: colors[type]});
-      }
+      } else mat = new THREE.MeshLambertMaterial({color: colors[type]});
+      
       const b = new THREE.Mesh(boxG, mat);
       b.position.set(Math.round(x), Math.round(y), Math.round(z)); b.name = type;
       sc.add(b); blks.push(b); bMap.set(`${b.position.x},${b.position.y},${b.position.z}`, b);
     }
 
-    // World Gen (Stone Layer Fix)
-    for(let x=-12; x<12; x++) for(let z=-12; z<12; z++) {
-      let h = Math.floor(Math.sin(x/6)*2 + Math.cos(z/6)*2);
+    // World Gen
+    for(let x=-10; x<10; x++) for(let z=-10; z<10; z++) {
+      let h = Math.floor(Math.sin(x/5)*2 + Math.cos(z/5)*2);
       addB(x, h, z, 'grass');
       addB(x, h-1, z, 'dirt');
-      for(let s=1; s<5; s++) addB(x, h-1-s, z, 'stone');
-      addB(x, -7, z, 'bedrock');
-
+      for(let s=1; s<3; s++) addB(x, h-1-s, z, 'stone');
       if(Math.random() < 0.02) {
-        for(let t=1; t<5; t++) addB(x, h+t, z, 'wood');
-        for(let lx=-1; lx<=1; lx++) for(let lz=-1; lz<=1; lz++) addB(x+lx, h+5, z+lz, 'leaves');
+        for(let t=1; t<4; t++) addB(x, h+t, z, 'wood');
       }
     }
 
-    // --- 3. UI & INVENTORY ---
+    // --- 3. INVENTORY & SPLITTING ---
     function updateUI(){
-      const hDisp = document.getElementById('hotbar-display'), hInv = document.getElementById('h-inv-grid'), mInv = document.getElementById('m-inv-grid');
+      const hDisp = document.getElementById('hotbar-display'), hInv = document.getElementById('h-inv-grid'), mInv = document.getElementById('m-inv-grid'), cGrid = document.getElementById('p-craft-grid');
       hDisp.innerHTML = ''; hInv.innerHTML = ''; mInv.innerHTML = '';
+      
       inventory.forEach((item, i) => {
-        let slot = document.createElement('div'); slot.className = 'inv-slot';
-        if(item.type) { slot.style.background = colors[item.type]; slot.innerHTML = `<span class="item-count">${item.count}</span>`; }
-        slot.onmousedown = () => handleSlotClick(inventory, i);
+        let slot = createSlot(item, (e) => handleSlotAction(inventory, i, e));
         if(i < 9) {
           hInv.appendChild(slot);
           let hs = document.createElement('div'); hs.className = 'slot' + (i === activeSlot ? ' active' : '');
@@ -145,96 +142,130 @@
           hDisp.appendChild(hs);
         } else mInv.appendChild(slot);
       });
+
+      Array.from(cGrid.children).forEach((slot, i) => {
+        let item = crafting[i];
+        slot.style.background = item.type ? colors[item.type] : '#8b8b8b';
+        slot.innerHTML = item.count > 0 ? `<span class="item-count">${item.count}</span>` : '';
+        slot.onmousedown = (e) => handleSlotAction(crafting, i, e);
+      });
+      checkRecipes();
     }
 
-    function handleSlotClick(arr, idx) {
-      if(dragItem) { let t = {...arr[idx]}; arr[idx] = {...dragItem.item}; dragItem.source[dragItem.idx] = t; dragItem = null; document.getElementById('drag-icon').style.display='none'; }
-      else if(arr[idx].type) { dragItem = {item: {...arr[idx]}, source: arr, idx: idx}; arr[idx] = {type:null, count:0}; 
-      let icon = document.getElementById('drag-icon'); icon.style.display='block'; icon.style.background = colors[dragItem.item.type]; }
+    function createSlot(item, onDown) {
+      let d = document.createElement('div'); d.className = 'inv-slot';
+      if(item.type) { d.style.background = colors[item.type]; d.innerHTML = `<span class="item-count">${item.count}</span>`; }
+      d.onmousedown = onDown; return d;
+    }
+
+    function handleSlotAction(arr, idx, e) {
+      if (e.button === 0) { // Left Click: Drag/Swap
+        if (dragItem) {
+          let t = {...arr[idx]};
+          arr[idx] = {...dragItem.item};
+          dragItem.source[dragItem.idx] = t;
+          dragItem = null;
+          document.getElementById('drag-icon').style.display = 'none';
+        } else if (arr[idx].type) {
+          dragItem = {item: {...arr[idx]}, source: arr, idx: idx};
+          arr[idx] = {type: null, count: 0};
+          let icon = document.getElementById('drag-icon');
+          icon.style.display = 'block'; icon.style.background = colors[dragItem.item.type];
+        }
+      } else if (e.button === 2) { // Right Click: Split
+        if (dragItem) {
+          if (!arr[idx].type || arr[idx].type === dragItem.item.type) {
+            arr[idx].type = dragItem.item.type;
+            arr[idx].count++;
+            dragItem.item.count--;
+            if (dragItem.item.count === 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
+          }
+        }
+      }
       updateUI();
     }
 
-    function startGame() { cam.position.set(0, 5, 0); setMenu('PLAYING'); }
+    function checkRecipes() {
+      const out = document.getElementById('craft-output');
+      out.style.background = '#8b8b8b'; out.innerHTML = '';
+      let wood = crafting.filter(c => c.type === 'wood' && c.count > 0);
+      if (wood.length === 1 && crafting.filter(c => c.type).length === 1) {
+        out.style.background = colors.planks; out.innerHTML = '<span class="item-count">4</span>';
+        out.onclick = () => {
+            crafting.forEach(c => { if(c.count > 0) c.count--; if(c.count === 0) c.type = null; });
+            inventory.find(s => !s.type || (s.type === 'planks' && s.count < 61)).type = 'planks';
+            inventory.find(s => s.type === 'planks').count += 4;
+            updateUI();
+        };
+      }
+    }
 
-    // --- 4. THE KEY FIX (ESC/E) ---
+    // --- 4. PHYSICS & Q DROP ---
+    let keys = {}, vel = new THREE.Vector3();
+    const isSolid = (x, y, z) => bMap.has(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`);
+
+    function dropItem(type) {
+      if (!type) return;
+      let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({color: colors[type]}));
+      drop.position.copy(cam.position).addScaledVector(cam.getWorldDirection(new THREE.Vector3()), 1);
+      sc.add(drop);
+      drops.push({mesh: drop, type: type, velY: 0.1});
+    }
+
+    function startGame() { cam.position.set(0, 5, 0); setMenu('PLAYING'); }
     function setMenu(s) {
       gameState = s;
       document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
       document.getElementById('hud').style.display = s === "PLAYING" ? 'flex' : 'none';
       document.getElementById('crosshair').style.display = s === "PLAYING" ? 'block' : 'none';
-      
-      if(s === "PLAYING") {
-        document.body.requestPointerLock();
-      } else {
-        document.exitPointerLock();
-        if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex';
-        else if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex';
-        else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex';
-      }
+      if(s === "PLAYING") document.body.requestPointerLock();
+      else { document.exitPointerLock(); document.getElementById(s === "INV" ? 'inventory-screen' : 'main-menu').style.display = 'flex'; }
       updateUI();
     }
 
-    document.addEventListener('pointerlockchange', () => {
-      if (document.pointerLockElement === null && gameState === "PLAYING") setMenu('PAUSE_MENU');
-    });
-
-    // --- 5. PHYSICS & COLLISIONS (TREE FIX) ---
-    let keys = {}, vel = new THREE.Vector3();
-    const isSolid = (x, y, z) => bMap.has(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`);
-
+    // --- 5. LOOP ---
     function animate() {
       requestAnimationFrame(animate);
       if(gameState === "PLAYING") {
         let speed = 0.12, dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; dir.normalize();
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
-
-        let moveX = 0, moveZ = 0;
-        if(keys['KeyW']) { moveX += dir.x * speed; moveZ += dir.z * speed; }
-        if(keys['KeyS']) { moveX -= dir.x * speed; moveZ -= dir.z * speed; }
-        if(keys['KeyA']) { moveX += side.x * speed; moveZ += side.z * speed; }
-        if(keys['KeyD']) { moveX -= side.x * speed; moveZ -= side.z * speed; }
-
-        // AABB-style sliding collisions
-        if(!isSolid(cam.position.x + moveX, cam.position.y - 1, cam.position.z)) cam.position.x += moveX;
-        if(!isSolid(cam.position.x, cam.position.y - 1, cam.position.z + moveZ)) cam.position.z += moveZ;
-
+        if(keys['KeyW']) if(!isSolid(cam.position.x+dir.x*0.4, cam.position.y-1, cam.position.z+dir.z*0.4)) cam.position.addScaledVector(dir, speed);
+        if(keys['KeyS']) if(!isSolid(cam.position.x-dir.x*0.4, cam.position.y-1, cam.position.z-dir.z*0.4)) cam.position.addScaledVector(dir, -speed);
+        
         vel.y -= 0.015; cam.position.y += vel.y;
-        if(isSolid(cam.position.x, cam.position.y - 1.6, cam.position.z)) {
-          cam.position.y = Math.floor(cam.position.y - 1.6) + 2.6; vel.y = 0;
-          if(keys['Space']) vel.y = 0.25;
-        }
+        if(isSolid(cam.position.x, cam.position.y - 1.6, cam.position.z)) { cam.position.y = Math.floor(cam.position.y - 1.6) + 2.6; vel.y = 0; if(keys['Space']) vel.y = 0.25; }
 
-        // --- PICKUP LOGIC ---
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
-          if(bMap.has(`${Math.round(d.mesh.position.x)},${Math.floor(d.mesh.position.y-0.2)},${Math.round(d.mesh.position.z)}`)) {
-            d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.7; d.velY = 0;
-          }
+          if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) d.velY = 0;
           d.mesh.rotation.y += 0.05;
-          if(cam.position.distanceTo(d.mesh.position) < 1.5) {
-            sc.remove(d.mesh); drops.splice(i, 1);
-            let slot = inventory.find(s => s.type === d.type && s.count < 64) || inventory.find(s => !s.type);
-            if(slot) { slot.type = d.type; slot.count++; updateUI(); }
+          // Magnet pickup
+          if(cam.position.distanceTo(d.mesh.position) < 2.5) {
+            d.mesh.position.lerp(cam.position, 0.2);
+            if(cam.position.distanceTo(d.mesh.position) < 0.8) {
+              sc.remove(d.mesh); drops.splice(i, 1);
+              let slot = inventory.find(s => (!s.type || s.type === d.type) && s.count < 64);
+              if(slot) { slot.type = d.type; slot.count++; updateUI(); }
+            }
           }
         });
       }
       rnd.render(sc, cam);
     }
 
-    // --- 6. INPUTS & PLACEMENT CHECK ---
     document.addEventListener('keydown', e => {
       keys[e.code] = true;
-      if(e.code === 'KeyE') { if(gameState === "INV") setMenu('PLAYING'); else setMenu('INV'); }
+      if(e.code === 'KeyE') setMenu(gameState === "INV" ? "PLAYING" : "INV");
+      if(e.code === 'KeyQ' && gameState === "PLAYING") {
+        let item = inventory[activeSlot];
+        if (item.type && item.count > 0) { dropItem(item.type); item.count--; if(item.count === 0) item.type = null; updateUI(); }
+      }
       if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key) - 1; updateUI(); }
     });
     document.addEventListener('keyup', e => keys[e.code] = false);
-
     document.addEventListener('mousemove', e => {
-      if(gameState === "PLAYING") {
-        cam.rotation.y -= e.movementX * 0.002; cam.rotation.x -= e.movementY * 0.002;
-        cam.rotation.x = Math.max(-1.5, Math.min(1.5, cam.rotation.x));
-      }
-      if(dragItem) { document.getElementById('drag-icon').style.left = e.clientX - 18 + 'px'; document.getElementById('drag-icon').style.top = e.clientY - 18 + 'px'; }
+      if(gameState === "PLAYING") { cam.rotation.y -= e.movementX*0.002; cam.rotation.x -= e.movementY*0.002; cam.rotation.x = Math.max(-1.5, 1.5, cam.rotation.x); }
+      if(dragItem) { document.getElementById('drag-icon').style.left = e.clientX-16+'px'; document.getElementById('drag-icon').style.top = e.clientY-16+'px'; }
     });
     cam.rotation.order = "YXZ";
 
@@ -245,35 +276,20 @@
       if(hits.length > 0 && hits[0].distance < 5) {
         let b = hits[0].object;
         if(e.button === 0 && b.name !== 'bedrock') {
-          // Drop block with physics
-          let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), b.material);
-          drop.position.copy(b.position); sc.add(drop);
-          drops.push({mesh: drop, type: b.name, velY: 0.1});
-          
-          sc.remove(b); bMap.delete(`${b.position.x},${b.position.y},${b.position.z}`);
-          blks.splice(blks.indexOf(b), 1);
+          dropItem(b.name); sc.remove(b); bMap.delete(`${b.position.x},${b.position.y},${b.position.z}`);
         } else if(e.button === 2) {
           let item = inventory[activeSlot];
           if(item.type && item.count > 0) {
             let p = b.position.clone().add(hits[0].face.normal);
-            p.x = Math.round(p.x); p.y = Math.round(p.y); p.z = Math.round(p.z);
-            
-            // --- PLACEMENT CHECK (Inside Player) ---
-            let playerX = Math.round(cam.position.x), playerZ = Math.round(cam.position.z);
-            let playerFeet = Math.floor(cam.position.y - 1.6), playerHead = Math.floor(cam.position.y);
-            
-            if(p.x === playerX && p.z === playerZ && (p.y === playerFeet || p.y === playerHead)) return; // Block inside player!
-
-            if(!bMap.has(`${p.x},${p.y},${p.z}`)) {
-              addB(p.x, p.y, p.z, item.type);
-              item.count--; if(item.count === 0) item.type = null;
-              updateUI();
+            if(!bMap.has(`${Math.round(p.x)},${Math.round(p.y)},${Math.round(p.z)}`)) {
+              addB(p.x, p.y, p.z, item.type); item.count--; if(item.count === 0) item.type = null; updateUI();
             }
           }
         }
       }
     });
 
+    document.getElementById('splash-text').innerText = splashVariants[Math.floor(Math.random() * splashVariants.length)];
     updateUI(); animate();
   </script>
 </body>
