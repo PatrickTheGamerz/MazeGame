@@ -11,36 +11,36 @@
     #hud{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
     .stats{display:flex;justify-content:space-between;width:380px;text-shadow:2px 2px 0 #000;margin-bottom:5px;font-size:24px}
     .hearts{color:#ff3333;letter-spacing:2px}.hunger{color:#cc6600;letter-spacing:2px}
-    #hotbar{display:flex;background:rgba(0,0,0,0.5);border:2px solid #555;padding:2px;margin-bottom:10px}
+    #hotbar-display{display:flex;background:rgba(0,0,0,0.5);border:2px solid #555;padding:2px;margin-bottom:10px}
     .slot{width:36px;height:36px;border:2px solid #888;background:rgba(100,100,100,0.8);margin:0 2px;position:relative;font-size:12px;font-weight:bold;line-height:36px;text-shadow:1px 1px #000;text-align:center}
     .slot.active{border:2px solid #fff;box-shadow:0 0 10px #fff}
-    .item-count{position:absolute;bottom:2px;right:4px;line-height:1}
+    .item-count{position:absolute;bottom:2px;right:4px;line-height:1;font-size:14px;color:#fff}
     #chat-container{position:absolute;bottom:80px;left:20px;width:400px;display:none;flex-direction:column;z-index:150}
     #chat-log{display:flex;flex-direction:column;justify-content:flex-end;height:200px;overflow-y:hidden;margin-bottom:5px;text-shadow:1px 1px 0 #000;pointer-events:none;font-size:18px}
     .chat-msg{background:rgba(0,0,0,0.4);padding:2px 5px;margin-bottom:2px}
     #chat-input{background:rgba(0,0,0,0.6);color:#fff;border:1px solid #555;font-family:inherit;font-size:16px;padding:5px;display:none;width:100%;outline:none}
     .menu-overlay{position:absolute;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.6);z-index:200;backdrop-filter:blur(2px);display:none}
-    .title{font-size:5rem;color:#FFA500;text-shadow:4px 4px 0 #333;margin-bottom:30px;font-weight:bold;position:relative; font-family: Impact, sans-serif; letter-spacing: 2px;}
-    .splash{position:absolute;top:70px;right:-60px;color:#FF0;font-size:1.5rem;text-shadow:2px 2px 0 #333;transform:rotate(-20deg);animation:pulse 0.5s infinite alternate;white-space:nowrap; font-family:'Courier New',Courier,monospace; letter-spacing: normal;}
+    .title{font-size:5rem;color:#FFA500;text-shadow:4px 4px 0 #333;margin-bottom:30px;font-weight:bold;position:relative; font-family: Impact, sans-serif;}
+    .splash{position:absolute;top:70px;right:-60px;color:#FF0;font-size:1.5rem;text-shadow:2px 2px 0 #333;transform:rotate(-20deg);animation:pulse 0.5s infinite alternate;white-space:nowrap;}
     @keyframes pulse{from{transform:rotate(-20deg) scale(1)}to{transform:rotate(-20deg) scale(1.1)}}
-    .btn{width:300px;padding:12px;margin:6px;background:#777;border:2px solid #000;border-top-color:#aaa;border-left-color:#aaa;color:#fff;font-size:1.2rem;cursor:pointer;text-shadow:2px 2px 0 #333;text-align:center;box-sizing:border-box;}
-    .btn:hover{background:#888}.btn.disabled{color:#555;cursor:not-allowed}
+    .btn{width:300px;padding:12px;margin:6px;background:#777;border:2px solid #000;border-top-color:#aaa;border-left-color:#aaa;color:#fff;font-size:1.2rem;cursor:pointer;text-shadow:2px 2px 0 #333;text-align:center}
     .inv-container{background:#c6c6c6;padding:10px;border:2px solid #000;width:450px;height:350px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:auto}
-    .inv-title{color:#333;font-size:14px;margin-bottom:5px;text-shadow:none;font-weight:bold;}
+    .inv-title{color:#333;font-size:14px;margin-bottom:5px;font-weight:bold}
     .inv-top{display:flex;justify-content:space-between;height:150px}
-    .inv-armor{display:flex;flex-direction:column;gap:5px}
-    .inv-crafting{display:flex;flex-direction:column;align-items:center;margin-top:20px}
-    .craft-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-right:10px}
-    .craft-result{width:36px;height:36px;border:2px solid #888;background:#8b8b8b;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;margin-top:15px;margin-left:20px}
     .inv-main{display:grid;grid-template-columns:repeat(9,36px);gap:4px;justify-content:center;margin-bottom:10px}
-    .inv-slot{width:36px;height:36px;background:#8b8b8b;border:2px solid #555;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;cursor:pointer}
-    .inv-slot:hover{background:#999}
+    .inv-slot{width:36px;height:36px;background:#8b8b8b;border:2px solid #555;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;position:relative;}
+    /* Steve CSS Styling */
+    .steve-preview{width:100px;height:130px;background:#8b8b8b;border:2px solid #555;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+    .s-head{width:30px;height:30px;background:#b58165;border-top:8px solid #4d301b;position:relative;z-index:2}
+    .s-body{width:30px;height:35px;background:#00aaae;position:relative;z-index:2}
+    .s-arm{width:10px;height:35px;background:#b58165;position:absolute;top:38px;border-top:10px solid #00aaae}
+    .s-leg{width:14px;height:35px;background:#3131b0;border-bottom:5px solid #606060;margin:0 1px}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
   <div id="crosshair"></div>
-  <div id="hud"><div class="stats"><div class="hearts" id="hp">♥♥♥♥♥♥♥♥♥♥</div><div class="hunger">🍖🍖🍖🍖🍖🍖🍖🍖🍖🍖</div></div><div id="hotbar"></div></div>
+  <div id="hud"><div class="stats"><div class="hearts" id="hp">♥♥♥♥♥♥♥♥♥♥</div><div class="hunger">🍖🍖🍖🍖🍖🍖🍖🍖🍖🍖</div></div><div id="hotbar-display"></div></div>
   <div id="chat-container"><div id="chat-log"></div><input type="text" id="chat-input" autocomplete="off"></div>
 
   <div id="main-menu" class="menu-overlay" style="display:flex">
@@ -48,306 +48,209 @@
     <div class="btn" onclick="setMenu('WORLD_SELECT')">Singleplayer</div>
     <div class="btn disabled">Multiplayer</div><div class="btn disabled">Options</div>
   </div>
-  
-  <div id="world-select" class="menu-overlay">
-    <div style="font-size:2rem;margin-bottom:20px">Select World</div>
-    <div style="width:400px;background:rgba(0,0,0,0.5);border:2px solid #555;padding:10px;margin-bottom:20px;cursor:pointer"><strong>New World</strong><br><span style="color:#aaa">Survival, Caves, Trees, Skies</span></div>
-    <div class="btn" onclick="respawn();setMenu('PLAYING')">Play Selected World</div>
-    <div class="btn" onclick="setMenu('MAIN_MENU')">Back</div>
-  </div>
-  
+
   <div id="pause-menu" class="menu-overlay">
-    <div style="font-size:1.5rem;margin-bottom:20px;color:#fff;text-shadow:2px 2px #000;">Game Menu</div>
-    <div class="btn" onclick="setMenu('PLAYING')" style="width:312px;">Back to Game</div>
-    <div style="display:flex;width:328px;justify-content:center;">
-      <div class="btn disabled" style="width:150px;margin:6px 3px;">Advancements</div>
-      <div class="btn disabled" style="width:150px;margin:6px 3px;">Statistics</div>
-    </div>
-    <div style="display:flex;width:328px;justify-content:center;">
-      <div class="btn disabled" style="width:150px;margin:6px 3px;">Give Feedback</div>
-      <div class="btn disabled" style="width:150px;margin:6px 3px;">Report Bugs</div>
-    </div>
-    <div class="btn disabled" style="width:312px;">Options...</div>
-    <div class="btn disabled" style="width:312px;">Open to LAN</div>
-    <div class="btn" onclick="setMenu('MAIN_MENU')" style="width:312px;">Save and Quit to Title</div>
+    <div style="font-size:1.5rem;margin-bottom:20px">Game Menu</div>
+    <div class="btn" onclick="setMenu('PLAYING')">Back to Game</div>
+    <div class="btn" onclick="setMenu('MAIN_MENU')">Save and Quit to Title</div>
   </div>
 
-  <div id="death-screen" class="menu-overlay">
-    <div style="font-size:4rem;color:#ff5555;margin-bottom:20px">You Died!</div>
-    <div class="btn" onclick="respawn();setMenu('PLAYING')">Respawn</div><div class="btn" onclick="setMenu('MAIN_MENU')">Title Screen</div>
-  </div>
-  
   <div id="inventory-screen" class="menu-overlay">
     <div class="inv-container">
       <div class="inv-top">
-        <div class="inv-armor"><div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div></div>
-        
-        <div style="width:100px;height:130px;background:#8b8b8b;border:2px solid #555;border-top-color:#333;border-left-color:#333;display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box;">
-          <div style="width:32px;height:32px;background:#b58165;border-top:8px solid #4d301b;position:relative;">
-            <div style="position:absolute;top:8px;left:4px;width:4px;height:4px;background:#fff"><div style="width:2px;height:4px;background:#44f"></div></div>
-            <div style="position:absolute;top:8px;right:4px;width:4px;height:4px;background:#fff"><div style="width:2px;height:4px;background:#44f"></div></div>
-            <div style="position:absolute;top:16px;left:8px;width:16px;height:4px;background:#4d301b"></div>
-          </div>
-          <div style="width:32px;height:36px;background:#00aaae;position:relative;">
-            <div style="position:absolute;left:-12px;top:0;width:12px;height:36px;background:#b58165;border-top:12px solid #00aaae"></div>
-            <div style="position:absolute;right:-12px;top:0;width:12px;height:36px;background:#b58165;border-top:12px solid #00aaae"></div>
-          </div>
-          <div style="width:32px;height:36px;background:#3131b0;display:flex;">
-            <div style="flex:1;border-bottom:6px solid #606060;border-right:1px solid #1a1a8a"></div>
-            <div style="flex:1;border-bottom:6px solid #606060"></div>
-          </div>
+        <div style="display:flex;flex-direction:column;gap:4px"><div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div></div>
+        <div class="steve-preview">
+           <div class="s-head"></div><div class="s-body"></div>
+           <div class="s-arm" style="left:20px"></div><div class="s-arm" style="right:20px"></div>
+           <div style="display:flex"><div class="s-leg"></div><div class="s-leg"></div></div>
         </div>
-
-        <div class="inv-crafting">
-          <div class="inv-title" style="align-self:flex-start">Crafting</div>
-          <div style="display:flex">
-            <div class="craft-grid"><div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div></div>
-            <div class="craft-result"></div>
-          </div>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="inv-title">Crafting</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px"><div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div></div>
         </div>
       </div>
       <div>
         <div class="inv-title">Inventory</div>
-        <div class="inv-main" id="inv-grid"></div>
-        <div class="inv-main" style="margin-bottom:0" id="inv-hotbar"></div>
+        <div class="inv-main" id="main-inv-grid"></div>
+        <div class="inv-main" id="hotbar-inv-grid" style="margin-top:10px"></div>
       </div>
     </div>
   </div>
 
   <script>
-    // --- 1. Texture Generation (Logs & Cracks) ---
+    // --- Data Management ---
+    // 0-8 is Hotbar, 9-35 is Main Inventory
+    let inventoryData = Array(36).fill().map(() => ({type: null, count: 0}));
+    let activeSlot = 0;
+
+    const splashes = ["Snaps to grid!", "Inventory linked!", "Slow and steady!", "Steve is here!", "Orange is the new Block!"];
+    document.getElementById('splash-text').innerText = splashes[Math.floor(Math.random()*splashes.length)];
+
+    // --- Texture & Materials (Keep original logic) ---
     function gT(b,v,t){
       let c=document.createElement('canvas');c.width=16;c.height=16;let x=c.getContext('2d');
       for(let i=0;i<16;i++)for(let j=0;j<16;j++){
         let n=Math.random()*v-(v/2),r=b[0]+n,g=b[1]+n,bl=b[2]+n;
-        if(t==='wS'&&i%4===0){r-=20;g-=20;bl-=20} // Wood side (Bark)
-        if(t==='wT'){ let d=Math.sqrt((i-8)**2+(j-8)**2); r=150-d*5; g=100-d*3; bl=50; if(Math.round(d)%3===0){r-=20;g-=20;bl-=10;} } // Wood top (Rings)
+        if(t==='wS'&&i%4===0){r-=20;g-=20;bl-=20}
+        if(t==='wT'){ let d=Math.sqrt((i-8)**2+(j-8)**2); r=150-d*5; g=100-d*3; bl=50; if(Math.round(d)%3===0){r-=20;g-=20;bl-=10;} }
         if(t==='l'&&Math.random()>.7)r=g=bl=0; if(t==='b')r=g=bl=Math.random()*40+10;
         x.fillStyle=`rgb(${r},${g},${bl})`;x.fillRect(i,j,1,1);
       }
       let tx=new THREE.CanvasTexture(c);tx.magFilter=THREE.NearestFilter;return {m:tx,c:`rgb(${b[0]},${b[1]},${b[2]})`};
     }
-    // Block Breaking Textures (Cracks)
-    function crk(lvl){
-      let c=document.createElement('canvas');c.width=16;c.height=16;let x=c.getContext('2d');
-      x.strokeStyle='rgba(0,0,0,0.8)';x.lineWidth=1;x.beginPath();
-      for(let i=0;i<lvl*3;i++){x.moveTo(8,8);x.lineTo(Math.random()*16,Math.random()*16);}x.stroke();
-      let tx=new THREE.CanvasTexture(c);tx.magFilter=THREE.NearestFilter;return tx;
-    }
-    const cTex=[null,crk(1),crk(2),crk(3),crk(4)];
-
-    const tG=gT([80,160,80],30),tD=gT([110,70,40],25),tS=gT([120,120,120],40),tWs=gT([70,40,20],20,'wS'),tWt=gT([150,100,50],0,'wT'),tL=gT([50,120,50],40,'l'),tB=gT([20,20,20],0,'b');
-    
-    // Multi-material for wood (Sides: Bark, Top/Bottom: Rings)
-    const matWood=[
-      new THREE.MeshLambertMaterial({map:tWs.m,name:'wood'}),new THREE.MeshLambertMaterial({map:tWs.m,name:'wood'}),
-      new THREE.MeshLambertMaterial({map:tWt.m,name:'wood'}),new THREE.MeshLambertMaterial({map:tWt.m,name:'wood'}),
-      new THREE.MeshLambertMaterial({map:tWs.m,name:'wood'}),new THREE.MeshLambertMaterial({map:tWs.m,name:'wood'})
-    ];
-    matWood.dur=1.5;
-
+    const tG=gT([80,160,80],30), tD=gT([110,70,40],25), tS=gT([120,120,120],40), tWs=gT([70,40,20],20,'wS'), tWt=gT([150,100,50],0,'wT'), tL=gT([50,120,50],40,'l'), tB=gT([20,20,20],0,'b');
     const mt={
-      grass:new THREE.MeshLambertMaterial({map:tG.m,name:'grass'}),dirt:new THREE.MeshLambertMaterial({map:tD.m,name:'dirt'}),
-      stone:new THREE.MeshLambertMaterial({map:tS.m,name:'stone'}),wood:matWood,
-      leaves:new THREE.MeshLambertMaterial({map:tL.m,transparent:true,opacity:0.9,name:'leaves'}),bedrock:new THREE.MeshLambertMaterial({map:tB.m,name:'bedrock'})
+      grass:new THREE.MeshLambertMaterial({map:tG.m,name:'grass'}), dirt:new THREE.MeshLambertMaterial({map:tD.m,name:'dirt'}),
+      stone:new THREE.MeshLambertMaterial({map:tS.m,name:'stone'}), wood:new THREE.MeshLambertMaterial({map:tWs.m,name:'wood'}),
+      leaves:new THREE.MeshLambertMaterial({map:tL.m,transparent:true,opacity:0.9,name:'leaves'}), bedrock:new THREE.MeshLambertMaterial({map:tB.m,name:'bedrock'})
     };
-    mt.grass.dur=0.5;mt.dirt.dur=0.5;mt.stone.dur=2.0;mt.leaves.dur=0.2;mt.bedrock.dur=999;
     const uiC={grass:tG.c,dirt:tD.c,stone:tS.c,wood:tWs.c,leaves:tL.c,bedrock:tB.c};
 
-    // --- 2. Engine & Environment (Sunsets & Stars) ---
-    const sc=new THREE.Scene();sc.background=new THREE.Color(0x87CEEB);sc.fog=new THREE.FogExp2(0x87CEEB,0.02);
-    const cam=new THREE.PerspectiveCamera(80,window.innerWidth/window.innerHeight,0.1,1000);
+    // --- Scene Setup ---
+    const sc=new THREE.Scene();sc.background=new THREE.Color(0x87CEEB);
+    const cam=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
     const rnd=new THREE.WebGLRenderer({antialias:false});rnd.setSize(window.innerWidth,window.innerHeight);document.body.appendChild(rnd.domElement);
-    const amb=new THREE.AmbientLight(0xffffff,0.4);sc.add(amb);
-    const skyP=new THREE.Object3D();sc.add(skyP);
-    const sun=new THREE.DirectionalLight(0xffffff,0.8);sun.position.set(0,100,0);skyP.add(sun);
-    const sunM=new THREE.Mesh(new THREE.BoxGeometry(10,10,10),new THREE.MeshBasicMaterial({color:0xffffaa}));sunM.position.set(0,100,0);skyP.add(sunM);
-    const moon=new THREE.Mesh(new THREE.BoxGeometry(8,8,8),new THREE.MeshBasicMaterial({color:0xddddff}));moon.position.set(0,-100,0);skyP.add(moon);
-    const clds=[];for(let i=0;i<15;i++){let c=new THREE.Mesh(new THREE.BoxGeometry(10,2,14),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.8}));c.position.set(Math.random()*100-50,40,Math.random()*100-50);sc.add(c);clds.push(c);}
+    const amb=new THREE.AmbientLight(0xffffff,0.6);sc.add(amb);
     
-    // Stars
-    let stG=new THREE.BufferGeometry(),stV=[];
-    for(let i=0;i<500;i++)stV.push(Math.random()*200-100,Math.random()*100,Math.random()*200-100);
-    stG.setAttribute('position',new THREE.Float32BufferAttribute(stV,3));
-    let stars=new THREE.Points(stG,new THREE.PointsMaterial({color:0xffffff,size:0.5,transparent:true,opacity:0}));
-    sc.add(stars);
-
-    // --- 3. World Gen ---
-    let blks=[],bMap=new Map(),drps=[],boxG=new THREE.BoxGeometry(1,1,1);
-    function addB(x,y,z,m){let b=new THREE.Mesh(boxG,m);b.position.set(x,y,z);sc.add(b);blks.push(b);bMap.set(`${x},${y},${z}`,b);}
-    for(let x=-20;x<20;x++)for(let z=-20;z<20;z++){
-      let h=Math.floor(Math.sin(x/8)*3+Math.cos(z/8)*3);
-      for(let y=-15;y<=h;y++)addB(x,y,z,y===h?mt.grass:(y>-3?mt.dirt:(y===-15?mt.bedrock:mt.stone)));
-      if(Math.random()<0.02){for(let ty=1;ty<=4;ty++)addB(x,h+ty,z,mt.wood);for(let lx=-2;lx<=2;lx++)for(let lz=-2;lz<=2;lz++)for(let ly=3;ly<=5;ly++)if(Math.abs(lx)+Math.abs(lz)<=2&&!bMap.has(`${x+lx},${h+ly},${z+lz}`))addB(x+lx,h+ly,z+lz,mt.leaves);}
+    let blks=[], bMap=new Map();
+    function addB(x,y,z,m){
+      let b=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),m);
+      b.position.set(x,y,z); sc.add(b); blks.push(b); bMap.set(`${x},${y},${z}`,b);
     }
 
-    // --- 4. UI & Hotbar ---
-    let inv=Array(9).fill().map(()=>({t:null,c:0}));let aSlot=0;
-    for(let i=0;i<27;i++)document.getElementById('inv-grid').innerHTML+='<div class="inv-slot"></div>';
-    for(let i=0;i<9;i++)document.getElementById('inv-hotbar').innerHTML+='<div class="inv-slot"></div>';
-    function rH(){
-      let h=document.getElementById('hotbar');h.innerHTML='';
-      for(let i=0;i<9;i++){
-        let d=document.createElement('div');d.className='slot'+(i===aSlot?' active':'');
-        if(inv[i].t){d.style.background=uiC[inv[i].t];d.innerHTML=`<span class="item-count">${inv[i].c}</span>`;}
-        h.appendChild(d);
+    // World Gen
+    for(let x=-15;x<15;x++)for(let z=-15;z<15;z++){
+      let h=Math.floor(Math.sin(x/8)*2+Math.cos(z/8)*2);
+      addB(x,h,z,mt.grass); addB(x,h-1,z,mt.dirt);
+    }
+
+    // --- Inventory System Logic ---
+    function updateUI(){
+      const hotbarDisp = document.getElementById('hotbar-display');
+      const hotbarInv = document.getElementById('hotbar-inv-grid');
+      const mainInv = document.getElementById('main-inv-grid');
+      
+      hotbarDisp.innerHTML = ''; hotbarInv.innerHTML = ''; mainInv.innerHTML = '';
+
+      for(let i=0; i<36; i++){
+        let item = inventoryData[i];
+        let slotHTML = `<div class="inv-slot" style="background:${item.type?uiC[item.type]:''}">${item.count>0?`<span class="item-count">${item.count}</span>`:''}</div>`;
+        
+        if(i < 9) { // Hotbar
+           hotbarInv.innerHTML += slotHTML;
+           let d = document.createElement('div');
+           d.className = 'slot' + (i === activeSlot ? ' active' : '');
+           if(item.type) { d.style.background = uiC[item.type]; d.innerHTML = `<span class="item-count">${item.count}</span>`; }
+           hotbarDisp.appendChild(d);
+        } else { // Main Inventory
+           mainInv.innerHTML += slotHTML;
+        }
       }
     }
-    rH();
-    function pickUp(t){for(let i=0;i<9;i++)if(inv[i].t===t&&inv[i].c<64){inv[i].c++;rH();return;}for(let i=0;i<9;i++)if(!inv[i].t){inv[i].t=t;inv[i].c=1;rH();return;}}
 
-    // Dynamic Splashes
-    const splashes = [
-        "Does barrel rolls!", "90% Bug Free!", "Made by AI!", 
-        "Now in 3D!", "HTML5 Magic!", "Punch trees!", 
-        "Creeper, aw man!", "Look at that sunset!", 
-        "Colormatic!", "Not on Java!"
-    ];
-    document.getElementById('splash-text').innerText = splashes[Math.floor(Math.random() * splashes.length)];
+    function pickUp(type){
+      // Try to stack in existing slots first (0-35)
+      for(let i=0; i<36; i++){
+        if(inventoryData[i].type === type && inventoryData[i].count < 64){
+          inventoryData[i].count++; updateUI(); return;
+        }
+      }
+      // Find first empty slot
+      for(let i=0; i<36; i++){
+        if(!inventoryData[i].type){
+          inventoryData[i].type = type; inventoryData[i].count = 1; updateUI(); return;
+        }
+      }
+    }
 
-    // --- 5. State & Menus (Fixes for E and ESC) ---
-    let gS="MAIN_MENU",hp=20;
+    // --- Menu Control ---
+    let gameState = "MAIN_MENU";
     function setMenu(s){
-      gS=s;
-      ['main-menu','world-select','pause-menu','death-screen','inventory-screen'].forEach(id=>document.getElementById(id).style.display='none');
-      document.getElementById('hud').style.display=s==="PLAYING"?'flex':'none';
-      document.getElementById('crosshair').style.display=s==="PLAYING"?'block':'none';
-      document.getElementById('chat-container').style.display=(s==="PLAYING"||s==="CHAT")?'flex':'none';
-      if(s!=="PLAYING"&&s!=="CHAT")document.getElementById(s.toLowerCase().replace('_','-')).style.display='flex';
-      
-      // Pointer lock logic
+      gameState = s;
+      document.getElementById('main-menu').style.display = s==="MAIN_MENU"?'flex':'none';
+      document.getElementById('pause-menu').style.display = s==="PAUSE_MENU"?'flex':'none';
+      document.getElementById('inventory-screen').style.display = s==="INV"?'flex':'none';
+      document.getElementById('hud').style.display = s==="PLAYING"?'flex':'none';
+      document.getElementById('crosshair').style.display = s==="PLAYING"?'block':'none';
       if(s==="PLAYING") document.body.requestPointerLock();
-      else if(document.pointerLockElement) document.exitPointerLock();
+      else document.exitPointerLock();
     }
-    function respawn(){cam.position.set(0,20,0);vel.set(0,0,0);hp=20;let st="";for(let i=0;i<10;i++)st+=(i<hp/2)?"♥":"♡";document.getElementById('hp').innerText=st;}
 
-    // Native ESC handling via pointerlockchange
-    document.addEventListener('pointerlockchange',()=>{
-      if(!document.pointerLockElement){
-        if(gS==="PLAYING") setMenu("PAUSE_MENU"); // Hit ESC while playing
-      }
-    });
-
-    // --- 6. Input ---
-    const k={w:0,a:0,s:0,d:0,sp:0,sh:0,ct:0};
-    const cI=document.getElementById('chat-input'),cL=document.getElementById('chat-log');
-    document.addEventListener('keydown',e=>{
-      if(gS==="PLAYING"&&(e.key==='t'||e.key==='/')){e.preventDefault();setMenu("CHAT");cI.style.display='block';cI.focus();if(e.key==='/')cI.value='/';return;}
-      if(gS==="CHAT"){if(e.key==='Enter'&&cI.value.trim()){cL.innerHTML+=`<div class='chat-msg'>&lt;Player&gt; ${cI.value}</div>`;cL.scrollTop=cL.scrollHeight;}if(e.key==='Enter'||e.key==='Escape'){cI.value='';cI.style.display='none';setMenu("PLAYING");}return;}
-      
-      // The E Key Fix (Inventory Screen)
-      if(e.code==='KeyE'){
-        if(gS==="PLAYING"){
-          setMenu("INVENTORY_SCREEN"); 
-        } else if(gS==="INVENTORY_SCREEN"){
-          setMenu("PLAYING");
-        }
-        return;
-      }
-      if(e.code==='Escape' && gS==="INVENTORY_SCREEN") setMenu("PLAYING");
-      
-      if(gS!=="PLAYING")return;
-      if(e.code==='KeyW')k.w=1;if(e.code==='KeyA')k.a=1;if(e.code==='KeyS')k.s=1;if(e.code==='KeyD')k.d=1;if(e.code==='Space')k.sp=1;if(e.code==='ShiftLeft')k.sh=1;if(e.code==='ControlLeft')k.ct=1;
-      if(e.key>='1'&&e.key<='9'){aSlot=parseInt(e.key)-1;rH();}
-    });
-    document.addEventListener('keyup',e=>{if(e.code==='KeyW')k.w=0;if(e.code==='KeyA')k.a=0;if(e.code==='KeyS')k.s=0;if(e.code==='KeyD')k.d=0;if(e.code==='Space')k.sp=0;if(e.code==='ShiftLeft')k.sh=0;if(e.code==='ControlLeft')k.ct=0;});
-    
-    const eu=new THREE.Euler(0,0,0,'YXZ');
-    document.addEventListener('mousemove',e=>{if(gS!=="PLAYING")return;eu.setFromQuaternion(cam.quaternion);eu.y-=e.movementX*0.002;eu.x-=e.movementY*0.002;eu.x=Math.max(-Math.PI/2,Math.min(Math.PI/2,eu.x));cam.quaternion.setFromEuler(eu);});
-
-    // --- 7. Mining (With Cracks) & Placing ---
-    const ray=new THREE.Raycaster(),cen=new THREE.Vector2(0,0);
-    let mTrg=null,mTim=0;
-    
-    // Crack overlay mesh
-    let crkM=new THREE.MeshBasicMaterial({transparent:true,depthWrite:false});
-    let crkMesh=new THREE.Mesh(boxG,crkM);crkMesh.scale.set(1.02,1.02,1.02);sc.add(crkMesh);crkMesh.visible=false;
-
-    document.addEventListener('mousedown',e=>{
-      if(gS!=="PLAYING")return; ray.setFromCamera(cen,cam);let h=ray.intersectObjects(blks);
-      if(h.length>0&&h[0].distance<5){
-        let b=h[0].object; let mType=Array.isArray(b.material)?b.material[0].name:b.material.name;
-        if(e.button===0&&mType!=='bedrock'){
-          mTrg=b;mTim=0;crkMesh.position.copy(b.position);crkMesh.visible=true;
-        }else if(e.button===2){
-          let i=inv[aSlot];if(i.t&&i.c>0){
-            let p=new THREE.Vector3().copy(h[0].point).add(h[0].face.normal.clone().multiplyScalar(0.5)).floor().addScalar(0.5);
-            if(!bMap.has(`${p.x},${p.y},${p.z}`)){addB(p.x,p.y,p.z,mt[i.t]);i.c--;if(i.c===0)i.t=null;rH();}
+    // --- Interaction & Grid Snapping ---
+    const ray = new THREE.Raycaster();
+    document.addEventListener('mousedown', e => {
+      if(gameState !== "PLAYING") return;
+      ray.setFromCamera(new THREE.Vector2(0,0), cam);
+      let intersects = ray.intersectObjects(blks);
+      if(intersects.length > 0 && intersects[0].distance < 5){
+        let b = intersects[0].object;
+        if(e.button === 0){ // Break
+          sc.remove(b); blks.splice(blks.indexOf(b),1); bMap.delete(`${b.position.x},${b.position.y},${b.position.z}`);
+          pickUp(b.material.name || 'grass');
+        } else if(e.button === 2){ // Place
+          let item = inventoryData[activeSlot];
+          if(item.type && item.count > 0){
+            // GRID SNAPPING LOGIC
+            // Get normal of face clicked, add it to current block position
+            let pos = b.position.clone().add(intersects[0].face.normal);
+            if(!bMap.has(`${pos.x},${pos.y},${pos.z}`)){
+              addB(pos.x, pos.y, pos.z, mt[item.type]);
+              item.count--; if(item.count === 0) item.type = null;
+              updateUI();
+            }
           }
         }
       }
     });
-    document.addEventListener('mouseup',e=>{if(e.button===0){mTrg=null;crkMesh.visible=false;}});
 
-    // --- 8. Physics Engine & Time ---
-    let vel=new THREE.Vector3(),cJ=false,tm=performance.now(),dTm=Math.PI/2;
-    function cW(x,y,z){let bx=Math.round(x),bz=Math.round(z);return bMap.has(`${bx},${Math.floor(y)},${bz}`)||bMap.has(`${bx},${Math.floor(y-1)},${bz}`);}
-    
-    function anim(){
-      requestAnimationFrame(anim);let nw=performance.now(),dt=Math.min((nw-tm)/1000,0.1);tm=nw;
-      
-      // Dynamic Sky (Sunsets & Stars)
-      dTm+=dt*0.05;skyP.rotation.z=dTm;
-      let sY=Math.sin(dTm+Math.PI/2); 
-      let skyC=new THREE.Color(),fogC=new THREE.Color();
-      if(sY>0.2){ skyC.setHex(0x87CEEB);stars.material.opacity=0; } // Day
-      else if(sY>0){ skyC.setRGB(1,0.5+sY,sY);stars.material.opacity=1-sY*5; } // Sunset
-      else{ skyC.setHex(0x0a0a1a);stars.material.opacity=1; } // Night
-      
-      sc.background=skyC;sc.fog.color.copy(skyC);
-      amb.intensity=Math.max(0.1,sY*0.5+0.1);
+    // --- Input & Movement ---
+    const keys = {};
+    document.addEventListener('keydown', e => {
+      keys[e.code] = true;
+      if(e.code === 'KeyE') gameState === "PLAYING" ? setMenu("INV") : setMenu("PLAYING");
+      if(e.code === 'Escape' && gameState === "PLAYING") setMenu("PAUSE_MENU");
+      if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key)-1; updateUI(); }
+    });
+    document.addEventListener('keyup', e => keys[e.code] = false);
 
-      clds.forEach(c=>{c.position.x+=1*dt;if(c.position.x>50)c.position.x=-50;});
-      
-      // Menu Camera Pan (Simulates Title Screen background world)
-      if(gS === "MAIN_MENU" || gS === "WORLD_SELECT") {
-        eu.y += 0.001;
-        eu.x = -0.1;
-        cam.quaternion.setFromEuler(eu);
-        cam.position.set(0, 15, 0); // High up looking around
-      }
+    document.addEventListener('mousemove', e => {
+      if(gameState !== "PLAYING") return;
+      cam.rotation.y -= e.movementX * 0.002;
+      cam.rotation.x -= e.movementY * 0.002;
+      cam.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, cam.rotation.x));
+    });
+    cam.rotation.order = "YXZ";
 
-      if(gS==="PLAYING"){
-        // Visual Mining (Cracks)
-        if(mTrg){
-          mTim+=dt; let dur=Array.isArray(mTrg.material)?mTrg.material.dur:mTrg.material.dur;
-          let p=mTim/dur;
-          if(p>=1){
-            let nName=Array.isArray(mTrg.material)?mTrg.material[0].name:mTrg.material.name;
-            sc.remove(mTrg);blks.splice(blks.indexOf(mTrg),1);bMap.delete(`${mTrg.position.x},${mTrg.position.y},${mTrg.position.z}`);
-            let d=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3),mTrg.material);d.position.copy(mTrg.position);d.userData={vy:4,t:nName};sc.add(d);drps.push(d);
-            mTrg=null;crkMesh.visible=false;
-          }else{
-            crkM.map=cTex[Math.floor(p*4)+1];crkM.needsUpdate=true;
-          }
+    // --- Game Loop ---
+    let vel = new THREE.Vector3();
+    function animate(){
+      requestAnimationFrame(animate);
+      if(gameState === "PLAYING"){
+        let speed = 0.1; // "Minecraft Normal" Speed
+        let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; dir.normalize();
+        let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
+        
+        if(keys['KeyW']) cam.position.addScaledVector(dir, speed);
+        if(keys['KeyS']) cam.position.addScaledVector(dir, -speed);
+        if(keys['KeyA']) cam.position.addScaledVector(side, speed);
+        if(keys['KeyD']) cam.position.addScaledVector(side, -speed);
+        
+        // Simple gravity
+        cam.position.y -= 0.1;
+        let ground = Math.floor(cam.position.y - 1.6);
+        if(bMap.has(`${Math.round(cam.position.x)},${ground},${Math.round(cam.position.z)}`)){
+          cam.position.y = ground + 2.6;
         }
-
-        // PLAYER SPEED NERFED HERE! 
-        let spd=k.ct?2.8:(k.sh?0.8:1.8); 
-        
-        vel.x-=vel.x*10*dt;vel.z-=vel.z*10*dt;vel.y-=30*dt;
-        let d=new THREE.Vector3();cam.getWorldDirection(d);d.y=0;d.normalize();let r=new THREE.Vector3();r.crossVectors(cam.up,d).normalize();
-        let mx=0,mz=0;if(k.w){mx+=d.x*spd;mz+=d.z*spd;}if(k.s){mx-=d.x*spd;mz-=d.z*spd;}if(k.a){mx+=r.x*spd;mz+=r.z*spd;}if(k.d){mx-=r.x*spd;mz-=r.z*spd;}
-        
-        if(!cW(cam.position.x+vel.x*dt+mx*dt,cam.position.y,cam.position.z)){vel.x+=mx;cam.position.x+=vel.x*dt;}else vel.x=0;
-        if(!cW(cam.position.x,cam.position.y,cam.position.z+vel.z*dt+mz*dt)){vel.z+=mz;cam.position.z+=vel.z*dt;}else vel.z=0;
-        
-        cam.position.y+=vel.y*dt;let cO=k.sh?-0.4:0;
-        ray.set(cam.position,new THREE.Vector3(0,-1,0));let fH=ray.intersectObjects(blks);
-        if(fH.length>0&&fH[0].distance<1.6-cO){vel.y=0;cam.position.y=fH[0].point.y+1.6+cO;cJ=true;}else cJ=false;
-        if(k.sp&&cJ){vel.y=8.5;cJ=false;}
-        if(cam.position.y<-25){hp-=10*dt;let st="";for(let i=0;i<10;i++)st+=(i<hp/2)?"♥":"♡";document.getElementById('hp').innerText=st;if(hp<=0)setMenu("DEATH_SCREEN");}
-
-        for(let i=drps.length-1;i>=0;i--){
-          let d=drps[i];d.rotation.y+=2*dt;d.userData.vy-=20*dt;d.position.y+=d.userData.vy*dt;
-          let fl=Math.floor(d.position.y);if(bMap.has(`${Math.round(d.position.x)},${fl},${Math.round(d.position.z)}`)){if(d.position.y<fl+0.65){d.position.y=fl+0.65;d.userData.vy=0;}}
-          if(cam.position.distanceTo(d.position)<1.8){pickUp(d.userData.t);sc.remove(d);drps.splice(i,1);}
-        }
+      } else if(gameState === "MAIN_MENU") {
+        cam.rotation.y += 0.002; // Title screen pan
       }
-      rnd.render(sc,cam);
+      rnd.render(sc, cam);
     }
-    anim();
-    window.addEventListener('resize',()=>{cam.aspect=window.innerWidth/window.innerHeight;cam.updateProjectionMatrix();rnd.setSize(window.innerWidth,window.innerHeight);});
+
+    // Initialization
+    cam.position.set(0, 5, 0);
+    updateUI();
+    animate();
   </script>
 </body>
 </html>
