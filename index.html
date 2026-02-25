@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT</title>
+  <title>ORANGECRAFT V5</title>
   <style>
-    /* UI Styling */
-    @font-face { font-family: 'Minecraftia'; src: local('Courier New'); } /* Fallback */
+    @font-face { font-family: 'Minecraftia'; src: local('Courier New'); }
     body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', Courier, monospace; user-select: none; color: white; }
     
     #crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; transform: translate(-50%, -50%); pointer-events: none; z-index: 100; display: none; }
@@ -13,25 +12,32 @@
     #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
     #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
     
-    /* HUD */
-    #hud { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: none; width: 400px; justify-content: space-between; z-index: 100; font-size: 20px; text-shadow: 2px 2px 0 #000; }
+    /* HUD: Health, Hunger, Hotbar */
+    #hud { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); display: none; flex-direction: column; align-items: center; z-index: 100; width: 100%; pointer-events: none;}
+    .stats { display: flex; justify-content: space-between; width: 350px; font-size: 20px; text-shadow: 2px 2px 0 #000; margin-bottom: 5px; }
     .hearts { color: #ff3333; }
     .hunger { color: #cc6600; }
-    #mining-progress { position: absolute; top: 55%; left: 50%; transform: translateX(-50%); width: 50px; height: 5px; background: rgba(0,0,0,0.5); display: none; border: 1px solid black; }
-    #mining-bar { height: 100%; width: 0%; background: #00ff00; }
+    #hotbar { display: flex; background: rgba(0,0,0,0.5); border: 2px solid #555; padding: 2px; margin-bottom: 10px; }
+    .slot { width: 36px; height: 36px; border: 2px solid #888; background: rgba(100,100,100,0.5); margin: 0 2px; }
+    .slot.active { border: 2px solid white; }
+
+    /* Chat System */
+    #chat-container { position: absolute; bottom: 80px; left: 20px; width: 400px; display: none; flex-direction: column; z-index: 150; }
+    #chat-log { display: flex; flex-direction: column; justify-content: flex-end; height: 200px; overflow-y: hidden; margin-bottom: 5px; text-shadow: 1px 1px 0 #000; pointer-events: none; }
+    .chat-msg { background: rgba(0,0,0,0.4); padding: 2px 5px; margin-bottom: 2px; }
+    #chat-input { background: rgba(0,0,0,0.6); color: white; border: 1px solid #555; font-family: inherit; font-size: 16px; padding: 5px; display: none; width: 100%; outline: none; }
 
     /* Menus */
-    .menu-overlay { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.4); z-index: 200; backdrop-filter: blur(2px); }
-    #pause-menu, #world-select, #death-screen { display: none; background: rgba(0,0,0,0.7); }
-    #death-screen { background: rgba(150, 0, 0, 0.5); }
+    .menu-overlay { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.6); z-index: 200; backdrop-filter: blur(2px); }
+    #pause-menu, #world-select, #death-screen { display: none; }
+    #death-screen { background: rgba(150, 0, 0, 0.7); }
     
     .title { font-size: 5rem; color: #FFA500; text-shadow: 4px 4px 0px #333; margin-bottom: 30px; font-weight: bold; position: relative; }
-    .death-title { font-size: 4rem; color: #ff5555; text-shadow: 4px 4px 0px #000; margin-bottom: 20px; }
     
-    .splash { position: absolute; top: 70px; right: -60px; color: #FFFF00; font-size: 1.5rem; text-shadow: 2px 2px 0px #333; transform: rotate(-20deg); animation: pulse 0.5s infinite alternate; white-space: nowrap; }
-    @keyframes pulse { from { transform: rotate(-20deg) scale(1); } to { transform: rotate(-20deg) scale(1.1); } }
-
-    .btn { width: 350px; padding: 12px; margin: 8px; background-color: #777; border: 2px solid #000; border-top-color: #aaa; border-left-color: #aaa; color: white; font-size: 1.2rem; font-family: inherit; text-align: center; cursor: pointer; text-shadow: 2px 2px 0px #333; }
+    /* Layout for Pause Menu matching image */
+    .btn-row { display: flex; gap: 10px; }
+    .btn { width: 300px; padding: 10px; margin: 5px; background-color: #777; border: 2px solid #000; border-top-color: #aaa; border-left-color: #aaa; color: white; font-size: 1.1rem; font-family: inherit; text-align: center; cursor: pointer; text-shadow: 2px 2px 0px #333; }
+    .btn.half { width: 140px; }
     .btn:hover { background-color: #888; }
     .btn:active { border-top-color: #000; border-left-color: #000; border-bottom-color: #aaa; border-right-color: #aaa; }
     .btn.disabled { color: #555; cursor: not-allowed; }
@@ -41,50 +47,52 @@
 <body>
   
   <div id="crosshair"></div>
-  <div id="mining-progress"><div id="mining-bar"></div></div>
   
   <div id="hud">
-    <div class="hearts" id="health-display">♥♥♥♥♥♥♥♥♥♥</div>
-    <div class="hunger">🍖🍖🍖🍖🍖🍖🍖🍖🍖🍖</div>
+    <div class="stats">
+      <div class="hearts" id="health-display">♥♥♥♥♥♥♥♥♥♥</div>
+      <div class="hunger">🍖🍖🍖🍖🍖🍖🍖🍖🍖🍖</div>
+    </div>
+    <div id="hotbar">
+      <div class="slot active"></div><div class="slot"></div><div class="slot"></div>
+      <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+      <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+    </div>
+  </div>
+
+  <div id="chat-container">
+    <div id="chat-log"></div>
+    <input type="text" id="chat-input" autocomplete="off">
   </div>
 
   <div id="main-menu" class="menu-overlay">
-    <div class="title">ORANGECRAFT<div class="splash" id="splash-text"></div></div>
+    <div class="title">ORANGECRAFT</div>
     <div class="btn" id="btn-singleplayer">Singleplayer</div>
     <div class="btn disabled">Multiplayer</div>
     <div class="btn disabled">Options...</div>
-    <div class="btn disabled">Quit Game</div>
-  </div>
-
-  <div id="world-select" class="menu-overlay">
-    <div style="font-size: 2rem; margin-bottom: 20px; text-shadow: 2px 2px #000;">Select World</div>
-    <div style="width: 400px; height: 100px; background: rgba(0,0,0,0.5); border: 2px solid #555; margin-bottom: 20px; padding: 10px; cursor: pointer;" id="world-slot">
-      <strong>New World</strong><br><span style="color:#aaa">Survival Mode, Version: V4</span>
-    </div>
-    <div class="btn" id="btn-play-world">Play Selected World</div>
-    <div class="btn" id="btn-back-main">Back</div>
   </div>
 
   <div id="pause-menu" class="menu-overlay">
-    <div style="font-size: 2rem; margin-bottom: 30px; text-shadow: 2px 2px #000;">Game Menu</div>
-    <div class="btn" id="btn-resume">Back to Game</div>
-    <div class="btn disabled">Options...</div>
-    <div class="btn" id="btn-quit">Save and Quit to Title</div>
-  </div>
-
-  <div id="death-screen" class="menu-overlay">
-    <div class="death-title">You Died!</div>
-    <div style="margin-bottom: 30px; font-size: 1.2rem;">You fell out of the world</div>
-    <div class="btn" id="btn-respawn">Respawn</div>
-    <div class="btn" id="btn-title-death">Title Screen</div>
+    <div style="font-size: 1.5rem; margin-bottom: 20px; text-shadow: 2px 2px #000;">Game Menu</div>
+    <div class="btn" id="btn-resume" style="width: 300px;">Back to Game</div>
+    <div class="btn-row">
+      <div class="btn half disabled">Advancements</div>
+      <div class="btn half disabled">Statistics</div>
+    </div>
+    <div class="btn-row">
+      <div class="btn half disabled">Give Feedback</div>
+      <div class="btn half disabled">Report Bugs</div>
+    </div>
+    <div class="btn disabled" style="width: 300px; margin-top: 15px;">Open to LAN</div>
+    <div class="btn-row">
+      <div class="btn half disabled">Options...</div>
+      <div class="btn half disabled">Mod Options...</div>
+    </div>
+    <div class="btn" id="btn-quit" style="width: 300px; margin-top: 15px;">Save and Quit to Title</div>
   </div>
 
   <script>
-    // --- 1. Init UI & Splash Text ---
-    const splashes = ["Better than real life!", "Now with trees!", "Don't fall in the void!", "Press CTRL to sprint!", "Colossal overhaul!"];
-    document.getElementById('splash-text').innerText = splashes[Math.floor(Math.random() * splashes.length)];
-
-    // --- 2. Advanced Texture Generator ---
+    // --- Textures ---
     function genTex(base, variance, type) {
       const canvas = document.createElement('canvas');
       canvas.width = 16; canvas.height = 16;
@@ -93,8 +101,7 @@
         for (let y = 0; y < 16; y++) {
           let noise = Math.random() * variance - (variance/2);
           let r = base[0]+noise, g = base[1]+noise, b = base[2]+noise;
-          if (type === 'wood' && x % 4 === 0) { r-=20; g-=20; b-=20; } // Tree bark lines
-          if (type === 'leaves' && Math.random() > 0.7) { r=0; g=0; b=0; } // Leaf gaps
+          if (type === 'bedrock') { r=g=b= Math.random() * 50; }
           ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
           ctx.fillRect(x, y, 1, 1);
         }
@@ -104,156 +111,124 @@
       return tex;
     }
 
-    const matGrass = new THREE.MeshLambertMaterial({ map: genTex([80, 160, 80], 30, 'grass') });
-    const matDirt = new THREE.MeshLambertMaterial({ map: genTex([110, 70, 40], 25, 'dirt') });
-    const matStone = new THREE.MeshLambertMaterial({ map: genTex([120, 120, 120], 40, 'stone') });
-    const matWood = new THREE.MeshLambertMaterial({ map: genTex([90, 60, 30], 20, 'wood') });
-    const matLeaves = new THREE.MeshLambertMaterial({ map: genTex([50, 120, 50], 40, 'leaves'), transparent: true, opacity: 0.9 });
+    const mats = {
+      grass: new THREE.MeshLambertMaterial({ map: genTex([80, 160, 80], 30) }),
+      dirt: new THREE.MeshLambertMaterial({ map: genTex([110, 70, 40], 25) }),
+      stone: new THREE.MeshLambertMaterial({ map: genTex([120, 120, 120], 40) }),
+      bedrock: new THREE.MeshLambertMaterial({ map: genTex([20, 20, 20], 0, 'bedrock') })
+    };
 
-    // Block properties (Durability)
-    matGrass.durability = 0.5; matDirt.durability = 0.5; matLeaves.durability = 0.2; 
-    matWood.durability = 1.5; matStone.durability = 3.0;
-
-    // --- 3. Scene, Skybox & Lighting ---
+    // --- Scene Setup ---
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x87CEEB, 0.02);
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 20, 60);
     const camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // Sky Pivot (Sun/Moon)
-    const skyPivot = new THREE.Object3D();
-    scene.add(skyPivot);
-    
-    const sun = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), new THREE.MeshBasicMaterial({color: 0xffffaa}));
-    sun.position.set(0, 100, 0);
-    skyPivot.add(sun);
-    
-    const moon = new THREE.Mesh(new THREE.BoxGeometry(8, 8, 8), new THREE.MeshBasicMaterial({color: 0xddddff}));
-    moon.position.set(0, -100, 0);
-    skyPivot.add(moon);
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
-    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    skyPivot.add(sunLight);
-    sunLight.position.set(0, 100, 0);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(50, 100, 50);
+    scene.add(dirLight);
 
-    // Clouds
-    const clouds = [];
-    const cloudGeo = new THREE.BoxGeometry(8, 2, 12);
-    const cloudMat = new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.8});
-    for(let i=0; i<10; i++) {
-      const c = new THREE.Mesh(cloudGeo, cloudMat);
-      c.position.set(Math.random()*100-50, 40, Math.random()*100-50);
-      scene.add(c);
-      clouds.push(c);
-    }
-
-    // --- 4. World Generation (With Trees) ---
+    // --- World Gen (Deep Caves & Bedrock) ---
     let blocks = [];
     const boxGeo = new THREE.BoxGeometry(1, 1, 1);
     
     function buildWorld() {
-      // Clear old world
-      blocks.forEach(b => scene.remove(b));
-      blocks = [];
-      const mapSize = 50;
-      
+      const mapSize = 40;
       for (let x = -mapSize/2; x < mapSize/2; x++) {
         for (let z = -mapSize/2; z < mapSize/2; z++) {
-          let h = Math.floor(Math.sin(x/10)*3 + Math.cos(z/8)*3);
+          let surfaceY = Math.floor(Math.sin(x/8)*3 + Math.cos(z/8)*3);
           
-          for (let y = h - 4; y <= h; y++) {
-            let mat = matStone;
-            if (y === h) mat = matGrass;
-            else if (y > h - 3) mat = matDirt;
+          // Generate deep down to y = -15
+          for (let y = -15; y <= surfaceY; y++) {
+            let mat = mats.stone;
+            if (y === surfaceY) mat = mats.grass;
+            else if (y > surfaceY - 3) mat = mats.dirt;
+            else if (y === -15) mat = mats.bedrock;
 
             const b = new THREE.Mesh(boxGeo, mat);
             b.position.set(x, y, z);
+            b.isBreakable = (mat !== mats.bedrock);
             scene.add(b);
             blocks.push(b);
-          }
-
-          // Generate Trees randomly on grass
-          if (Math.random() < 0.02) {
-            let treeH = Math.floor(Math.random() * 2) + 4;
-            for(let ty = 1; ty <= treeH; ty++) {
-              let t = new THREE.Mesh(boxGeo, matWood);
-              t.position.set(x, h+ty, z);
-              scene.add(t); blocks.push(t);
-            }
-            // Leaves
-            for(let lx=-2; lx<=2; lx++) {
-              for(let lz=-2; lz<=2; lz++) {
-                for(let ly=treeH-1; ly<=treeH+1; ly++) {
-                  if (Math.abs(lx)+Math.abs(lz) > 2) continue; // Round leaves
-                  let l = new THREE.Mesh(boxGeo, matLeaves);
-                  l.position.set(x+lx, h+ly, z+lz);
-                  scene.add(l); blocks.push(l);
-                }
-              }
-            }
           }
         }
       }
     }
     buildWorld();
 
-    // --- 5. Game State & Logic ---
-    let gameState = "MAIN_MENU"; // MAIN_MENU, WORLD_SELECT, PLAYING, PAUSED, DEAD
-    let playerHealth = 20;
-    
-    // UI Elements
-    const elMain = document.getElementById('main-menu');
-    const elWorld = document.getElementById('world-select');
-    const elPause = document.getElementById('pause-menu');
-    const elDeath = document.getElementById('death-screen');
-    const elHud = document.getElementById('hud');
-    const elCross = document.getElementById('crosshair');
+    // --- Game State & UI ---
+    let gameState = "MAIN_MENU";
+    let isChatting = false;
 
     function setMenu(state) {
       gameState = state;
-      elMain.style.display = state === "MAIN_MENU" ? 'flex' : 'none';
-      elWorld.style.display = state === "WORLD_SELECT" ? 'flex' : 'none';
-      elPause.style.display = state === "PAUSED" ? 'flex' : 'none';
-      elDeath.style.display = state === "DEAD" ? 'flex' : 'none';
-      elHud.style.display = state === "PLAYING" ? 'flex' : 'none';
-      elCross.style.display = state === "PLAYING" ? 'block' : 'none';
+      document.getElementById('main-menu').style.display = state === "MAIN_MENU" ? 'flex' : 'none';
+      document.getElementById('pause-menu').style.display = state === "PAUSED" ? 'flex' : 'none';
+      document.getElementById('hud').style.display = state === "PLAYING" ? 'flex' : 'none';
+      document.getElementById('chat-container').style.display = (state === "PLAYING" || state === "CHATTING") ? 'flex' : 'none';
+      document.getElementById('crosshair').style.display = state === "PLAYING" ? 'block' : 'none';
       
       if(state === "PLAYING") document.body.requestPointerLock();
       else document.exitPointerLock();
     }
 
-    // Button Listeners
-    document.getElementById('btn-singleplayer').onclick = () => setMenu("WORLD_SELECT");
-    document.getElementById('btn-back-main').onclick = () => setMenu("MAIN_MENU");
-    document.getElementById('btn-play-world').onclick = () => { respawn(); setMenu("PLAYING"); };
+    document.getElementById('btn-singleplayer').onclick = () => { camera.position.set(0, 10, 0); setMenu("PLAYING"); };
     document.getElementById('btn-resume').onclick = () => setMenu("PLAYING");
     document.getElementById('btn-quit').onclick = () => setMenu("MAIN_MENU");
-    document.getElementById('btn-respawn').onclick = () => { respawn(); setMenu("PLAYING"); };
-    document.getElementById('btn-title-death').onclick = () => { respawn(); setMenu("MAIN_MENU"); };
 
-    document.addEventListener('pointerlockchange', () => {
-      if (document.pointerLockElement !== document.body && gameState === "PLAYING") setMenu("PAUSED");
-    });
+    // --- Chat Logic ---
+    const chatInput = document.getElementById('chat-input');
+    const chatLog = document.getElementById('chat-log');
+    
+    function addChat(text) {
+      const msg = document.createElement('div');
+      msg.className = 'chat-msg';
+      msg.innerText = text;
+      chatLog.appendChild(msg);
+      if(chatLog.children.length > 8) chatLog.removeChild(chatLog.firstChild);
+    }
 
-    // --- 6. Controls (Sprint/Crouch) ---
-    const keys = { w: false, a: false, s: false, d: false, space: false, shift: false, ctrl: false };
+    // --- Controls ---
+    const keys = { w: false, a: false, s: false, d: false, space: false };
+    
     document.addEventListener('keydown', (e) => {
+      if (gameState === "PLAYING" && (e.key === 't' || e.key === '/')) {
+        e.preventDefault();
+        setMenu("CHATTING");
+        chatInput.style.display = 'block';
+        chatInput.focus();
+        if(e.key === '/') chatInput.value = '/';
+        return;
+      }
+      if (gameState === "CHATTING" && e.key === 'Enter') {
+        if(chatInput.value.trim() !== '') addChat("<Player> " + chatInput.value);
+        chatInput.value = '';
+        chatInput.style.display = 'none';
+        setMenu("PLAYING");
+        return;
+      }
+      if (gameState === "CHATTING" && e.key === 'Escape') {
+        chatInput.value = '';
+        chatInput.style.display = 'none';
+        setMenu("PLAYING");
+        return;
+      }
+
+      if (gameState !== "PLAYING") return;
       if(e.code==='KeyW') keys.w=true; if(e.code==='KeyA') keys.a=true;
       if(e.code==='KeyS') keys.s=true; if(e.code==='KeyD') keys.d=true;
       if(e.code==='Space') keys.space=true; 
-      if(e.code==='ShiftLeft') keys.shift=true; 
-      if(e.code==='ControlLeft') keys.ctrl=true;
     });
+
     document.addEventListener('keyup', (e) => {
       if(e.code==='KeyW') keys.w=false; if(e.code==='KeyA') keys.a=false;
       if(e.code==='KeyS') keys.s=false; if(e.code==='KeyD') keys.d=false;
       if(e.code==='Space') keys.space=false; 
-      if(e.code==='ShiftLeft') keys.shift=false; 
-      if(e.code==='ControlLeft') keys.ctrl=false;
     });
 
     const euler = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -266,14 +241,14 @@
       camera.quaternion.setFromEuler(euler);
     });
 
-    // --- 7. Mining System ---
+    // Pointer lock listener to trigger pause
+    document.addEventListener('pointerlockchange', () => {
+      if (document.pointerLockElement !== document.body && gameState === "PLAYING") setMenu("PAUSED");
+    });
+
+    // --- Building / Perfect Snapping ---
     const raycaster = new THREE.Raycaster();
     const center = new THREE.Vector2(0, 0);
-    let isMining = false;
-    let mineTimer = 0;
-    let targetBlock = null;
-    const progressUI = document.getElementById('mining-progress');
-    const progressBar = document.getElementById('mining-bar');
 
     document.addEventListener('mousedown', (e) => {
       if (gameState !== "PLAYING") return;
@@ -281,130 +256,104 @@
       const hits = raycaster.intersectObjects(blocks);
 
       if (hits.length > 0 && hits[0].distance < 6) {
-        if (e.button === 0) {
-          isMining = true;
-          mineTimer = 0;
-          targetBlock = hits[0].object;
-          progressUI.style.display = 'block';
+        if (e.button === 0 && hits[0].object.isBreakable) {
+          scene.remove(hits[0].object);
+          blocks.splice(blocks.indexOf(hits[0].object), 1);
         } else if (e.button === 2) {
-          // Place Block
-          const b = new THREE.Mesh(boxGeo, matStone);
-          b.position.copy(hits[0].point).add(hits[0].face.normal);
-          b.position.floor().addScalar(0.5);
+          // PERFECT GRID SNAPPING MATH
+          const placementPos = new THREE.Vector3().copy(hits[0].point).add(hits[0].face.normal.clone().multiplyScalar(0.5));
+          placementPos.x = Math.floor(placementPos.x + 0.5);
+          placementPos.y = Math.floor(placementPos.y + 0.5);
+          placementPos.z = Math.floor(placementPos.z + 0.5);
+
+          const b = new THREE.Mesh(boxGeo, mats.stone);
+          b.position.copy(placementPos);
+          b.isBreakable = true;
           scene.add(b); blocks.push(b);
         }
       }
     });
 
-    document.addEventListener('mouseup', (e) => {
-      if(e.button === 0) {
-        isMining = false;
-        progressUI.style.display = 'none';
-        targetBlock = null;
-      }
-    });
-
-    // --- 8. Physics & Core Loop ---
+    // --- Physics ---
     let velocity = new THREE.Vector3();
     let canJump = false;
     let time = performance.now();
-    let dayTime = Math.PI / 2; // Start at noon
+    const playerRadius = 0.3; // Make player slightly thinner for collisions
 
-    function respawn() {
-      camera.position.set(0, 20, 0);
-      velocity.set(0,0,0);
-      playerHealth = 20;
-      updateHearts();
+    function checkWallCollision(newPos) {
+      // Basic Axis-Aligned Bounding Box (AABB) checking against all blocks
+      for(let i=0; i<blocks.length; i++) {
+        let b = blocks[i].position;
+        // Check if player's body intersects with a block's space
+        if (Math.abs(newPos.x - b.x) < 0.5 + playerRadius && 
+            Math.abs(newPos.z - b.z) < 0.5 + playerRadius &&
+            newPos.y > b.y - 1.5 && newPos.y < b.y + 0.5) {
+          return true; // Hit a wall!
+        }
+      }
+      return false;
     }
-
-    function updateHearts() {
-      let str = "";
-      for(let i=0; i<10; i++) str += (i < Math.ceil(playerHealth/2)) ? "♥" : "♡";
-      document.getElementById('health-display').innerText = str;
-    }
-
-    // Initial cam for panorama menu
-    camera.position.set(0, 15, 0);
 
     function animate() {
       requestAnimationFrame(animate);
       const now = performance.now();
-      const delta = Math.min((now - time) / 1000, 0.1); // Cap delta to prevent lag spikes
+      const delta = Math.min((now - time) / 1000, 0.1);
       time = now;
 
-      // Environment Animation (Always runs)
-      dayTime += delta * 0.02;
-      skyPivot.rotation.z = dayTime;
-      
-      let lightIntensity = Math.max(0.1, Math.sin(dayTime + Math.PI/2));
-      scene.background = new THREE.Color().setHSL(0.6, 0.5, lightIntensity * 0.5);
-      scene.fog.color.copy(scene.background);
-      ambientLight.intensity = lightIntensity * 0.5 + 0.1;
-
-      clouds.forEach(c => {
-        c.position.x += 2 * delta;
-        if(c.position.x > 50) c.position.x = -50;
-      });
-
-      if (gameState === "MAIN_MENU" || gameState === "WORLD_SELECT") {
-        // Slow panorama camera spin
-        camera.rotation.y += 0.1 * delta;
-      } 
-      else if (gameState === "PLAYING") {
-        // --- Mining Logic ---
-        if (isMining && targetBlock) {
-          mineTimer += delta;
-          let maxTime = targetBlock.material.durability;
-          progressBar.style.width = (mineTimer/maxTime * 100) + '%';
-          if (mineTimer >= maxTime) {
-            scene.remove(targetBlock);
-            blocks.splice(blocks.indexOf(targetBlock), 1);
-            isMining = false;
-            progressUI.style.display = 'none';
-          }
-        }
-
-        // --- Movement & Physics ---
-        let speedMult = keys.ctrl ? 60.0 : 40.0; // Sprint
-        if (keys.shift) speedMult = 20.0; // Crouch
-
+      if (gameState === "PLAYING") {
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
-        velocity.y -= 30.0 * delta;
+        velocity.y -= 30.0 * delta; // Gravity
 
         const dir = new THREE.Vector3();
         camera.getWorldDirection(dir); dir.y = 0; dir.normalize();
         const right = new THREE.Vector3();
         right.crossVectors(camera.up, dir).normalize();
 
-        if (keys.w) { velocity.x += dir.x * speedMult * delta; velocity.z += dir.z * speedMult * delta; }
-        if (keys.s) { velocity.x -= dir.x * speedMult * delta; velocity.z -= dir.z * speedMult * delta; }
-        if (keys.a) { velocity.x += right.x * speedMult * delta; velocity.z += right.z * speedMult * delta; }
-        if (keys.d) { velocity.x -= right.x * speedMult * delta; velocity.z -= right.z * speedMult * delta; }
+        let moveSpeed = 40.0 * delta;
+        
+        // Desired movement
+        let moveX = 0, moveZ = 0;
+        if (keys.w) { moveX += dir.x * moveSpeed; moveZ += dir.z * moveSpeed; }
+        if (keys.s) { moveX -= dir.x * moveSpeed; moveZ -= dir.z * moveSpeed; }
+        if (keys.a) { moveX += right.x * moveSpeed; moveZ += right.z * moveSpeed; }
+        if (keys.d) { moveX -= right.x * moveSpeed; moveZ -= right.z * moveSpeed; }
 
-        camera.position.x += velocity.x * delta;
-        camera.position.z += velocity.z * delta;
+        // Apply X movement and check collision
+        let nextPosX = camera.position.clone();
+        nextPosX.x += velocity.x * delta + moveX;
+        if(!checkWallCollision(nextPosX)) {
+          velocity.x += moveX / delta; // Allow movement
+          camera.position.x = nextPosX.x;
+        } else {
+          velocity.x = 0; // Hit wall, stop moving this direction
+        }
+
+        // Apply Z movement and check collision
+        let nextPosZ = camera.position.clone();
+        nextPosZ.z += velocity.z * delta + moveZ;
+        if(!checkWallCollision(nextPosZ)) {
+          velocity.z += moveZ / delta;
+          camera.position.z = nextPosZ.z;
+        } else {
+          velocity.z = 0;
+        }
+
         camera.position.y += velocity.y * delta;
 
-        // Crouch height offset
-        let targetHeight = keys.shift ? -0.5 : 0;
-        
-        if (keys.space && canJump) { velocity.y = 10.0; canJump = false; }
-
-        // Floor Collision
+        // Floor Collision (Allows jumping)
         raycaster.set(camera.position, new THREE.Vector3(0, -1, 0));
         const floorHits = raycaster.intersectObjects(blocks);
-        if (floorHits.length > 0 && floorHits[0].distance < 1.6 - targetHeight) {
+        if (floorHits.length > 0 && floorHits[0].distance < 1.6) {
           velocity.y = 0;
-          camera.position.y = floorHits[0].point.y + 1.6 + targetHeight;
+          camera.position.y = floorHits[0].point.y + 1.6;
           canJump = true;
         } else { canJump = false; }
 
-        // Void Damage
-        if (camera.position.y < -10) {
-          playerHealth -= 10 * delta;
-          updateHearts();
-          if (playerHealth <= 0) setMenu("DEAD");
+        // Realistic Jumping
+        if (keys.space && canJump) { 
+          velocity.y = 9.5; 
+          canJump = false; 
         }
       }
 
@@ -412,7 +361,11 @@
     }
     animate();
 
-    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    window.addEventListener('resize', () => { 
+      camera.aspect = window.innerWidth / window.innerHeight; 
+      camera.updateProjectionMatrix(); 
+      renderer.setSize(window.innerWidth, window.innerHeight); 
+    });
   </script>
 </body>
 </html>
