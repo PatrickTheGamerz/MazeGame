@@ -2,38 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.1</title>
+  <title>ORANGECRAFT Alpha 1.2 - Infinite Edition</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
-    
-    /* --- 1:1 AUTHENTIC VHS MASTER --- */
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; }
     #vhs-scanlines { position:absolute; width:100%; height:100%; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.3) 50%); background-size: 100% 3px; opacity: 0.8; }
     #vhs-noise { position:absolute; width:100%; height:100%; opacity:0.15; background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/White_noise.png'); animation: noiseJitter 0.15s infinite; }
     #vhs-fringe { position:absolute; width:100%; height:100%; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(255,0,0,0.1), rgba(0,255,0,0.03), rgba(0,0,255,0.1)); }
     #vhs-tracking { position:absolute; bottom:5%; width:100%; height:15px; background: rgba(255,255,255,0.25); filter: blur(10px); opacity: 0.6; animation: tracking 6s linear infinite; }
-    
     @keyframes tracking { 0% { bottom: -15%; } 15% { bottom: 115%; } 100% { bottom: 115%; } }
     @keyframes noiseJitter { 0% { transform:translate(0,0) } 50% { transform:translate(-1.5%,1.5%) } 100% { transform:translate(1.5%,-1.5%) } }
-
     #crosshair{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;z-index:100;display:none}
     #crosshair::before,#crosshair::after{content:'';position:absolute;background:#fff}
     #crosshair::before{top:9px;left:0;width:20px;height:2px}#crosshair::after{top:0;left:9px;width:2px;height:20px}
-    
     #hud{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
     #hotbar-display{display:flex;background:rgba(0,0,0,0.8);border:4px solid #222;padding:2px;margin-bottom:10px}
     .slot{width:36px;height:36px;border:2px solid #666;background:rgba(80,80,80,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px}
     .slot.active{border:2px solid #fff;box-shadow:0 0 20px rgba(255,255,255,0.5)}
     .item-count{position:absolute;bottom:2px;right:4px;font-size:12px;text-shadow:1px 1px #000;color:white}
-    
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
     .title{font-size:5rem;color:#FFA500;text-shadow:4px 4px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
     .splash{position:absolute;top:75px;right:-80px;color:#FF0;font-size:1.4rem;animation:pulse 0.5s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px #000; font-family: 'Courier New'}
     @keyframes pulse{from{transform:rotate(-20deg) scale(1)}to{transform:rotate(-20deg) scale(1.2)}}
-    
     .btn{width:320px;padding:12px;margin:6px;background:#555;border:4px solid #000;border-top-color:#888;border-left-color:#888;color:#fff;cursor:pointer;text-align:center;font-size:1.2rem}
     .btn:hover{background:#666}
-
     .inv-container{background:#c6c6c6;padding:15px;border:4px solid #000;display:flex;flex-direction:column;pointer-events:auto;color:#000;box-shadow: 10px 10px 0 rgba(0,0,0,0.6)}
     .inv-slot{width:36px;height:36px;background:#8b8b8b;border:2px solid #555;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;position:relative;cursor:pointer}
     .inv-main{display:grid;grid-template-columns:repeat(9,36px);gap:4px;justify-content:center;margin-top:10px}
@@ -77,30 +69,121 @@
   </div>
 
   <script>
-    // --- 1. DATA & ALPHA SPLASHES ---
-    const colors = { grass:'#7cfc00', dirt:'#866043', stone:'#7a7a7a', wood:'#674e37', insideWood:'#d2b48c', leaves:'#32cd32', planks:'#9a7f59', bedrock:'#222', stick: '#4b3c23', crafting_table: '#644628' };
-    const splashes = ["Alpha 1.1!", "Found footage!", "Uses LWJGL!", "90% bug free!", "Polynomial!", "Swedish style!", "Pixels!", "CRT Quality!", "Punching wood!", "Don't look back!"];
+    // --- 1. DATA & TEXTURE GENERATOR ---
+    const colors = { grass:'#4e9e32', dirt:'#5e4431', stone:'#7a7a7a', wood:'#674e37', insideWood:'#d2b48c', leaves:'#2d7a22', planks:'#9a7f59', bedrock:'#222', stick: '#4b3c23', crafting_table: '#644628' };
+    const splashes = ["Infinite World!", "Chunk Loading!", "32x Textures!", "No more ghost blocks!"];
     
+    // Improved Textures
+    const texCache = {};
+    function genTex(color, noise = 0.15, size = 16) {
+        if(texCache[color]) return texCache[color];
+        const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = color; ctx.fillRect(0,0,size,size);
+        for(let i=0; i<size*size*0.4; i++) {
+            ctx.fillStyle = `rgba(0,0,0,${Math.random()*noise})`;
+            ctx.fillRect(Math.random()*size, Math.random()*size, 1, 1);
+            ctx.fillStyle = `rgba(255,255,255,${Math.random()*noise})`;
+            ctx.fillRect(Math.random()*size, Math.random()*size, 1, 1);
+        }
+        const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter;
+        texCache[color] = t; return t;
+    }
+
     let inventory = Array(36).fill(null).map(() => ({type: null, count: 0}));
     let crafting = Array(4).fill(null).map(() => ({type: null, count: 0}));
     let activeSlot = 0, dragItem = null, gameState = "MAIN_MENU", drops = [];
     let miningTarget = null, miningProgress = 0;
     let targetRotation = new THREE.Euler(0, 0, 0, "YXZ");
 
-    // --- 2. ENGINE ---
+    // --- 2. ENGINE & CHUNKS ---
     const sc = new THREE.Scene();
     sc.background = new THREE.Color(0x87CEEB);
-    sc.fog = new THREE.FogExp2(0x87CEEB, 0.14);
+    sc.fog = new THREE.FogExp2(0x87CEEB, 0.05);
     const cam = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const rnd = new THREE.WebGLRenderer({antialias:false});
     rnd.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(rnd.domElement);
 
-    const amb = new THREE.AmbientLight(0xffffff, 0.95); sc.add(amb);
-    const sun = new THREE.DirectionalLight(0xffffff, 0.3); sun.position.set(10, 20, 10); sc.add(sun);
+    const amb = new THREE.AmbientLight(0xffffff, 0.8); sc.add(amb);
+    const sun = new THREE.DirectionalLight(0xffffff, 0.4); sun.position.set(10, 50, 10); sc.add(sun);
 
     const boxG = new THREE.BoxGeometry(1, 1, 1);
-    let blks = [], bMap = new Map();
+    let bMap = new Map();
+    let chunks = new Map();
+    const CHUNK_SIZE = 8; // Size of chunk for performance
+    const RENDER_DIST = 4; // Radial chunks
+
+    // --- FIX: Block Mining & Map Management ---
+    function removeB(mesh) {
+        if(!mesh) return;
+        const key = `${Math.round(mesh.position.x)},${Math.round(mesh.position.y)},${Math.round(mesh.position.z)}`;
+        bMap.delete(key);
+        sc.remove(mesh);
+        // Clean up from blks array if needed (using bMap primarily now)
+    }
+
+    function addB(x,y,z,type){
+      let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`;
+      if(bMap.has(key)) return;
+
+      let mat;
+      if(type === 'wood'){
+        const side = new THREE.MeshLambertMaterial({map: genTex(colors.wood)});
+        const top = new THREE.MeshLambertMaterial({map: genTex(colors.insideWood)});
+        mat = [side, side, top, top, side, side];
+      } else mat = new THREE.MeshLambertMaterial({map: genTex(colors[type])});
+      
+      const b = new THREE.Mesh(boxG, mat);
+      b.position.set(Math.round(x), Math.round(y), Math.round(z)); b.name = type;
+      sc.add(b);
+      bMap.set(key, b);
+      return b;
+    }
+
+    function updateChunks() {
+        let pX = Math.floor(cam.position.x / CHUNK_SIZE);
+        let pZ = Math.floor(cam.position.z / CHUNK_SIZE);
+
+        for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) {
+            for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) {
+                let cKey = `${x},${z}`;
+                if(!chunks.has(cKey)) {
+                    generateChunk(x, z);
+                    chunks.set(cKey, true);
+                }
+            }
+        }
+        // Cleanup distant blocks (Basic)
+        if(bMap.size > 4000) {
+            for(let [key, block] of bMap) {
+                if(block.position.distanceTo(cam.position) > (RENDER_DIST + 2) * CHUNK_SIZE) {
+                    sc.remove(block);
+                    bMap.delete(key);
+                    let ck = `${Math.floor(block.position.x/CHUNK_SIZE)},${Math.floor(block.position.z/CHUNK_SIZE)}`;
+                    chunks.delete(ck);
+                }
+            }
+        }
+    }
+
+    function generateChunk(cx, cz) {
+        for(let x = 0; x < CHUNK_SIZE; x++) {
+            for(let z = 0; z < CHUNK_SIZE; z++) {
+                let absX = cx * CHUNK_SIZE + x;
+                let absZ = cz * CHUNK_SIZE + z;
+                let h = Math.floor(Math.sin(absX/10)*2 + Math.cos(absZ/10)*2);
+                
+                addB(absX, h, absZ, 'grass');
+                addB(absX, h-1, absZ, 'dirt');
+                addB(absX, h-2, absZ, 'stone');
+                
+                if(Math.random() < 0.01) {
+                    for(let t=1; t<4; t++) addB(absX, h+t, absZ, 'wood');
+                }
+            }
+        }
+    }
 
     const crackMats = Array(10).fill(null).map((_, i) => {
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
@@ -112,29 +195,7 @@
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.01, 1.01, 1.01), crackMats[0]);
     sc.add(crackMesh); crackMesh.visible = false;
 
-    function addB(x,y,z,type){
-      let mat;
-      if(type === 'wood'){
-        const side = new THREE.MeshLambertMaterial({color: colors.wood});
-        const top = new THREE.MeshLambertMaterial({color: colors.insideWood});
-        mat = [side, side, top, top, side, side];
-      } else mat = new THREE.MeshLambertMaterial({color: colors[type]});
-      const b = new THREE.Mesh(boxG, mat);
-      b.position.set(Math.round(x), Math.round(y), Math.round(z)); b.name = type;
-      sc.add(b); blks.push(b); bMap.set(`${b.position.x},${b.position.y},${b.position.z}`, b);
-    }
-
-    for(let x=-10; x<10; x++) for(let z=-10; z<10; z++){
-      let h = Math.floor(Math.sin(x/5)*2 + Math.cos(z/5)*2);
-      addB(x, h, z, 'grass'); addB(x, h-1, z, 'dirt');
-      for(let s=1; s<3; s++) addB(x, h-1-s, z, 'stone');
-      if(Math.random() < 0.02) {
-        for(let t=1; t<4; t++) addB(x, h+t, z, 'wood');
-        for(let lx=-1; lx<=1; lx++) for(let lz=-1; lz<=1; lz++) addB(x+lx, h+4, z+lz, 'leaves');
-      }
-    }
-
-    // --- 3. UI & INVENTORY (CLEAN 0 ITEMS) ---
+    // --- 3. UI & INVENTORY ---
     function updateUI(){
       const hDisp = document.getElementById('hotbar-display'), hInv = document.getElementById('h-inv-grid'), mInv = document.getElementById('m-inv-grid'), cGrid = document.getElementById('p-craft-grid');
       hDisp.innerHTML = ''; hInv.innerHTML = ''; mInv.innerHTML = '';
@@ -163,16 +224,7 @@
       let d = document.createElement('div'); d.className = 'inv-slot';
       if(item.type) { d.style.background = colors[item.type]; d.innerHTML = `<span class="item-count">${item.count}</span>`; }
       d.onmousedown = onDown;
-      d.ondblclick = () => { if(item.type) collectStacks(item.type); };
       return d;
-    }
-
-    function collectStacks(type) {
-      let total = 0;
-      inventory.forEach(s => { if(s.type === type) { total += s.count; s.type = null; s.count = 0; } });
-      let target = inventory.find(s => !s.type);
-      if(target) { target.type = type; target.count = Math.min(64, total); }
-      updateUI();
     }
 
     function handleSlotAction(arr, idx, e) {
@@ -195,25 +247,13 @@
     function checkRecipes() {
       const out = document.getElementById('craft-output'); out.style.background = '#8b8b8b'; out.innerHTML = '';
       let g = crafting.map(c => c.type);
-      // Wood -> Planks
       if (crafting.filter(c => c.type).length === 1 && g.includes('wood')) {
         out.style.background = colors.planks; out.innerHTML = '<span class="item-count">4</span>';
-        out.onclick = () => { crafting.forEach(c => { if(c.count > 0) c.count--; }); inventory.find(s => !s.type || (s.type==='planks'&&s.count<61)).type = 'planks'; inventory.find(s => s.type === 'planks').count += 4; updateUI(); };
-      }
-      // Planks -> Stick
-      if (g[0]==='planks' && g[2]==='planks' && !g[1] && !g[3]) {
-        out.style.background = colors.stick; out.innerHTML = '<span class="item-count">4</span>';
-        out.onclick = () => { crafting[0].count--; crafting[2].count--; inventory.find(s => !s.type || (s.type==='stick'&&s.count<61)).type = 'stick'; inventory.find(s => s.type === 'stick').count += 4; updateUI(); };
-      }
-      // 4 Planks -> Crafting Table
-      if (g.every(t => t === 'planks')) {
-        out.style.background = colors.crafting_table; out.innerHTML = '<span class="item-count">1</span>';
-        out.onclick = () => { crafting.forEach(c => c.count--); inventory.find(s => !s.type).type = 'crafting_table'; inventory.find(s => s.type === 'crafting_table').count++; updateUI(); };
+        out.onclick = () => { crafting.forEach(c => { if(c.count > 0) c.count--; }); let s = inventory.find(s => !s.type || (s.type==='planks'&&s.count<61)); s.type = 'planks'; s.count += 4; updateUI(); };
       }
     }
 
-    // --- 4. THE KEY FIX (INSTANT ESC) ---
-    function startGame() { cam.position.set(0, 5, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); }
+    function startGame() { cam.position.set(0, 10, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); }
     
     function setMenu(s) {
       gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
@@ -230,23 +270,19 @@
     }
 
     document.addEventListener('pointerlockchange', () => {
-      // INSTANT POPUP: If we lose pointer lock, we open the menu immediately
       if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU');
     });
 
-    // --- 5. SMOOTH CAMERA & LOOP ---
     let keys = {}, vel = new THREE.Vector3();
     const isSolid = (x, y, z) => bMap.has(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`);
 
     function animate() {
       requestAnimationFrame(animate);
-      
-      // Smooth camera lerp
       cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.22;
       cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.22;
 
-      // GAME CONTINUES DURING INVENTORY (s !== "MAIN_MENU" and s !== "PAUSE_MENU")
       if(gameState !== "MAIN_MENU" && gameState !== "PAUSE_MENU") {
+        updateChunks();
         let speed = 0.12, dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; dir.normalize();
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
         
@@ -271,13 +307,16 @@
         });
 
         if(miningTarget && gameState === "PLAYING") {
-            miningProgress += 0.016; let hardness = (miningTarget.name==='stone')?2.5:(miningTarget.name==='wood')?1.2:0.4;
+            miningProgress += 0.025; let hardness = (miningTarget.name==='stone')?2.5:(miningTarget.name==='wood')?1.2:0.4;
             let stage = Math.floor((miningProgress / hardness) * 10);
             if(stage >= 10) {
-                let name = miningTarget.name; sc.remove(miningTarget); bMap.delete(`${miningTarget.position.x},${miningTarget.position.y},${miningTarget.position.z}`);
-                let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), miningTarget.material); drop.position.copy(miningTarget.position); sc.add(drop); drops.push({mesh: drop, type: name, velY: 0.1});
+                let name = miningTarget.name; 
+                let dropPos = miningTarget.position.clone();
+                removeB(miningTarget);
+                let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({map: genTex(colors[name])})); 
+                drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: name, velY: 0.1});
                 miningTarget = null; crackMesh.visible = false;
-            } else { crackMesh.material = crackMats[stage]; }
+            } else { crackMesh.material = crackMats[Math.min(stage, 9)]; }
         }
       }
       rnd.render(sc, cam);
@@ -286,11 +325,9 @@
     document.addEventListener('keydown', e => {
       keys[e.code] = true;
       if(e.code === 'KeyE') { if(gameState === "INV") setMenu('PLAYING'); else if(gameState === "PLAYING") setMenu('INV'); }
-      // ESC is handled by pointerlockchange above for instant response
-      if(e.code === 'KeyQ' && gameState === "PLAYING") { let item = inventory[activeSlot]; if (item.type && item.count > 0) { let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({color:colors[item.type]})); drop.position.copy(cam.position).addScaledVector(cam.getWorldDirection(new THREE.Vector3()), 1); sc.add(drop); drops.push({mesh: drop, type: item.type, velY: 0.1}); item.count--; updateUI(); } }
       if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key) - 1; updateUI(); }
     });
-    document.addEventListener('keyup', e => { keys[e.code] = false; if(e.code==='KeyW'||e.code==='KeyS'||e.code==='KeyA'||e.code==='KeyD') { miningTarget=null; crackMesh.visible = false; } });
+    document.addEventListener('keyup', e => { keys[e.code] = false; });
     document.addEventListener('mousemove', e => {
       if(gameState === "PLAYING") { targetRotation.y -= e.movementX*0.002; targetRotation.x -= e.movementY*0.002; targetRotation.x = Math.max(-1.5, Math.min(1.5, targetRotation.x)); }
       if(dragItem) { document.getElementById('drag-icon').style.left = e.clientX-16+'px'; document.getElementById('drag-icon').style.top = e.clientY-16+'px'; }
@@ -300,7 +337,7 @@
     document.addEventListener('mousedown', e => {
       if(gameState !== "PLAYING") return;
       const ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(0,0), cam);
-      let hits = ray.intersectObjects(blks);
+      let hits = ray.intersectObjects(Array.from(bMap.values()));
       if(hits.length > 0 && hits[0].distance < 5) {
         let b = hits[0].object;
         if(e.button === 0 && b.name !== 'bedrock') { miningTarget = b; miningProgress = 0; crackMesh.position.copy(b.position); crackMesh.visible = true; }
@@ -309,7 +346,6 @@
           if(item.type && item.count > 0 && item.type !== 'stick') {
             let p = b.position.clone().add(hits[0].face.normal);
             let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
-            if(pX === Math.round(cam.position.x) && pZ === Math.round(cam.position.z) && (pY === Math.floor(cam.position.y-1.6) || pY === Math.floor(cam.position.y))) return;
             if(!bMap.has(`${pX},${pY},${pZ}`)) { addB(pX, pY, pZ, item.type); item.count--; updateUI(); }
           }
         }
