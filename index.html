@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.4 - Optimized</title>
+  <title>ORANGECRAFT Alpha 1.2 - Infinite Edition</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; }
@@ -17,7 +17,7 @@
     #crosshair::before{top:9px;left:0;width:20px;height:2px}#crosshair::after{top:0;left:9px;width:2px;height:20px}
     #hud{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
     #hotbar-display{display:flex;background:rgba(0,0,0,0.8);border:4px solid #222;padding:2px;margin-bottom:10px}
-    .slot{width:36px;height:36px;border:2px solid #666;background:rgba(80,80,80,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px;image-rendering:pixelated}
+    .slot{width:36px;height:36px;border:2px solid #666;background:rgba(80,80,80,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px}
     .slot.active{border:2px solid #fff;box-shadow:0 0 20px rgba(255,255,255,0.5)}
     .item-count{position:absolute;bottom:2px;right:4px;font-size:12px;text-shadow:1px 1px #000;color:white}
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
@@ -27,9 +27,9 @@
     .btn{width:320px;padding:12px;margin:6px;background:#555;border:4px solid #000;border-top-color:#888;border-left-color:#888;color:#fff;cursor:pointer;text-align:center;font-size:1.2rem}
     .btn:hover{background:#666}
     .inv-container{background:#c6c6c6;padding:15px;border:4px solid #000;display:flex;flex-direction:column;pointer-events:auto;color:#000;box-shadow: 10px 10px 0 rgba(0,0,0,0.6)}
-    .inv-slot{width:36px;height:36px;background:#8b8b8b;border:2px solid #555;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;position:relative;cursor:pointer;image-rendering:pixelated}
+    .inv-slot{width:36px;height:36px;background:#8b8b8b;border:2px solid #555;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;position:relative;cursor:pointer}
     .inv-main{display:grid;grid-template-columns:repeat(9,36px);gap:4px;justify-content:center;margin-top:10px}
-    #drag-icon{position:fixed;pointer-events:none;z-index:1100;width:32px;height:32px;display:none;border:2px solid #fff;image-rendering:pixelated}
+    #drag-icon{position:fixed;pointer-events:none;z-index:1100;width:32px;height:32px;display:none;border:2px solid #fff}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -69,31 +69,25 @@
   </div>
 
   <script>
-    // --- 1. CORE DATA ---
-    const colors = { grass:'#4e9e32', dirt:'#5e4431', stone:'#7a7a7a', wood:'#674e37', insideWood:'#d2b48c', leaves:'#2d7a22', planks:'#9a7f59', bedrock:'#111', stick: '#4b3c23', crafting_table: '#8a6441' };
-    const splashes = ["Lag Fix!", "Collision Leaves!", "No X-Ray!", "Smooth Chunks!"];
+    // --- 1. DATA & TEXTURE GENERATOR ---
+    const colors = { grass:'#4e9e32', dirt:'#5e4431', stone:'#7a7a7a', wood:'#674e37', insideWood:'#d2b48c', leaves:'#2d7a22', planks:'#9a7f59', bedrock:'#222', stick: '#4b3c23', crafting_table: '#644628' };
+    const splashes = ["Infinite World!", "Chunk Loading!", "32x Textures!", "No more ghost blocks!"];
+    
+    // Improved Textures
     const texCache = {};
-
-    function genTex(color, noise = 0.15, size = 16, border = false) {
-        let cacheKey = `${color}-${noise}-${border}`;
-        if(texCache[cacheKey]) return texCache[cacheKey];
+    function genTex(color, noise = 0.15, size = 16) {
+        if(texCache[color]) return texCache[color];
         const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = color; ctx.fillRect(0,0,size,size);
         for(let i=0; i<size*size*0.4; i++) {
             ctx.fillStyle = `rgba(0,0,0,${Math.random()*noise})`;
             ctx.fillRect(Math.random()*size, Math.random()*size, 1, 1);
+            ctx.fillStyle = `rgba(255,255,255,${Math.random()*noise})`;
+            ctx.fillRect(Math.random()*size, Math.random()*size, 1, 1);
         }
-        if(border) { ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1; ctx.strokeRect(0,0,size,size); }
         const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter;
-        texCache[cacheKey] = t; return t;
-    }
-
-    function getItemCSS(type) {
-        if(!type) return '#8b8b8b';
-        if(type === 'stick') return `linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`;
-        if(type === 'crafting_table') return `repeating-conic-gradient(${colors.crafting_table} 0% 25%, #5a402a 0% 50%) 50% / 10px 10px`;
-        return colors[type];
+        texCache[color] = t; return t;
     }
 
     let inventory = Array(36).fill(null).map(() => ({type: null, count: 0}));
@@ -102,7 +96,7 @@
     let miningTarget = null, miningProgress = 0;
     let targetRotation = new THREE.Euler(0, 0, 0, "YXZ");
 
-    // --- 2. ENGINE ---
+    // --- 2. ENGINE & CHUNKS ---
     const sc = new THREE.Scene();
     sc.background = new THREE.Color(0x87CEEB);
     sc.fog = new THREE.FogExp2(0x87CEEB, 0.05);
@@ -114,51 +108,60 @@
     const amb = new THREE.AmbientLight(0xffffff, 0.8); sc.add(amb);
     const sun = new THREE.DirectionalLight(0xffffff, 0.4); sun.position.set(10, 50, 10); sc.add(sun);
 
-    const bMap = new Map();
-    const chunks = new Map();
-    const CHUNK_SIZE = 8;
-    const RENDER_DIST = 3;
-    let isGenerating = false;
+    const boxG = new THREE.BoxGeometry(1, 1, 1);
+    let bMap = new Map();
+    let chunks = new Map();
+    const CHUNK_SIZE = 8; // Size of chunk for performance
+    const RENDER_DIST = 4; // Radial chunks
+
+    // --- FIX: Block Mining & Map Management ---
+    function removeB(mesh) {
+        if(!mesh) return;
+        const key = `${Math.round(mesh.position.x)},${Math.round(mesh.position.y)},${Math.round(mesh.position.z)}`;
+        bMap.delete(key);
+        sc.remove(mesh);
+        // Clean up from blks array if needed (using bMap primarily now)
+    }
 
     function addB(x,y,z,type){
       let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`;
       if(bMap.has(key)) return;
+
       let mat;
       if(type === 'wood'){
-        const side = new THREE.MeshLambertMaterial({map: genTex(colors.wood, 0.2)});
-        const top = new THREE.MeshLambertMaterial({map: genTex(colors.insideWood, 0.1)});
+        const side = new THREE.MeshLambertMaterial({map: genTex(colors.wood)});
+        const top = new THREE.MeshLambertMaterial({map: genTex(colors.insideWood)});
         mat = [side, side, top, top, side, side];
-      } else if (type === 'crafting_table') {
-        const top = new THREE.MeshLambertMaterial({map: genTex('#7a5a3a', 0.2, 16, true)});
-        const side = new THREE.MeshLambertMaterial({map: genTex(colors.crafting_table, 0.3)});
-        mat = [side, side, top, side, side, side];
-      } else mat = new THREE.MeshLambertMaterial({map: genTex(colors[type], type==='bedrock'?0.4:0.15)});
+      } else mat = new THREE.MeshLambertMaterial({map: genTex(colors[type])});
       
-      const b = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), mat);
+      const b = new THREE.Mesh(boxG, mat);
       b.position.set(Math.round(x), Math.round(y), Math.round(z)); b.name = type;
-      sc.add(b); bMap.set(key, b); return b;
+      sc.add(b);
+      bMap.set(key, b);
+      return b;
     }
 
-    function removeB(mesh) {
-        if(!mesh) return;
-        bMap.delete(`${Math.round(mesh.position.x)},${Math.round(mesh.position.y)},${Math.round(mesh.position.z)}`);
-        sc.remove(mesh);
-    }
-
-    // --- LAG FIX: Incremental Generator ---
-    function updateWorld() {
-        if (isGenerating) return;
+    function updateChunks() {
         let pX = Math.floor(cam.position.x / CHUNK_SIZE);
         let pZ = Math.floor(cam.position.z / CHUNK_SIZE);
 
-        for (let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) {
-            for (let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) {
-                let key = `${x},${z}`;
-                if (!chunks.has(key)) {
-                    isGenerating = true;
-                    setTimeout(() => { generateChunk(x, z); isGenerating = false; }, 0); // Non-blocking load
-                    chunks.set(key, true);
-                    return; // Load one per frame to prevent spike
+        for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) {
+            for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) {
+                let cKey = `${x},${z}`;
+                if(!chunks.has(cKey)) {
+                    generateChunk(x, z);
+                    chunks.set(cKey, true);
+                }
+            }
+        }
+        // Cleanup distant blocks (Basic)
+        if(bMap.size > 4000) {
+            for(let [key, block] of bMap) {
+                if(block.position.distanceTo(cam.position) > (RENDER_DIST + 2) * CHUNK_SIZE) {
+                    sc.remove(block);
+                    bMap.delete(key);
+                    let ck = `${Math.floor(block.position.x/CHUNK_SIZE)},${Math.floor(block.position.z/CHUNK_SIZE)}`;
+                    chunks.delete(ck);
                 }
             }
         }
@@ -169,28 +172,30 @@
             for(let z = 0; z < CHUNK_SIZE; z++) {
                 let absX = cx * CHUNK_SIZE + x;
                 let absZ = cz * CHUNK_SIZE + z;
-                let surfH = Math.floor(Math.sin(absX/10)*2 + Math.cos(absZ/10)*2);
-                addB(absX, surfH, absZ, 'grass');
-                addB(absX, surfH-1, absZ, 'dirt');
-                for(let sy = surfH-2; sy > -40; sy--) addB(absX, sy, absZ, 'stone');
-                addB(absX, -40, absZ, 'bedrock');
-                if(Math.random() < 0.006) spawnTree(absX, surfH+1, absZ);
+                let h = Math.floor(Math.sin(absX/10)*2 + Math.cos(absZ/10)*2);
+                
+                addB(absX, h, absZ, 'grass');
+                addB(absX, h-1, absZ, 'dirt');
+                addB(absX, h-2, absZ, 'stone');
+                
+                if(Math.random() < 0.01) {
+                    for(let t=1; t<4; t++) addB(absX, h+t, absZ, 'wood');
+                }
             }
         }
     }
 
-    function spawnTree(x, y, z) {
-        for(let h=0; h<4; h++) addB(x, y+h, z, 'wood');
-        for(let lx=-2; lx<=2; lx++) for(let lz=-2; lz<=2; lz++) {
-            if(Math.abs(lx) === 2 && Math.abs(lz) === 2) continue;
-            addB(x+lx, y+3, z+lz, 'leaves');
-            addB(x+lx, y+4, z+lz, 'leaves');
-        }
-        for(let lx=-1; lx<=1; lx++) for(let lz=-1; lz<=1; lz++) addB(x+lx, y+5, z+lz, 'leaves');
-        addB(x, y+6, z, 'leaves');
-    }
+    const crackMats = Array(10).fill(null).map((_, i) => {
+        const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
+        const ctx = canvas.getContext('2d'); ctx.strokeStyle = "rgba(0,0,0,0.8)"; ctx.lineWidth = 1;
+        if(i > 0) { for(let j=0; j<i*2; j++) { ctx.moveTo(Math.random()*16, Math.random()*16); ctx.lineTo(Math.random()*16, Math.random()*16); ctx.stroke(); } }
+        const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter;
+        return new THREE.MeshBasicMaterial({ map: t, transparent: true, polygonOffset: true, polygonOffsetFactor: -1 });
+    });
+    const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.01, 1.01, 1.01), crackMats[0]);
+    sc.add(crackMesh); crackMesh.visible = false;
 
-    // --- 3. UI ---
+    // --- 3. UI & INVENTORY ---
     function updateUI(){
       const hDisp = document.getElementById('hotbar-display'), hInv = document.getElementById('h-inv-grid'), mInv = document.getElementById('m-inv-grid'), cGrid = document.getElementById('p-craft-grid');
       hDisp.innerHTML = ''; hInv.innerHTML = ''; mInv.innerHTML = '';
@@ -201,14 +206,14 @@
         if(i < 9) {
           hInv.appendChild(slot);
           let hs = document.createElement('div'); hs.className = 'slot' + (i === activeSlot ? ' active' : '');
-          if(item.type) { hs.style.background = getItemCSS(item.type); hs.innerHTML = `<span class="item-count">${item.count}</span>`; }
+          if(item.type) { hs.style.background = colors[item.type]; hs.innerHTML = `<span class="item-count">${item.count}</span>`; }
           hDisp.appendChild(hs);
         } else mInv.appendChild(slot);
       });
       Array.from(cGrid.children).forEach((slot, i) => {
         if(crafting[i].count <= 0) { crafting[i].type = null; crafting[i].count = 0; }
         let item = crafting[i];
-        slot.style.background = getItemCSS(item.type);
+        slot.style.background = item.type ? colors[item.type] : '#8b8b8b';
         slot.innerHTML = item.count > 0 ? `<span class="item-count">${item.count}</span>` : '';
         slot.onmousedown = (e) => handleSlotAction(crafting, i, e);
       });
@@ -217,9 +222,9 @@
 
     function createSlot(item, onDown) {
       let d = document.createElement('div'); d.className = 'inv-slot';
-      d.style.background = getItemCSS(item.type);
-      if(item.type) d.innerHTML = `<span class="item-count">${item.count}</span>`;
-      d.onmousedown = onDown; return d;
+      if(item.type) { d.style.background = colors[item.type]; d.innerHTML = `<span class="item-count">${item.count}</span>`; }
+      d.onmousedown = onDown;
+      return d;
     }
 
     function handleSlotAction(arr, idx, e) {
@@ -228,7 +233,7 @@
           let t = {...arr[idx]}; arr[idx] = {...dragItem.item}; dragItem.source[dragItem.idx] = t; dragItem = null; document.getElementById('drag-icon').style.display = 'none';
         } else if (arr[idx].type) {
           dragItem = {item: {...arr[idx]}, source: arr, idx: idx}; arr[idx] = {type: null, count: 0};
-          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.background = getItemCSS(dragItem.item.type);
+          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.background = colors[dragItem.item.type];
         }
       } else if (e.button === 2 && dragItem) {
         if (!arr[idx].type || arr[idx].type === dragItem.item.type) {
@@ -242,42 +247,31 @@
     function checkRecipes() {
       const out = document.getElementById('craft-output'); out.style.background = '#8b8b8b'; out.innerHTML = '';
       let g = crafting.map(c => c.type);
-      let res = null;
-      if (crafting.filter(c => c.type).length === 1 && g.includes('wood')) res = {type: 'planks', count: 4};
-      if (g[0]==='planks' && g[2]==='planks' && !g[1] && !g[3]) res = {type: 'stick', count: 4};
-      if (g.every(t => t === 'planks')) res = {type: 'crafting_table', count: 1};
-
-      if(res) {
-        out.style.background = getItemCSS(res.type); out.innerHTML = `<span class="item-count">${res.count}</span>`;
-        out.onclick = () => { 
-            crafting.forEach(c => { if(c.count > 0) c.count--; }); 
-            let s = inventory.find(s => !s.type || (s.type === res.type && s.count < 60)); 
-            s.type = res.type; s.count += res.count; updateUI(); 
-        };
+      if (crafting.filter(c => c.type).length === 1 && g.includes('wood')) {
+        out.style.background = colors.planks; out.innerHTML = '<span class="item-count">4</span>';
+        out.onclick = () => { crafting.forEach(c => { if(c.count > 0) c.count--; }); let s = inventory.find(s => !s.type || (s.type==='planks'&&s.count<61)); s.type = 'planks'; s.count += 4; updateUI(); };
       }
     }
 
-    // --- 4. MECHANICS ---
-    function dropSingle() {
-        let item = inventory[activeSlot];
-        if (!item.type || item.count <= 0) return;
-        let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({color:colors[item.type]||'#fff'})); 
-        drop.position.copy(cam.position).addScaledVector(cam.getWorldDirection(new THREE.Vector3()), 1);
-        sc.add(drop); drops.push({mesh: drop, type: item.type, velY: 0.1});
-        item.count--; updateUI();
-    }
-
-    function startGame() { cam.position.set(0, 10, 0); setMenu('PLAYING'); }
+    function startGame() { cam.position.set(0, 10, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); }
+    
     function setMenu(s) {
       gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
       document.getElementById('hud').style.display = (s === "PLAYING" || s === "INV") ? 'flex' : 'none';
       document.getElementById('crosshair').style.display = s === "PLAYING" ? 'block' : 'none';
       if(s === "PLAYING") document.body.requestPointerLock();
-      else { document.exitPointerLock(); if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex'; else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex'; else if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex'; }
+      else {
+        document.exitPointerLock();
+        if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex';
+        else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex';
+        else if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex';
+      }
       updateUI();
     }
 
-    document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU'); });
+    document.addEventListener('pointerlockchange', () => {
+      if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU');
+    });
 
     let keys = {}, vel = new THREE.Vector3();
     const isSolid = (x, y, z) => bMap.has(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`);
@@ -288,14 +282,15 @@
       cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.22;
 
       if(gameState !== "MAIN_MENU" && gameState !== "PAUSE_MENU") {
-        updateWorld();
+        updateChunks();
         let speed = 0.12, dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; dir.normalize();
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
+        
         if(gameState === "PLAYING") {
-          if(keys['KeyW']) if(!isSolid(cam.position.x+dir.x*0.4, cam.position.y-0.5, cam.position.z+dir.z*0.4)) cam.position.addScaledVector(dir, speed);
-          if(keys['KeyS']) if(!isSolid(cam.position.x-dir.x*0.4, cam.position.y-0.5, cam.position.z-dir.z*0.4)) cam.position.addScaledVector(dir, -speed);
-          if(keys['KeyA']) if(!isSolid(cam.position.x+side.x*0.4, cam.position.y-0.5, cam.position.z+side.z*0.4)) cam.position.addScaledVector(side, speed);
-          if(keys['KeyD']) if(!isSolid(cam.position.x-side.x*0.4, cam.position.y-0.5, cam.position.z-side.z*0.4)) cam.position.addScaledVector(side, -speed);
+          if(keys['KeyW']) if(!isSolid(cam.position.x+dir.x*0.4, cam.position.y-1, cam.position.z+dir.z*0.4)) cam.position.addScaledVector(dir, speed);
+          if(keys['KeyS']) if(!isSolid(cam.position.x-dir.x*0.4, cam.position.y-1, cam.position.z-dir.z*0.4)) cam.position.addScaledVector(dir, -speed);
+          if(keys['KeyA']) if(!isSolid(cam.position.x+side.x*0.4, cam.position.y-1, cam.position.z+side.z*0.4)) cam.position.addScaledVector(side, speed);
+          if(keys['KeyD']) if(!isSolid(cam.position.x-side.x*0.4, cam.position.y-1, cam.position.z-side.z*0.4)) cam.position.addScaledVector(side, -speed);
         }
 
         vel.y -= 0.015; cam.position.y += vel.y;
@@ -305,22 +300,23 @@
           d.velY -= 0.01; d.mesh.position.y += d.velY;
           if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; }
           d.mesh.rotation.y += 0.05;
-          if(cam.position.distanceTo(d.mesh.position) < 2) {
-            d.mesh.position.lerp(cam.position, 0.2);
+          if(cam.position.distanceTo(d.mesh.position) < 2.5) {
+            d.mesh.position.lerp(cam.position, 0.25);
             if(cam.position.distanceTo(d.mesh.position) < 0.7) { sc.remove(d.mesh); drops.splice(i, 1); let slot = inventory.find(s => (!s.type || s.type === d.type) && s.count < 64); if(slot) { slot.type = d.type; slot.count++; updateUI(); } }
           }
         });
 
         if(miningTarget && gameState === "PLAYING") {
-            miningProgress += 0.03; let hardness = (miningTarget.name==='stone')?2.5:(miningTarget.name==='wood')?1.2:0.4;
-            if(miningProgress >= hardness) {
-                let name = miningTarget.name; let dropPos = miningTarget.position.clone();
-                removeB(miningTarget); miningTarget = null;
-                if(name !== 'leaves') { // Leaves don't drop blocks
-                   let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({color:colors[name]||'#fff'})); 
-                   drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: name, velY: 0.1});
-                }
-            }
+            miningProgress += 0.025; let hardness = (miningTarget.name==='stone')?2.5:(miningTarget.name==='wood')?1.2:0.4;
+            let stage = Math.floor((miningProgress / hardness) * 10);
+            if(stage >= 10) {
+                let name = miningTarget.name; 
+                let dropPos = miningTarget.position.clone();
+                removeB(miningTarget);
+                let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({map: genTex(colors[name])})); 
+                drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: name, velY: 0.1});
+                miningTarget = null; crackMesh.visible = false;
+            } else { crackMesh.material = crackMats[Math.min(stage, 9)]; }
         }
       }
       rnd.render(sc, cam);
@@ -329,7 +325,6 @@
     document.addEventListener('keydown', e => {
       keys[e.code] = true;
       if(e.code === 'KeyE') { if(gameState === "INV") setMenu('PLAYING'); else if(gameState === "PLAYING") setMenu('INV'); }
-      if(e.code === 'KeyQ' && gameState === "PLAYING") dropSingle();
       if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key) - 1; updateUI(); }
     });
     document.addEventListener('keyup', e => { keys[e.code] = false; });
@@ -337,6 +332,7 @@
       if(gameState === "PLAYING") { targetRotation.y -= e.movementX*0.002; targetRotation.x -= e.movementY*0.002; targetRotation.x = Math.max(-1.5, Math.min(1.5, targetRotation.x)); }
       if(dragItem) { document.getElementById('drag-icon').style.left = e.clientX-16+'px'; document.getElementById('drag-icon').style.top = e.clientY-16+'px'; }
     });
+    cam.rotation.order = "YXZ";
 
     document.addEventListener('mousedown', e => {
       if(gameState !== "PLAYING") return;
@@ -344,19 +340,20 @@
       let hits = ray.intersectObjects(Array.from(bMap.values()));
       if(hits.length > 0 && hits[0].distance < 5) {
         let b = hits[0].object;
-        if(e.button === 0 && b.name !== 'bedrock') { miningTarget = b; miningProgress = 0; }
+        if(e.button === 0 && b.name !== 'bedrock') { miningTarget = b; miningProgress = 0; crackMesh.position.copy(b.position); crackMesh.visible = true; }
         else if(e.button === 2) {
           let item = inventory[activeSlot];
           if(item.type && item.count > 0 && item.type !== 'stick') {
             let p = b.position.clone().add(hits[0].face.normal);
-            // No X-ray build: Don't allow placing block where player is
-            if(Math.abs(p.x - cam.position.x) < 0.6 && Math.abs(p.z - cam.position.z) < 0.6 && Math.abs(p.y - cam.position.y) < 1.6) return;
-            if(!bMap.has(`${Math.round(p.x)},${Math.round(p.y)},${Math.round(p.z)}`)) { addB(p.x, p.y, p.z, item.type); item.count--; updateUI(); }
+            let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
+            if(!bMap.has(`${pX},${pY},${pZ}`)) { addB(pX, pY, pZ, item.type); item.count--; updateUI(); }
           }
         }
       }
     });
-    document.addEventListener('mouseup', () => { miningTarget = null; });
+    document.addEventListener('mouseup', () => { miningTarget = null; crackMesh.visible = false; });
+
+    document.getElementById('splash-text').innerText = splashes[Math.floor(Math.random() * splashes.length)];
     updateUI(); animate();
   </script>
 </body>
