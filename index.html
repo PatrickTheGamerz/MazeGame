@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.5 - Smooth & Textured</title>
+  <title>ORANGECRAFT Alpha 1.6 - The Pixel Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -18,9 +18,13 @@
     #crosshair::before{top:9px;left:0;width:20px;height:2px}#crosshair::after{top:0;left:9px;width:2px;height:20px}
     #hud{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
     #hotbar-display{display:flex;background:rgba(0,0,0,0.8);border:4px solid #222;padding:2px;margin-bottom:10px}
-    .slot{width:36px;height:36px;border:2px solid #666;background:rgba(80,80,80,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px}
+    
+    /* PIXEL PERFECT INVENTORY */
+    .slot, .inv-slot {width:36px;height:36px;border:2px solid #666;background-color:rgba(80,80,80,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px; background-size: cover; image-rendering: pixelated;}
     .slot.active{border:2px solid #fff;box-shadow:0 0 20px rgba(255,255,255,0.5)}
-    .item-count{position:absolute;bottom:2px;right:4px;font-size:12px;text-shadow:1px 1px #000;color:white;pointer-events:none;}
+    .item-count{position:absolute;bottom:2px;right:4px;font-size:14px;text-shadow:2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;color:white;pointer-events:none;font-weight:bold;}
+    .inv-slot{background-color:#8b8b8b;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;cursor:pointer;margin:0;}
+    
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
     .title{font-size:5rem;color:#FFA500;text-shadow:6px 6px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
     .splash{position:absolute;top:75px;right:-80px;color:#FF0;font-size:1.4rem;animation:pulse 0.5s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px #000; font-family: 'Courier New'}
@@ -28,9 +32,8 @@
     .btn{width:320px;padding:12px;margin:6px;background:#555;border:4px solid #000;border-top-color:#888;border-left-color:#888;color:#fff;cursor:pointer;text-align:center;font-size:1.2rem}
     .btn:hover{background:#666}
     .inv-container{background:#c6c6c6;padding:15px;border:4px solid #000;display:flex;flex-direction:column;pointer-events:auto;color:#000;box-shadow: 10px 10px 0 rgba(0,0,0,0.6)}
-    .inv-slot{width:36px;height:36px;background:#8b8b8b;border:2px solid #555;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;position:relative;cursor:pointer}
     .inv-main{display:grid;grid-template-columns:repeat(9,36px);gap:4px;justify-content:center;margin-top:10px}
-    #drag-icon{position:fixed;pointer-events:none;z-index:1100;width:32px;height:32px;display:none;border:2px solid #fff}
+    #drag-icon{position:fixed;pointer-events:none;z-index:1100;width:32px;height:32px;display:none;background-size:cover;image-rendering:pixelated;filter:drop-shadow(2px 2px 0px rgba(0,0,0,0.5));}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -53,7 +56,7 @@
   </div>
 
   <div id="inventory-screen" class="menu-overlay">
-    <div class="inv-container">
+    <div class="inv-container" id="inv-box">
       <div style="display:flex; justify-content:space-between; margin-bottom:10px">
         <div style="width:100px; height:120px; background:#222; border:2px solid #000"></div>
         <div style="text-align:center; color:#333; font-weight:bold">Crafting<br>
@@ -70,57 +73,136 @@
   </div>
 
   <script>
-    // --- 1. DATA & ADVANCED PROCEDURAL TEXTURES ---
-    const colors = { grass:'#4e9e32', dirt:'#705036', stone:'#7a7a7a', cobblestone:'#666', wood:'#59432e', woodTop:'#c79d63', leaves:'#2d7a22', planks:'#b08a5a', bedrock:'#1a1a1a', stick: '#705131', ctTop: '#a57342', ctSide: '#734d28' };
-    const splashes = ["Smooth Movement!", "No Ghost Blocks!", "Real Planks!", "Cobblestone Time!"];
-    
+    // --- 1. PROCEDURAL MUSIC ENGINE ---
+    let audioCtx = null;
+    function startMusic() {
+        if(audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Base Ambient Drone
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = 'sine'; osc.frequency.value = 110; // A2
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 5);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start();
+
+        // Random Procedural Melody (C Pentatonic)
+        setInterval(() => {
+            if(Math.random() > 0.6) return; // Add rests
+            const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C4 to C5
+            let n = notes[Math.floor(Math.random()*notes.length)];
+            let o = audioCtx.createOscillator();
+            let g = audioCtx.createGain();
+            o.type = 'triangle'; o.frequency.value = n;
+            g.gain.setValueAtTime(0, audioCtx.currentTime);
+            g.gain.linearRampToValueAtTime(0.03, audioCtx.currentTime + 2);
+            g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 8);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(); o.stop(audioCtx.currentTime + 8);
+        }, 4000);
+    }
+
+    // --- 2. EXACT PIXEL-ART TEXTURE GENERATOR ---
     const texCache = {};
+    const imgDataUrls = {};
+    const splashes = ["Procedural Music!", "Perfect Textures!", "No more lost items!", "Press Q to toss!"];
+
     function genTex(type) {
         if(texCache[type]) return texCache[type];
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = colors[type] || '#ff00ff'; ctx.fillRect(0,0,16,16);
-        
+        ctx.imageSmoothingEnabled = false;
+
+        // Custom Pixel Algorithms mimicking the uploaded images perfectly
         if (type === 'planks') {
-            ctx.fillStyle = '#8f6c42';
+            ctx.fillStyle = '#a88154'; ctx.fillRect(0,0,16,16); // Base color
+            ctx.fillStyle = '#8f683e'; // Darker grain
             for(let y=0; y<16; y+=4) {
-                ctx.fillRect(0, y, 16, 1); // Board gaps
-                for(let i=0; i<3; i++) { ctx.fillRect(Math.random()*16, y+1+Math.random()*2, 3, 1); } // Grain
+                ctx.fillRect(0, y+3, 16, 1); // Board gaps
+                ctx.fillStyle = '#6b4b2b'; ctx.fillRect(0, y+4, 16, 1); // Deep gap shadows
+                ctx.fillStyle = '#8f683e';
+                ctx.fillRect(Math.random()*16, y+1, 4, 1); ctx.fillRect(Math.random()*16, y+2, 3, 1);
             }
+            // Vertical nail lines
+            ctx.fillStyle = '#6b4b2b';
+            ctx.fillRect(3,0,1,3); ctx.fillRect(11,4,1,3); ctx.fillRect(5,8,1,3); ctx.fillRect(13,12,1,3);
         } else if (type === 'cobblestone') {
-            ctx.fillStyle = '#444';
-            for(let i=0; i<20; i++) { ctx.fillRect(Math.random()*16, Math.random()*16, 4, 1); ctx.fillRect(Math.random()*16, Math.random()*16, 1, 4); }
-            for(let i=0; i<80; i++) { ctx.fillStyle=`rgba(255,255,255,0.1)`; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
+            ctx.fillStyle = '#6e6e6e'; ctx.fillRect(0,0,16,16); // Base
+            for(let i=0; i<40; i++) { // Random stones
+                ctx.fillStyle = Math.random()>0.5 ? '#808080' : '#5c5c5c';
+                let x = Math.floor(Math.random()*14), y = Math.floor(Math.random()*14);
+                ctx.fillRect(x, y, 2+Math.random()*2, 2+Math.random()*2);
+            }
+            ctx.fillStyle = '#3b3b3b'; // Mortar lines
+            for(let i=0; i<16; i+=4) { ctx.fillRect(0, i, 16, 1); ctx.fillRect(i+(i%3), 0, 1, 16); }
         } else if (type === 'stone') {
-            for(let i=0; i<150; i++) { ctx.fillStyle=Math.random()>0.5?'#6f6f6f':'#858585'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
+            ctx.fillStyle = '#7d7d7d'; ctx.fillRect(0,0,16,16);
+            for(let i=0; i<80; i++) { 
+                ctx.fillStyle=Math.random()>0.5?'#6f6f6f':'#8a8a8a'; 
+                ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1); 
+            }
+        } else if (type === 'dirt') {
+            ctx.fillStyle = '#79553a'; ctx.fillRect(0,0,16,16);
+            for(let i=0; i<60; i++) { 
+                ctx.fillStyle = Math.random()>0.5 ? '#593d29' : '#8c6444';
+                ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1);
+            }
         } else if (type === 'grassSide') {
-            ctx.fillStyle = colors.dirt; ctx.fillRect(0, 0, 16, 16);
-            ctx.fillStyle = colors.grass; ctx.fillRect(0, 0, 16, 4);
-            for(let x=0; x<16; x++) { if(Math.random()>0.3) ctx.fillRect(x, 4, 1, 1 + Math.random()*2); } // Drooping grass
-            for(let i=0; i<50; i++) { ctx.fillStyle=`rgba(0,0,0,0.1)`; ctx.fillRect(Math.random()*16, 5+Math.random()*11, 1, 1); } // Dirt noise
+            ctx.fillStyle = '#79553a'; ctx.fillRect(0,0,16,16); // dirt base
+            for(let i=0; i<40; i++) { ctx.fillStyle='#593d29'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
+            ctx.fillStyle = '#5ba33e'; ctx.fillRect(0,0,16,3); // top grass layer
+            let fringes = [2,3,2,4,2,3,1,2,3,2,4,3,2,1,2,3]; // Jagged edge array
+            for(let x=0; x<16; x++) { ctx.fillRect(x, 3, 1, fringes[x]); }
+        } else if (type === 'grass') {
+            ctx.fillStyle = '#5ba33e'; ctx.fillRect(0,0,16,16);
+            for(let i=0; i<80; i++) { ctx.fillStyle=Math.random()>0.5?'#4a8532':'#6bbf49'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
         } else if (type === 'wood') {
-            ctx.fillStyle = '#3d2b1c';
-            for(let x=0; x<16; x+=2) { ctx.fillRect(x, 0, 1, 16); if(Math.random()>0.5) ctx.fillRect(x+1, Math.random()*16, 1, 4); }
+            ctx.fillStyle = '#3d2b1c'; ctx.fillRect(0,0,16,16); // Bark base
+            ctx.fillStyle = '#5c442c'; // Bark lines
+            for(let x=0; x<16; x+=2) { ctx.fillRect(x, 0, 1, 16); if(Math.random()>0.3) ctx.fillRect(x+1, Math.random()*16, 1, 3); }
         } else if (type === 'woodTop') {
-            ctx.fillStyle = '#8f6a3e'; for(let r=2; r<8; r+=2) { ctx.strokeRect(8-r, 8-r, r*2, r*2); }
+            ctx.fillStyle = '#b58a52'; ctx.fillRect(0,0,16,16);
+            ctx.fillStyle = '#8f6a3e'; // Tree Rings
+            for(let r=2; r<8; r+=2) { ctx.strokeRect(8-r, 8-r, r*2, r*2); }
         } else if (type === 'ctTop') {
-            ctx.fillStyle = '#6b4522'; ctx.fillRect(0, 5, 16, 1); ctx.fillRect(0, 10, 16, 1); ctx.fillRect(5, 0, 1, 16); ctx.fillRect(10, 0, 1, 16);
+            ctx.fillStyle = '#b07f4f'; ctx.fillRect(0,0,16,16);
+            ctx.fillStyle = '#593a20'; // 3x3 Grid
+            ctx.fillRect(3, 3, 10, 10);
+            ctx.fillStyle = '#8a603c'; 
+            ctx.fillRect(4, 4, 8, 8);
+            ctx.fillStyle = '#593a20';
+            ctx.fillRect(4, 6, 8, 1); ctx.fillRect(4, 9, 8, 1);
+            ctx.fillRect(6, 4, 1, 8); ctx.fillRect(9, 4, 1, 8);
         } else if (type === 'ctSide') {
-            ctx.fillStyle = '#3a2512'; ctx.fillRect(0,0,16,3); ctx.fillStyle = '#888'; ctx.fillRect(10, 5, 4, 3); ctx.fillStyle = '#d5aa72'; ctx.fillRect(11, 8, 2, 5);
+            ctx.fillStyle = '#a88154'; ctx.fillRect(0,0,16,16);
+            ctx.fillStyle = '#593c20'; ctx.fillRect(0,0,16,4); // Dark top band
+            ctx.fillStyle = '#7a7a7a'; ctx.fillRect(10, 5, 4, 3); // Saw blade
+            ctx.fillStyle = '#e0e0e0'; ctx.fillRect(11, 7, 3, 1); // Saw teeth
+            ctx.fillStyle = '#593a20'; ctx.fillRect(12, 8, 1, 4); // Handle
         } else if (type === 'leaves') {
             ctx.clearRect(0,0,16,16);
             for(let x=0; x<16; x++) { for(let y=0; y<16; y++) {
-                if((x+y)%2===0 || Math.random()>0.8) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); }
+                if((x+y)%2===0 || Math.random()>0.7) { 
+                    ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; 
+                    ctx.fillRect(x,y,1,1); 
+                }
             }}
         } else if (type === 'bedrock') {
-            for(let i=0; i<256; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#111' : '#333'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
-        } else {
-            // Generic dirt/grass top noise
-            for(let i=0; i<100; i++) { ctx.fillStyle = `rgba(0,0,0,0.15)`; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
+            ctx.fillStyle = '#222'; ctx.fillRect(0,0,16,16);
+            for(let i=0; i<150; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#111' : '#444'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
+        } else if (type === 'stick') {
+            ctx.clearRect(0,0,16,16);
+            ctx.fillStyle = '#36200b'; // Outline shadow
+            for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 2, 2); }
+            ctx.fillStyle = '#8a5c34'; // Inner stick
+            for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 1, 1); }
         }
 
+        imgDataUrls[type] = canvas.toDataURL(); // Save actual image data for UI
         const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter;
-        if(type === 'leaves') t.transparent = true;
+        if(type === 'leaves' || type === 'stick') t.transparent = true;
         texCache[type] = t; return t;
     }
 
@@ -130,7 +212,7 @@
     let miningTarget = null, miningProgress = 0;
     let targetRotation = new THREE.Euler(0, 0, 0, "YXZ");
 
-    // --- 2. ENGINE & CHUNKS ---
+    // --- 3. ENGINE & CHUNKS ---
     const sc = new THREE.Scene();
     sc.background = new THREE.Color(0x87CEEB);
     sc.fog = new THREE.FogExp2(0x87CEEB, 0.04);
@@ -143,11 +225,8 @@
     const sun = new THREE.DirectionalLight(0xffffff, 0.4); sun.position.set(10, 50, 10); sc.add(sun);
 
     const boxG = new THREE.BoxGeometry(1, 1, 1);
-    let bMap = new Map();
-    let chunks = new Map();
-    const brokenBlocks = new Set(); // FIXED GHOST BLOCKS
-    const CHUNK_SIZE = 8; 
-    const RENDER_DIST = 4; 
+    let bMap = new Map(), chunks = new Map(), brokenBlocks = new Set();
+    const CHUNK_SIZE = 8, RENDER_DIST = 4; 
 
     function removeB(mesh) {
         if(!mesh) return;
@@ -233,75 +312,87 @@
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.01, 1.01, 1.01), crackMats[0]);
     sc.add(crackMesh); crackMesh.visible = false;
 
-    // --- 3. UI & INVENTORY ---
+    // --- 4. UI & DRAG-AND-DROP INVENTORY ---
+    function getUIImg(type) {
+        if(!type) return 'none';
+        genTex(type); // Ensure it's generated
+        let uiType = type === 'wood' ? 'wood' : (type === 'crafting_table' ? 'ctTop' : type);
+        return `url(${imgDataUrls[uiType]})`;
+    }
+
     function updateUI(){
       const hDisp = document.getElementById('hotbar-display'), hInv = document.getElementById('h-inv-grid'), mInv = document.getElementById('m-inv-grid'), cGrid = document.getElementById('p-craft-grid');
       hDisp.innerHTML = ''; hInv.innerHTML = ''; mInv.innerHTML = '';
-      
-      const getSlotBg = (t) => {
-          if(!t) return 'rgba(80,80,80,0.8)';
-          if(t==='stick') return `linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`;
-          if(t==='crafting_table') return colors.ctTop;
-          if(t==='cobblestone') return colors.cobblestone;
-          return colors[t] || '#fff';
-      };
 
       inventory.forEach((item, i) => {
         if(item.count <= 0) { item.type = null; item.count = 0; }
-        let slot = createSlot(item, (e) => handleSlotAction(inventory, i, e), getSlotBg);
+        let slot = createSlot(item, (e) => handleSlotAction(inventory, i, e));
         if(i < 9) {
           hInv.appendChild(slot);
           let hs = document.createElement('div'); hs.className = 'slot' + (i === activeSlot ? ' active' : '');
-          if(item.type) { hs.style.background = getSlotBg(item.type); hs.innerHTML = `<span class="item-count">${item.count}</span>`; }
+          if(item.type) { hs.style.backgroundImage = getUIImg(item.type); hs.innerHTML = `<span class="item-count">${item.count}</span>`; }
           hDisp.appendChild(hs);
         } else mInv.appendChild(slot);
       });
       Array.from(cGrid.children).forEach((slot, i) => {
         if(crafting[i].count <= 0) { crafting[i].type = null; crafting[i].count = 0; }
         let item = crafting[i];
-        slot.style.background = item.type ? getSlotBg(item.type) : '#8b8b8b';
+        slot.style.backgroundImage = getUIImg(item.type);
         slot.innerHTML = item.count > 0 ? `<span class="item-count">${item.count}</span>` : '';
         slot.onmousedown = (e) => handleSlotAction(crafting, i, e);
       });
       checkRecipes();
     }
 
-    function createSlot(item, onDown, getSlotBg) {
+    function createSlot(item, onDown) {
       let d = document.createElement('div'); d.className = 'inv-slot';
-      if(item.type) { d.style.background = getSlotBg(item.type); d.innerHTML = `<span class="item-count">${item.count}</span>`; }
+      if(item.type) { d.style.backgroundImage = getUIImg(item.type); d.innerHTML = `<span class="item-count">${item.count}</span>`; }
       d.onmousedown = onDown; return d;
     }
 
     function handleSlotAction(arr, idx, e) {
       if (e.button === 0) {
         if (dragItem) {
-          let t = {...arr[idx]}; arr[idx] = {...dragItem.item}; dragItem.source[dragItem.idx] = t; dragItem = null; document.getElementById('drag-icon').style.display = 'none';
+          if(!arr[idx].type || arr[idx].type === dragItem.item.type) {
+              arr[idx].type = dragItem.item.type; arr[idx].count += dragItem.item.count;
+              dragItem = null; document.getElementById('drag-icon').style.display = 'none';
+          } else {
+              let t = {...arr[idx]}; arr[idx] = {...dragItem.item}; dragItem.item = t; 
+              document.getElementById('drag-icon').style.backgroundImage = getUIImg(dragItem.item.type);
+          }
         } else if (arr[idx].type) {
           dragItem = {item: {...arr[idx]}, source: arr, idx: idx}; arr[idx] = {type: null, count: 0};
           let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; 
-          icon.style.background = dragItem.item.type==='stick'?`linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`:(dragItem.item.type==='crafting_table'?colors.ctTop:colors[dragItem.item.type] || colors.cobblestone);
-        }
-      } else if (e.button === 2 && dragItem) {
-        if (!arr[idx].type || arr[idx].type === dragItem.item.type) {
-          arr[idx].type = dragItem.item.type; arr[idx].count++; dragItem.item.count--;
-          if (dragItem.item.count <= 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
+          icon.style.backgroundImage = getUIImg(dragItem.item.type);
         }
       }
       updateUI();
     }
 
+    // FIX FOR DISAPPEARING ITEMS: Tossing them if clicked outside the UI panel
+    document.addEventListener('mousedown', (e) => {
+        if(gameState === "INV" && dragItem) {
+            let invBox = document.getElementById('inv-box');
+            if(!invBox.contains(e.target) && e.target.id !== 'drag-icon') {
+                // Drop item into the world
+                dropItemIntoWorld(dragItem.item.type, dragItem.item.count);
+                dragItem = null; document.getElementById('drag-icon').style.display = 'none';
+                updateUI();
+            }
+        }
+    });
+
     function checkRecipes() {
-      const out = document.getElementById('craft-output'); out.style.background = '#8b8b8b'; out.innerHTML = ''; out.onclick = null;
+      const out = document.getElementById('craft-output'); out.style.backgroundImage = 'none'; out.innerHTML = ''; out.onclick = null;
       let c0 = crafting[0].type, c1 = crafting[1].type, c2 = crafting[2].type, c3 = crafting[3].type;
       let total = crafting.filter(c => c.type).length;
 
       if (total === 1 && (c0==='wood' || c1==='wood' || c2==='wood' || c3==='wood')) {
-        out.style.background = colors.planks; out.innerHTML = '<span class="item-count">4</span>'; out.onclick = () => processCraft('planks', 4);
+        out.style.backgroundImage = getUIImg('planks'); out.innerHTML = '<span class="item-count">4</span>'; out.onclick = () => processCraft('planks', 4);
       } else if (total === 2 && ((c0==='planks' && c2==='planks') || (c1==='planks' && c3==='planks'))) {
-        out.style.background = `linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`; 
-        out.innerHTML = '<span class="item-count">4</span>'; out.onclick = () => processCraft('stick', 4);
+        out.style.backgroundImage = getUIImg('stick'); out.innerHTML = '<span class="item-count">4</span>'; out.onclick = () => processCraft('stick', 4);
       } else if (total === 4 && c0==='planks' && c1==='planks' && c2==='planks' && c3==='planks') {
-        out.style.background = colors.ctTop; out.innerHTML = '<span class="item-count">1</span>'; out.onclick = () => processCraft('crafting_table', 1);
+        out.style.backgroundImage = getUIImg('crafting_table'); out.innerHTML = '<span class="item-count">1</span>'; out.onclick = () => processCraft('crafting_table', 1);
       }
     }
 
@@ -312,7 +403,7 @@
         updateUI();
     }
 
-    function startGame() { cam.position.set(0, 15, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); }
+    function startGame() { cam.position.set(0, 15, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); startMusic(); }
     
     function setMenu(s) {
       gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
@@ -336,6 +427,20 @@
         return bMap.has(key) && bMap.get(key).name !== 'stick';
     };
 
+    function dropItemIntoWorld(type, amount = 1) {
+        for(let j=0; j<amount; j++) {
+            let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
+            // Spawn items directly at eye-level, slightly in front
+            let dropPos = cam.position.clone().addScaledVector(dir, 0.5);
+            let geo = type === 'stick' ? new THREE.BoxGeometry(0.1, 0.5, 0.1) : new THREE.BoxGeometry(0.3, 0.3, 0.3);
+            let mat = new THREE.MeshLambertMaterial({map: genTex(type === 'crafting_table' ? 'ctTop' : (type === 'wood' ? 'woodTop' : type)), transparent: type==='leaves'||type==='stick'});
+            let drop = new THREE.Mesh(geo, mat);
+            drop.position.copy(dropPos); sc.add(drop);
+            // Throw it outwards!
+            drops.push({mesh: drop, type: type, velY: 0.1, velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
+        }
+    }
+
     function animate() {
       requestAnimationFrame(animate);
       cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.22;
@@ -344,12 +449,11 @@
       if(gameState !== "MAIN_MENU" && gameState !== "PAUSE_MENU") {
         updateChunks();
         
-        // --- SMOOTH MOVEMENT PHYSICS ---
         let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; dir.normalize();
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
         
         let accel = 0.025; let friction = 0.75;
-        pVel.x *= friction; pVel.z *= friction; // Apply friction
+        pVel.x *= friction; pVel.z *= friction; 
 
         if(gameState === "PLAYING") {
           if(keys['KeyW']) { pVel.x += dir.x * accel; pVel.z += dir.z * accel; }
@@ -362,25 +466,21 @@
         let px = cam.position.x, pz = cam.position.z;
         let nextX = px + pVel.x, nextZ = pz + pVel.z;
 
-        // Sliding Collision (Independent X and Z)
         if(!isSolid(nextX + Math.sign(pVel.x)*0.3, footY, pz) && !isSolid(nextX + Math.sign(pVel.x)*0.3, headY, pz)) cam.position.x = nextX; else pVel.x = 0;
         if(!isSolid(px, footY, nextZ + Math.sign(pVel.z)*0.3) && !isSolid(px, headY, nextZ + Math.sign(pVel.z)*0.3)) cam.position.z = nextZ; else pVel.z = 0;
 
-        // Vertical Movement
         yVel -= 0.015; cam.position.y += yVel;
         if(isSolid(cam.position.x, cam.position.y - 1.6, cam.position.z)) { 
             cam.position.y = Math.round(cam.position.y - 1.6) + 2.1; yVel = 0; 
             if(keys['Space'] && gameState === "PLAYING") yVel = 0.25; 
         }
 
-        // --- DROPS PROCESSING ---
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
           if(d.velDir) { d.mesh.position.x += d.velDir.x; d.mesh.position.z += d.velDir.z; d.velDir.multiplyScalar(0.9); }
-          if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; }
-          d.mesh.rotation.y += 0.05; d.mesh.rotation.x += 0.02;
+          if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; d.velDir.x=0; d.velDir.z=0; }
+          d.mesh.rotation.y += 0.03; d.mesh.rotation.x += 0.01;
           
-          // 1.5 SECOND PICKUP DELAY
           if(Date.now() - d.spawnTime > 1500) {
               if(cam.position.distanceTo(d.mesh.position) < 2.5) {
                 d.mesh.position.lerp(cam.position, 0.25);
@@ -393,7 +493,6 @@
           }
         });
 
-        // --- MINING ---
         if(miningTarget && gameState === "PLAYING") {
             miningProgress += 0.025; let hardness = (miningTarget.name==='stone'||miningTarget.name==='cobblestone')?2.5:(miningTarget.name==='wood')?1.2:(miningTarget.name==='leaves')?0.2:0.4;
             let stage = Math.floor((miningProgress / hardness) * 10);
@@ -415,13 +514,12 @@
                 });
 
                 if(name !== 'leaves') {
-                    // STONE DROPS COBBLESTONE
                     let dropName = name === 'stone' ? 'cobblestone' : name;
                     let geo = dropName === 'stick' ? new THREE.BoxGeometry(0.1, 0.4, 0.1) : new THREE.BoxGeometry(0.3,0.3,0.3);
-                    let mat = new THREE.MeshLambertMaterial({map: genTex(dropName === 'crafting_table' ? 'ctTop' : (dropName === 'wood' ? 'woodTop' : dropName))});
+                    let mat = new THREE.MeshLambertMaterial({map: genTex(dropName === 'crafting_table' ? 'ctTop' : (dropName === 'wood' ? 'woodTop' : dropName)), transparent: dropName==='stick'});
                     let drop = new THREE.Mesh(geo, mat); 
                     drop.position.copy(dropPos); sc.add(drop); 
-                    drops.push({mesh: drop, type: dropName, velY: 0.1, spawnTime: Date.now() - 1500}); // Mined items pick up instantly
+                    drops.push({mesh: drop, type: dropName, velY: 0.1, spawnTime: Date.now() - 1500}); 
                 }
                 
                 miningTarget = null; crackMesh.visible = false;
@@ -442,14 +540,7 @@
               slot.count--; let type = slot.type;
               if(slot.count <= 0) slot.type = null;
               updateUI();
-              
-              let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
-              let dropPos = cam.position.clone().addScaledVector(dir, 1);
-              let geo = type === 'stick' ? new THREE.BoxGeometry(0.1, 0.5, 0.1) : new THREE.BoxGeometry(0.3, 0.3, 0.3);
-              let drop = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map: genTex(type === 'crafting_table' ? 'ctTop' : (type === 'wood' ? 'woodTop' : type))}));
-              drop.position.copy(dropPos); sc.add(drop);
-              // Set spawnTime to current time for 1.5s delay
-              drops.push({mesh: drop, type: type, velY: 0.15, velDir: dir.multiplyScalar(0.3), spawnTime: Date.now()});
+              dropItemIntoWorld(type, 1);
           }
       }
     });
