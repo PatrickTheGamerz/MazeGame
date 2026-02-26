@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.8 - Mechanics & Textures Update</title>
+  <title>ORANGECRAFT Alpha 1.9 - The Mechanics & Melodies Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -37,7 +37,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body oncontextmenu="return false;">
-  <audio id="bgm" src="calm1.mp3" loop></audio>
 
   <div id="vhs-master"><div id="vhs-scanlines"></div><div id="vhs-noise"></div><div id="vhs-fringe"></div><div id="vhs-tracking"></div></div>
   <div id="crosshair"></div>
@@ -74,14 +73,11 @@
   </div>
 
   <script>
-    // --- 1. AUDIO & MUSIC ENGINE ---
+    // --- 1. AUDIO & MUSIC SEQUENCER ---
     let audioCtx = null;
-    let musicInterval = null;
+    let musicSeq = null;
 
-    function initAudio() {
-        if(audioCtx) return;
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
+    function initAudio() { if(!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } }
 
     function playSound(type) {
         if(!audioCtx) return;
@@ -89,50 +85,64 @@
         let g = audioCtx.createGain(); g.connect(audioCtx.destination);
         
         if(type === 'click') {
-            // Classic snappy wood "tick"
             let o = audioCtx.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(400, now); o.frequency.exponentialRampToValueAtTime(100, now + 0.05);
             g.gain.setValueAtTime(0.3, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
             o.connect(g); o.start(now); o.stop(now + 0.05);
-        } else if (type === 'place' || type === 'step') {
-            let o = audioCtx.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(150, now); o.frequency.exponentialRampToValueAtTime(40, now + 0.1);
-            g.gain.setValueAtTime(type==='place'?0.15:0.05, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            o.connect(g); o.start(now); o.stop(now + 0.1);
-        } else if (type === 'break') {
+        } else if (type === 'step') {
+            // Crunchy Grass Step
+            let bufferSize = audioCtx.sampleRate * 0.1; let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); let data = buffer.getChannelData(0);
+            for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            let noise = audioCtx.createBufferSource(); noise.buffer = buffer;
+            let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 600;
+            g.gain.setValueAtTime(0.05, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            noise.connect(filter); filter.connect(g); noise.start(now);
+        } else if (type === 'break' || type === 'place') {
+            // Thick crunch for breaking/placing
             let bufferSize = audioCtx.sampleRate * 0.2; let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); let data = buffer.getChannelData(0);
             for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
             let noise = audioCtx.createBufferSource(); noise.buffer = buffer;
-            let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 800;
+            let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = type==='break'?800:400;
             g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
             noise.connect(filter); filter.connect(g); noise.start(now);
         }
     }
 
-    function startMusic() {
+    // Procedural Sequence for "Minecraft" and "Mice on Venus"
+    function playMusic(track) {
         initAudio();
-        // Try playing real MP3 first
-        let bgm = document.getElementById('bgm');
-        bgm.play().catch(e => {
-            // Fallback: Web Audio Synth for "Minecraft" Track
-            if(musicInterval) return;
-            const scale = [370.0, 440.0, 554.4, 415.3]; // F#4, A4, C#5, G#4
-            let step = 0;
-            musicInterval = setInterval(() => {
-                let now = audioCtx.currentTime;
-                let o = audioCtx.createOscillator(); o.type = 'sine';
-                let g = audioCtx.createGain();
-                let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 800;
-                o.frequency.value = scale[step % scale.length] / 2;
-                g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.08, now + 1); g.gain.linearRampToValueAtTime(0, now + 4);
-                o.connect(filter); filter.connect(g); g.connect(audioCtx.destination);
-                o.start(now); o.stop(now + 4);
-                step++;
-            }, 2500);
-        });
+        if(musicSeq) clearInterval(musicSeq);
+        
+        let seq = []; let idx = 0;
+        if(track === 'menu') {
+            // "Minecraft" Theme (Slow, melancholic)
+            seq = [370.0, 440.0, 554.4, 415.3, null, 440.0, 370.0, null]; // F#4, A4, C#5, G#4
+        } else if (track === 'game') {
+            // "Mice on Venus" (Piano melody)
+            seq = [370.0, 440.0, 554.4, null, 659.25, 587.33, 554.4, null]; // F#4, A4, C#5, E5, D5, C#5
+        }
+
+        musicSeq = setInterval(() => {
+            let note = seq[idx % seq.length]; idx++;
+            if(!note) return;
+            
+            let now = audioCtx.currentTime;
+            let o = audioCtx.createOscillator(); o.type = 'sine';
+            let g = audioCtx.createGain();
+            let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 800;
+            
+            o.frequency.value = note / 2;
+            g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.08, now + 1); g.gain.linearRampToValueAtTime(0, now + 3);
+            o.connect(filter); filter.connect(g); g.connect(audioCtx.destination);
+            o.start(now); o.stop(now + 3);
+        }, 2000);
     }
+
+    // Start Menu Music on interaction
+    document.addEventListener('click', () => { if(gameState === "MAIN_MENU" && !musicSeq) playMusic('menu'); }, {once: true});
 
     // --- 2. EXACT PIXEL-ART TEXTURES & CRACKS ---
     const texCache = {}; const imgDataUrls = {};
-    const splashes = ["Right-Click to Split!", "Items Stack to 64!", "Cracking Animation!", "Classic Sounding!"];
+    const splashes = ["Ctrl+Click to Split!", "2D Item Drops!", "Mice on Venus!", "Ctrl+Q Drops Stack!"];
 
     function genTex(type) {
         if(texCache[type]) return texCache[type];
@@ -204,26 +214,12 @@
         texCache[type] = t; return t;
     }
 
-    // --- ACCURATE BLOCK CRACKS ---
     const crackMats = Array(10).fill(null).map((_, i) => {
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
-        const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
-        ctx.fillStyle = "rgba(0,0,0,0.8)";
-        
-        let cracks = [
-            [8,8],[7,8],[8,7],
-            [9,8],[8,9],[6,7],[7,6],[9,9],
-            [5,6],[10,9],[6,5],[9,10],[10,7],[7,10],
-            [4,5],[11,10],[5,4],[10,11],[11,6],[6,11],[4,7],[11,8],
-            [3,4],[12,11],[4,3],[11,12],[12,5],[5,12],[3,8],[12,9],[2,5],[13,10],
-            [2,3],[13,12],[3,2],[12,13],[13,4],[4,13],[2,9],[13,8],[1,6],[14,11]
-        ];
-        
+        const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.fillStyle = "rgba(0,0,0,0.8)";
+        let cracks = [[8,8],[7,8],[8,7],[9,8],[8,9],[6,7],[7,6],[9,9],[5,6],[10,9],[6,5],[9,10],[10,7],[7,10],[4,5],[11,10],[5,4],[10,11],[11,6],[6,11],[4,7],[11,8],[3,4],[12,11],[4,3],[11,12],[12,5],[5,12],[3,8],[12,9],[2,5],[13,10],[2,3],[13,12],[3,2],[12,13],[13,4],[4,13],[2,9],[13,8],[1,6],[14,11]];
         let maxDraw = Math.floor((i / 9) * cracks.length);
-        if(i > 0) {
-            for(let j=0; j<maxDraw; j++) { ctx.fillRect(cracks[j][0], cracks[j][1], 1, 1); }
-        }
-        
+        if(i > 0) { for(let j=0; j<maxDraw; j++) { ctx.fillRect(cracks[j][0], cracks[j][1], 1, 1); } }
         const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter;
         return new THREE.MeshBasicMaterial({ map: t, transparent: true, polygonOffset: true, polygonOffsetFactor: -1 });
     });
@@ -301,23 +297,17 @@
         return `url(${imgDataUrls[uiType]})`;
     }
 
-    // Helper to stack items correctly up to 64
     function addToInventory(type, amount) {
-        // Try to add to existing stacks first
         for(let i=0; i<36; i++) {
             if(inventory[i].type === type && inventory[i].count < 64) {
-                let space = 64 - inventory[i].count;
-                let add = Math.min(space, amount);
+                let add = Math.min(64 - inventory[i].count, amount);
                 inventory[i].count += add; amount -= add;
                 if(amount <= 0) break;
             }
         }
-        // If there's still some left, put in empty slot
         if(amount > 0) {
             for(let i=0; i<36; i++) {
-                if(!inventory[i].type) {
-                    inventory[i].type = type; inventory[i].count = amount; amount = 0; break;
-                }
+                if(!inventory[i].type) { inventory[i].type = type; inventory[i].count = amount; amount = 0; break; }
             }
         }
         updateUI(); return amount === 0;
@@ -353,36 +343,41 @@
       e.stopPropagation(); playSound('click');
       let slot = arr[idx];
 
-      if (e.button === 0) { // LEFT CLICK (Pick up all / Place all / Swap)
+      // CTRL+CLICK TO SPLIT IN HALF
+      if (e.button === 0 && e.ctrlKey && !dragItem && slot.type) {
+          let half = Math.ceil(slot.count / 2);
+          dragItem = {item: {type: slot.type, count: half}, source: arr, idx: idx};
+          slot.count -= half; if(slot.count <= 0) slot.type = null;
+          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.backgroundImage = getUIImg(dragItem.item.type);
+          updateUI(); return;
+      }
+
+      if (e.button === 0) { 
         if (dragItem) {
-          if (!slot.type) { // Empty slot, drop all
-            arr[idx] = {type: dragItem.item.type, count: dragItem.item.count};
-            dragItem = null; document.getElementById('drag-icon').style.display = 'none';
-          } else if (slot.type === dragItem.item.type) { // Same item, stack
+          if (!slot.type) { 
+            arr[idx] = {type: dragItem.item.type, count: dragItem.item.count}; dragItem = null; document.getElementById('drag-icon').style.display = 'none';
+          } else if (slot.type === dragItem.item.type) {
             let space = 64 - slot.count;
             if (space > 0) {
               let add = Math.min(space, dragItem.item.count);
               slot.count += add; dragItem.item.count -= add;
               if (dragItem.item.count <= 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
             }
-          } else { // Different item, swap
-            let temp = {...slot}; arr[idx] = {...dragItem.item}; dragItem.item = temp; 
-            document.getElementById('drag-icon').style.backgroundImage = getUIImg(dragItem.item.type);
+          } else { 
+            let temp = {...slot}; arr[idx] = {...dragItem.item}; dragItem.item = temp; document.getElementById('drag-icon').style.backgroundImage = getUIImg(dragItem.item.type);
           }
-        } else if (slot.type) { // Pick up all
+        } else if (slot.type) {
           dragItem = {item: {...slot}, source: arr, idx: idx}; arr[idx] = {type: null, count: 0};
           let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.backgroundImage = getUIImg(dragItem.item.type);
         }
-      } else if (e.button === 2) { // RIGHT CLICK (Pick up half / Place one)
+      } else if (e.button === 2) { 
         if (dragItem) {
-          // If placing one
           if (!slot.type || (slot.type === dragItem.item.type && slot.count < 64)) {
             if(!slot.type) arr[idx] = {type: dragItem.item.type, count: 0};
             arr[idx].count++; dragItem.item.count--;
             if(dragItem.item.count <= 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
           }
-        } else if (slot.type) {
-          // If picking up half
+        } else if (slot.type) { // Right click to pick up half
           let half = Math.ceil(slot.count / 2);
           dragItem = {item: {type: slot.type, count: half}, source: arr, idx: idx};
           slot.count -= half; if(slot.count <= 0) slot.type = null;
@@ -392,7 +387,8 @@
       updateUI();
     }
 
-    document.addEventListener('mousedown', (e) => {
+    // FIX DROP OUTSIDE
+    document.addEventListener('mouseup', (e) => {
         if(gameState === "INV" && dragItem) {
             let invBox = document.getElementById('inv-box');
             if(!invBox.contains(e.target) && e.target.id !== 'drag-icon') {
@@ -410,13 +406,9 @@
       else if (total === 4 && c0==='planks' && c1==='planks' && c2==='planks' && c3==='planks') { out.style.backgroundImage = getUIImg('crafting_table'); out.innerHTML = '<span class="item-count">1</span>'; out.onclick = () => processCraft('crafting_table', 1); }
     }
 
-    function processCraft(resultType, amount) { 
-        playSound('click'); 
-        crafting.forEach(c => { if(c.count > 0) c.count--; }); 
-        addToInventory(resultType, amount); // Uses new 64-stack logic
-    }
+    function processCraft(resultType, amount) { playSound('click'); crafting.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount); }
 
-    function startGame() { initAudio(); cam.position.set(0, 15, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); startMusic(); }
+    function startGame() { initAudio(); cam.position.set(0, 15, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); playMusic('game'); }
     
     function setMenu(s) {
       gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
@@ -432,14 +424,22 @@
     let keys = {}, pVel = new THREE.Vector3(), yVel = 0;
     const isSolid = (x, y, z) => { let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; return bMap.has(key) && bMap.get(key).name !== 'stick'; };
 
+    // PERFECTED 2D ITEM DROPS
     function dropItemIntoWorld(type, amount = 1) {
         for(let j=0; j<amount; j++) {
             let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
             let dropPos = cam.position.clone().addScaledVector(dir, 0.5);
-            let geo = type === 'stick' ? new THREE.BoxGeometry(0.1, 0.5, 0.1) : new THREE.BoxGeometry(0.3, 0.3, 0.3);
-            let mat = new THREE.MeshLambertMaterial({map: genTex(type === 'crafting_table' ? 'ctTop' : (type === 'wood' ? 'woodTop' : type)), transparent: type==='leaves'||type==='stick'});
-            let drop = new THREE.Mesh(geo, mat); drop.position.copy(dropPos); sc.add(drop);
-            drops.push({mesh: drop, type: type, velY: 0.1, velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
+            let drop;
+            if (type === 'stick') { // 2D Sprite Billboarding
+                let mat = new THREE.SpriteMaterial({map: genTex('stick')});
+                drop = new THREE.Sprite(mat); drop.scale.set(0.4, 0.4, 0.4);
+            } else {
+                let geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+                let mat = new THREE.MeshLambertMaterial({map: genTex(type === 'crafting_table' ? 'ctTop' : (type === 'wood' ? 'woodTop' : type)), transparent: type==='leaves'});
+                drop = new THREE.Mesh(geo, mat);
+            }
+            drop.position.copy(dropPos); sc.add(drop);
+            drops.push({mesh: drop, type: type, velY: 0.1, is2D: type==='stick', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
         }
     }
 
@@ -481,14 +481,14 @@
           d.velY -= 0.01; d.mesh.position.y += d.velY;
           if(d.velDir) { d.mesh.position.x += d.velDir.x; d.mesh.position.z += d.velDir.z; d.velDir.multiplyScalar(0.9); }
           if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; d.velDir.x=0; d.velDir.z=0; }
-          d.mesh.rotation.y += 0.03; d.mesh.rotation.x += 0.01;
+          
+          if(!d.is2D) { d.mesh.rotation.y += 0.03; d.mesh.rotation.x += 0.01; } // Do not rotate 2D sprites (they auto bill-board)
           
           if(Date.now() - d.spawnTime > 1500) {
               if(cam.position.distanceTo(d.mesh.position) < 2.5) {
                 d.mesh.position.lerp(cam.position, 0.25);
                 if(cam.position.distanceTo(d.mesh.position) < 0.7) { 
-                    playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); 
-                    addToInventory(d.type, 1); // Uses stacking logic
+                    playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); addToInventory(d.type, 1); 
                 }
               }
           }
@@ -510,9 +510,10 @@
 
                 if(name !== 'leaves') {
                     let dropName = name === 'stone' ? 'cobblestone' : name;
-                    let geo = dropName === 'stick' ? new THREE.BoxGeometry(0.1, 0.4, 0.1) : new THREE.BoxGeometry(0.3,0.3,0.3);
-                    let mat = new THREE.MeshLambertMaterial({map: genTex(dropName === 'crafting_table' ? 'ctTop' : (dropName === 'wood' ? 'woodTop' : dropName)), transparent: dropName==='stick'});
-                    let drop = new THREE.Mesh(geo, mat); drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: dropName, velY: 0.1, spawnTime: Date.now() - 1500}); 
+                    let drop;
+                    if(dropName === 'stick') { let mat = new THREE.SpriteMaterial({map: genTex('stick')}); drop = new THREE.Sprite(mat); drop.scale.set(0.4,0.4,0.4); }
+                    else { let geo = new THREE.BoxGeometry(0.3,0.3,0.3); let mat = new THREE.MeshLambertMaterial({map: genTex(dropName === 'crafting_table' ? 'ctTop' : (dropName === 'wood' ? 'woodTop' : dropName))}); drop = new THREE.Mesh(geo, mat); }
+                    drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: dropName, velY: 0.1, is2D: dropName==='stick', spawnTime: Date.now() - 1500}); 
                 }
                 miningTarget = null; crackMesh.visible = false;
             } else { crackMesh.material = crackMats[Math.min(stage, 9)]; }
@@ -525,9 +526,16 @@
       keys[e.code] = true;
       if(e.code === 'KeyE') { playSound('click'); if(gameState === "INV") setMenu('PLAYING'); else if(gameState === "PLAYING") setMenu('INV'); }
       if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key) - 1; updateUI(); }
+      
+      // CTRL+Q = Drop Stack, Q = Drop 1
       if(e.code === 'KeyQ' && gameState === "PLAYING") {
           let slot = inventory[activeSlot];
-          if(slot.type && slot.count > 0) { slot.count--; let type = slot.type; if(slot.count <= 0) slot.type = null; updateUI(); dropItemIntoWorld(type, 1); }
+          if(slot.type && slot.count > 0) { 
+              let dropAmount = e.ctrlKey ? slot.count : 1;
+              slot.count -= dropAmount; 
+              let type = slot.type; if(slot.count <= 0) slot.type = null; 
+              updateUI(); dropItemIntoWorld(type, dropAmount); 
+          }
       }
     });
     document.addEventListener('keyup', e => { keys[e.code] = false; });
