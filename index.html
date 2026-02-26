@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.7 - Sounds & Sights Update</title>
+  <title>ORANGECRAFT Alpha 1.8 - Mechanics & Textures Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -37,6 +37,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body oncontextmenu="return false;">
+  <audio id="bgm" src="calm1.mp3" loop></audio>
+
   <div id="vhs-master"><div id="vhs-scanlines"></div><div id="vhs-noise"></div><div id="vhs-fringe"></div><div id="vhs-tracking"></div></div>
   <div id="crosshair"></div>
   <div id="drag-icon"></div>
@@ -87,52 +89,50 @@
         let g = audioCtx.createGain(); g.connect(audioCtx.destination);
         
         if(type === 'click') {
-            let o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(800, now);
-            g.gain.setValueAtTime(0.1, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            o.connect(g); o.start(now); o.stop(now + 0.1);
+            // Classic snappy wood "tick"
+            let o = audioCtx.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(400, now); o.frequency.exponentialRampToValueAtTime(100, now + 0.05);
+            g.gain.setValueAtTime(0.3, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+            o.connect(g); o.start(now); o.stop(now + 0.05);
         } else if (type === 'place' || type === 'step') {
-            let o = audioCtx.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(type==='place'?150:100, now);
-            o.frequency.exponentialRampToValueAtTime(30, now + 0.1);
-            g.gain.setValueAtTime(type==='place'?0.1:0.03, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            let o = audioCtx.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(150, now); o.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+            g.gain.setValueAtTime(type==='place'?0.15:0.05, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
             o.connect(g); o.start(now); o.stop(now + 0.1);
         } else if (type === 'break') {
-            let bufferSize = audioCtx.sampleRate * 0.15;
-            let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            let data = buffer.getChannelData(0);
+            let bufferSize = audioCtx.sampleRate * 0.2; let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); let data = buffer.getChannelData(0);
             for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
             let noise = audioCtx.createBufferSource(); noise.buffer = buffer;
-            let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 1000;
-            g.gain.setValueAtTime(0.15, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 800;
+            g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
             noise.connect(filter); filter.connect(g); noise.start(now);
         }
     }
 
     function startMusic() {
         initAudio();
-        if(musicInterval) return;
-        // C418-style "Sweden" / "Subwoofer Lullaby" generator
-        const scale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25]; // C Pentatonic
-        musicInterval = setInterval(() => {
-            if(Math.random() > 0.7) return; // Silent pauses
-            let now = audioCtx.currentTime;
-            let o = audioCtx.createOscillator(); o.type = 'sine';
-            let g = audioCtx.createGain();
-            let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 600;
-            
-            o.frequency.value = scale[Math.floor(Math.random()*scale.length)] / 2; // Lower octave
-            
-            g.gain.setValueAtTime(0, now);
-            g.gain.linearRampToValueAtTime(0.05, now + 3); // Slow fade in
-            g.gain.linearRampToValueAtTime(0, now + 10); // Slow fade out
-            
-            o.connect(filter); filter.connect(g); g.connect(audioCtx.destination);
-            o.start(now); o.stop(now + 10);
-        }, 5000);
+        // Try playing real MP3 first
+        let bgm = document.getElementById('bgm');
+        bgm.play().catch(e => {
+            // Fallback: Web Audio Synth for "Minecraft" Track
+            if(musicInterval) return;
+            const scale = [370.0, 440.0, 554.4, 415.3]; // F#4, A4, C#5, G#4
+            let step = 0;
+            musicInterval = setInterval(() => {
+                let now = audioCtx.currentTime;
+                let o = audioCtx.createOscillator(); o.type = 'sine';
+                let g = audioCtx.createGain();
+                let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 800;
+                o.frequency.value = scale[step % scale.length] / 2;
+                g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.08, now + 1); g.gain.linearRampToValueAtTime(0, now + 4);
+                o.connect(filter); filter.connect(g); g.connect(audioCtx.destination);
+                o.start(now); o.stop(now + 4);
+                step++;
+            }, 2500);
+        });
     }
 
-    // --- 2. EXACT PIXEL-ART TEXTURE GENERATOR ---
+    // --- 2. EXACT PIXEL-ART TEXTURES & CRACKS ---
     const texCache = {}; const imgDataUrls = {};
-    const splashes = ["Now with Sound!", "Inventory Fixed!", "C418 Vibes!", "Crispy Cobblestone!"];
+    const splashes = ["Right-Click to Split!", "Items Stack to 64!", "Cracking Animation!", "Classic Sounding!"];
 
     function genTex(type) {
         if(texCache[type]) return texCache[type];
@@ -140,40 +140,35 @@
         const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
 
         if (type === 'planks') {
-            ctx.fillStyle = '#b48f5e'; ctx.fillRect(0,0,16,16); // Lighter base
-            ctx.fillStyle = '#9c774a'; // Darker grain
+            ctx.fillStyle = '#b48f5e'; ctx.fillRect(0,0,16,16); 
+            ctx.fillStyle = '#9c774a'; 
             for(let y=0; y<16; y+=4) {
-                ctx.fillRect(0, y+3, 16, 1); // Board gaps
-                ctx.fillStyle = '#7a5a35'; ctx.fillRect(0, y+4, 16, 1); // Deep gap shadows
-                ctx.fillStyle = '#9c774a';
+                ctx.fillRect(0, y+3, 16, 1); ctx.fillStyle = '#7a5a35'; ctx.fillRect(0, y+4, 16, 1); ctx.fillStyle = '#9c774a';
                 ctx.fillRect(Math.random()*16, y+1, 4, 1); ctx.fillRect(Math.random()*16, y+2, 3, 1);
             }
-            ctx.fillStyle = '#6b4b2b'; // Nails
-            ctx.fillRect(3,0,1,3); ctx.fillRect(11,4,1,3); ctx.fillRect(5,8,1,3); ctx.fillRect(13,12,1,3);
+            ctx.fillStyle = '#6b4b2b'; ctx.fillRect(3,0,1,3); ctx.fillRect(11,4,1,3); ctx.fillRect(5,8,1,3); ctx.fillRect(13,12,1,3);
         } else if (type === 'cobblestone') {
-            ctx.fillStyle = '#555'; ctx.fillRect(0,0,16,16); // Darker base for high contrast
-            for(let i=0; i<60; i++) { // Chaotic alpha stones
-                ctx.fillStyle = Math.random()>0.5 ? '#888' : '#666';
-                let x = Math.floor(Math.random()*14), y = Math.floor(Math.random()*14);
-                ctx.fillRect(x, y, 2+Math.random()*3, 2+Math.random()*3);
+            ctx.fillStyle = '#656565'; ctx.fillRect(0,0,16,16); 
+            for(let i=0; i<40; i++) { 
+                ctx.fillStyle = Math.random()>0.5 ? '#808080' : '#525252';
+                ctx.fillRect(Math.floor(Math.random()*14), Math.floor(Math.random()*14), 2+Math.random()*2, 2+Math.random()*2);
             }
-            ctx.fillStyle = '#333'; // Heavy Mortar lines
+            ctx.fillStyle = '#3a3a3a'; 
             for(let i=0; i<16; i+=4) { ctx.fillRect(0, i, 16, 1); ctx.fillRect(i+(i%3), 0, 1, 16); }
-            for(let i=0; i<30; i++) { ctx.fillStyle='#999'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); } // Highlights
         } else if (type === 'stone') {
             ctx.fillStyle = '#7d7d7d'; ctx.fillRect(0,0,16,16);
-            for(let i=0; i<80; i++) { ctx.fillStyle=Math.random()>0.5?'#6f6f6f':'#8a8a8a'; ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1); }
+            for(let i=0; i<90; i++) { ctx.fillStyle=Math.random()>0.5?'#707070':'#8c8c8c'; ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1); }
         } else if (type === 'dirt') {
-            ctx.fillStyle = '#866043'; ctx.fillRect(0,0,16,16); // Classic dirt
+            ctx.fillStyle = '#866043'; ctx.fillRect(0,0,16,16); 
             for(let i=0; i<60; i++) { ctx.fillStyle = Math.random()>0.5 ? '#68452b' : '#997354'; ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1); }
         } else if (type === 'grassSide') {
-            ctx.fillStyle = '#866043'; ctx.fillRect(0,0,16,16); // dirt base
+            ctx.fillStyle = '#866043'; ctx.fillRect(0,0,16,16); 
             for(let i=0; i<40; i++) { ctx.fillStyle='#68452b'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
-            ctx.fillStyle = '#65b847'; ctx.fillRect(0,0,16,3); // Vibrant top grass layer
+            ctx.fillStyle = '#65b847'; ctx.fillRect(0,0,16,3); 
             let fringes = [2,3,2,4,2,3,1,2,3,2,4,3,2,1,2,3]; 
-            for(let x=0; x<16; x++) { ctx.fillStyle = '#65b847'; ctx.fillRect(x, 3, 1, fringes[x]); ctx.fillStyle = '#4f9136'; ctx.fillRect(x, 3+fringes[x], 1, 1); } // shadows
+            for(let x=0; x<16; x++) { ctx.fillStyle = '#65b847'; ctx.fillRect(x, 3, 1, fringes[x]); ctx.fillStyle = '#4f9136'; ctx.fillRect(x, 3+fringes[x], 1, 1); } 
         } else if (type === 'grass') {
-            ctx.fillStyle = '#65b847'; ctx.fillRect(0,0,16,16); // Vibrant
+            ctx.fillStyle = '#65b847'; ctx.fillRect(0,0,16,16); 
             for(let i=0; i<80; i++) { ctx.fillStyle=Math.random()>0.5?'#549c39':'#78cc58'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
         } else if (type === 'wood') {
             ctx.fillStyle = '#3d2b1c'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#5c442c';
@@ -196,7 +191,7 @@
             }}
         } else if (type === 'bedrock') {
             ctx.fillStyle = '#222'; ctx.fillRect(0,0,16,16);
-            for(let i=0; i<150; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#111' : '#444'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
+            for(let i=0; i<150; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#111' : '#333'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
         } else if (type === 'stick') {
             ctx.clearRect(0,0,16,16); ctx.fillStyle = '#36200b';
             for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 2, 2); }
@@ -208,6 +203,30 @@
         if(type === 'leaves' || type === 'stick') t.transparent = true;
         texCache[type] = t; return t;
     }
+
+    // --- ACCURATE BLOCK CRACKS ---
+    const crackMats = Array(10).fill(null).map((_, i) => {
+        const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
+        const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
+        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        
+        let cracks = [
+            [8,8],[7,8],[8,7],
+            [9,8],[8,9],[6,7],[7,6],[9,9],
+            [5,6],[10,9],[6,5],[9,10],[10,7],[7,10],
+            [4,5],[11,10],[5,4],[10,11],[11,6],[6,11],[4,7],[11,8],
+            [3,4],[12,11],[4,3],[11,12],[12,5],[5,12],[3,8],[12,9],[2,5],[13,10],
+            [2,3],[13,12],[3,2],[12,13],[13,4],[4,13],[2,9],[13,8],[1,6],[14,11]
+        ];
+        
+        let maxDraw = Math.floor((i / 9) * cracks.length);
+        if(i > 0) {
+            for(let j=0; j<maxDraw; j++) { ctx.fillRect(cracks[j][0], cracks[j][1], 1, 1); }
+        }
+        
+        const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter;
+        return new THREE.MeshBasicMaterial({ map: t, transparent: true, polygonOffset: true, polygonOffsetFactor: -1 });
+    });
 
     let inventory = Array(36).fill(null).map(() => ({type: null, count: 0}));
     let crafting = Array(4).fill(null).map(() => ({type: null, count: 0}));
@@ -273,20 +292,35 @@
         }
     }
 
-    const crackMats = Array(10).fill(null).map((_, i) => {
-        const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
-        const ctx = canvas.getContext('2d'); ctx.strokeStyle = "rgba(0,0,0,0.8)"; ctx.lineWidth = 1;
-        if(i > 0) { for(let j=0; j<i*2; j++) { ctx.moveTo(Math.random()*16, Math.random()*16); ctx.lineTo(Math.random()*16, Math.random()*16); ctx.stroke(); } }
-        const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter;
-        return new THREE.MeshBasicMaterial({ map: t, transparent: true, polygonOffset: true, polygonOffsetFactor: -1 });
-    });
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.01, 1.01, 1.01), crackMats[0]); sc.add(crackMesh); crackMesh.visible = false;
 
-    // --- 4. UI & DRAG-AND-DROP INVENTORY ---
+    // --- 4. UI & PERFECTED INVENTORY DRAG/DROP/SPLIT ---
     function getUIImg(type) {
         if(!type) return 'none'; genTex(type);
         let uiType = type === 'wood' ? 'wood' : (type === 'crafting_table' ? 'ctTop' : type);
         return `url(${imgDataUrls[uiType]})`;
+    }
+
+    // Helper to stack items correctly up to 64
+    function addToInventory(type, amount) {
+        // Try to add to existing stacks first
+        for(let i=0; i<36; i++) {
+            if(inventory[i].type === type && inventory[i].count < 64) {
+                let space = 64 - inventory[i].count;
+                let add = Math.min(space, amount);
+                inventory[i].count += add; amount -= add;
+                if(amount <= 0) break;
+            }
+        }
+        // If there's still some left, put in empty slot
+        if(amount > 0) {
+            for(let i=0; i<36; i++) {
+                if(!inventory[i].type) {
+                    inventory[i].type = type; inventory[i].count = amount; amount = 0; break;
+                }
+            }
+        }
+        updateUI(); return amount === 0;
     }
 
     function updateUI(){
@@ -316,17 +350,42 @@
     }
 
     function handleSlotAction(arr, idx, e) {
-      e.stopPropagation(); // FIX: Stops the global mousedown from triggering a drop when clicking slots!
-      playSound('click');
-      if (e.button === 0) {
+      e.stopPropagation(); playSound('click');
+      let slot = arr[idx];
+
+      if (e.button === 0) { // LEFT CLICK (Pick up all / Place all / Swap)
         if (dragItem) {
-          if(!arr[idx].type || arr[idx].type === dragItem.item.type) {
-              arr[idx].type = dragItem.item.type; arr[idx].count += dragItem.item.count; dragItem = null; document.getElementById('drag-icon').style.display = 'none';
-          } else {
-              let t = {...arr[idx]}; arr[idx] = {...dragItem.item}; dragItem.item = t; document.getElementById('drag-icon').style.backgroundImage = getUIImg(dragItem.item.type);
+          if (!slot.type) { // Empty slot, drop all
+            arr[idx] = {type: dragItem.item.type, count: dragItem.item.count};
+            dragItem = null; document.getElementById('drag-icon').style.display = 'none';
+          } else if (slot.type === dragItem.item.type) { // Same item, stack
+            let space = 64 - slot.count;
+            if (space > 0) {
+              let add = Math.min(space, dragItem.item.count);
+              slot.count += add; dragItem.item.count -= add;
+              if (dragItem.item.count <= 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
+            }
+          } else { // Different item, swap
+            let temp = {...slot}; arr[idx] = {...dragItem.item}; dragItem.item = temp; 
+            document.getElementById('drag-icon').style.backgroundImage = getUIImg(dragItem.item.type);
           }
-        } else if (arr[idx].type) {
-          dragItem = {item: {...arr[idx]}, source: arr, idx: idx}; arr[idx] = {type: null, count: 0};
+        } else if (slot.type) { // Pick up all
+          dragItem = {item: {...slot}, source: arr, idx: idx}; arr[idx] = {type: null, count: 0};
+          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.backgroundImage = getUIImg(dragItem.item.type);
+        }
+      } else if (e.button === 2) { // RIGHT CLICK (Pick up half / Place one)
+        if (dragItem) {
+          // If placing one
+          if (!slot.type || (slot.type === dragItem.item.type && slot.count < 64)) {
+            if(!slot.type) arr[idx] = {type: dragItem.item.type, count: 0};
+            arr[idx].count++; dragItem.item.count--;
+            if(dragItem.item.count <= 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
+          }
+        } else if (slot.type) {
+          // If picking up half
+          let half = Math.ceil(slot.count / 2);
+          dragItem = {item: {type: slot.type, count: half}, source: arr, idx: idx};
+          slot.count -= half; if(slot.count <= 0) slot.type = null;
           let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.backgroundImage = getUIImg(dragItem.item.type);
         }
       }
@@ -351,7 +410,11 @@
       else if (total === 4 && c0==='planks' && c1==='planks' && c2==='planks' && c3==='planks') { out.style.backgroundImage = getUIImg('crafting_table'); out.innerHTML = '<span class="item-count">1</span>'; out.onclick = () => processCraft('crafting_table', 1); }
     }
 
-    function processCraft(resultType, amount) { playSound('click'); crafting.forEach(c => { if(c.count > 0) c.count--; }); let slot = inventory.find(s => !s.type || (s.type === resultType && s.count <= 64 - amount)); if(slot) { slot.type = resultType; slot.count += amount; } updateUI(); }
+    function processCraft(resultType, amount) { 
+        playSound('click'); 
+        crafting.forEach(c => { if(c.count > 0) c.count--; }); 
+        addToInventory(resultType, amount); // Uses new 64-stack logic
+    }
 
     function startGame() { initAudio(); cam.position.set(0, 15, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); startMusic(); }
     
@@ -409,7 +472,6 @@
             if(keys['Space'] && gameState === "PLAYING") yVel = 0.25; 
         }
 
-        // Footsteps SFX
         if(onGround && (keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']) && gameState === "PLAYING") {
             stepTimer += Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z);
             if(stepTimer > 0.8) { playSound('step'); stepTimer = 0; }
@@ -426,7 +488,7 @@
                 d.mesh.position.lerp(cam.position, 0.25);
                 if(cam.position.distanceTo(d.mesh.position) < 0.7) { 
                     playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); 
-                    let slot = inventory.find(s => (!s.type || s.type === d.type) && s.count < 64); if(slot) { slot.type = d.type; slot.count++; updateUI(); } 
+                    addToInventory(d.type, 1); // Uses stacking logic
                 }
               }
           }
