@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.5 - Deep & Detailed</title>
+  <title>ORANGECRAFT Alpha 1.12</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; }
@@ -69,11 +69,11 @@
   </div>
 
   <script>
-    // --- 1. CORE DATA & TEXTURES ---
+    // --- 1. DATA & TEXTURES ---
     const colors = { grass:'#4e9e32', dirt:'#5e4431', stone:'#7a7a7a', wood:'#674e37', insideWood:'#d2b48c', leaves:'#2d7a22', planks:'#9a7f59', bedrock:'#111', stick: '#4b3c23', crafting_table: '#8a6441' };
-    const splashes = ["Bedrock at -50!", "Single Drop (Q)!", "Authentic Trees!", "No X-Ray Camera!"];
+    const splashes = ["Deep Bedrock!", "Tiered Trees!", "Single Drops!", "Alpha 1.12"];
+    
     const texCache = {};
-
     function genTex(color, noise = 0.15, size = 16, border = false) {
         let key = `${color}-${noise}-${border}`;
         if(texCache[key]) return texCache[key];
@@ -89,6 +89,7 @@
         texCache[key] = t; return t;
     }
 
+    // CSS Icons for Inventory
     function getItemCSS(type) {
         if(!type) return '#8b8b8b';
         if(type === 'stick') return `linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`;
@@ -102,7 +103,7 @@
     let miningTarget = null, miningProgress = 0;
     let targetRotation = new THREE.Euler(0, 0, 0, "YXZ");
 
-    // --- 2. ENGINE ---
+    // --- 2. ENGINE & CHUNKS ---
     const sc = new THREE.Scene();
     sc.background = new THREE.Color(0x87CEEB);
     sc.fog = new THREE.FogExp2(0x87CEEB, 0.05);
@@ -138,36 +139,48 @@
       sc.add(b); bMap.set(key, b); return b;
     }
 
+    function removeB(mesh) {
+        if(!mesh) return;
+        bMap.delete(`${Math.round(mesh.position.x)},${Math.round(mesh.position.y)},${Math.round(mesh.position.z)}`);
+        sc.remove(mesh);
+    }
+
     function generateChunk(cx, cz) {
         for(let x = 0; x < CHUNK_SIZE; x++) {
             for(let z = 0; z < CHUNK_SIZE; z++) {
                 let absX = cx * CHUNK_SIZE + x;
                 let absZ = cz * CHUNK_SIZE + z;
-                let surfH = Math.floor(Math.sin(absX/10)*2 + Math.cos(absZ/10)*2);
-                addB(absX, surfH, absZ, 'grass');
-                addB(absX, surfH-1, absZ, 'dirt');
-                for(let sy = surfH-2; sy > -50; sy--) addB(absX, sy, absZ, 'stone');
+                let h = Math.floor(Math.sin(absX/10)*2 + Math.cos(absZ/10)*2);
+                
+                addB(absX, h, absZ, 'grass');
+                addB(absX, h-1, absZ, 'dirt');
+                // Depth logic: Stone goes down to -50
+                for(let sy = h-2; sy > -50; sy--) addB(absX, sy, absZ, 'stone');
                 addB(absX, -50, absZ, 'bedrock');
-                if(Math.random() < 0.006) spawnTree(absX, surfH+1, absZ);
+                
+                // Fewer trees, tiered design
+                if(Math.random() < 0.007) spawnTree(absX, h+1, absZ);
             }
         }
     }
 
     function spawnTree(x, y, z) {
-        for(let h=0; h<4; h++) addB(x, y+h, z, 'wood');
-        // Tree shape based on image         for(let lx=-2; lx<=2; lx++) for(let lz=-2; lz<=2; lz++) {
-            if(Math.abs(lx) === 2 && Math.abs(lz) === 2) continue;
+        for(let h=0; h<4; h++) addB(x, y+h, z, 'wood'); // Trunk
+        // Leaf layers based on image
+        for(let lx=-2; lx<=2; lx++) for(let lz=-2; lz<=2; lz++) {
+            if(Math.abs(lx) === 2 && Math.abs(lz) === 2) continue; // Round corners
             addB(x+lx, y+3, z+lz, 'leaves');
             addB(x+lx, y+4, z+lz, 'leaves');
         }
         for(let lx=-1; lx<=1; lx++) for(let lz=-1; lz<=1; lz++) addB(x+lx, y+5, z+lz, 'leaves');
-        addB(x, y+6, z, 'leaves');
+        addB(x, y+6, z, 'leaves'); // Top block
     }
 
-    // --- 3. UI & CRAFTING ---
+    // --- 3. UI & INVENTORY ---
     function updateUI(){
       const hDisp = document.getElementById('hotbar-display'), hInv = document.getElementById('h-inv-grid'), mInv = document.getElementById('m-inv-grid'), cGrid = document.getElementById('p-craft-grid');
       hDisp.innerHTML = ''; hInv.innerHTML = ''; mInv.innerHTML = '';
+      
       inventory.forEach((item, i) => {
         if(item.count <= 0) { item.type = null; item.count = 0; }
         let slot = createSlot(item, (e) => handleSlotAction(inventory, i, e));
@@ -180,8 +193,9 @@
       });
       Array.from(cGrid.children).forEach((slot, i) => {
         if(crafting[i].count <= 0) { crafting[i].type = null; crafting[i].count = 0; }
-        slot.style.background = getItemCSS(crafting[i].type);
-        slot.innerHTML = crafting[i].count > 0 ? `<span class="item-count">${crafting[i].count}</span>` : '';
+        let item = crafting[i];
+        slot.style.background = getItemCSS(item.type);
+        slot.innerHTML = item.count > 0 ? `<span class="item-count">${item.count}</span>` : '';
         slot.onmousedown = (e) => handleSlotAction(crafting, i, e);
       });
       checkRecipes();
@@ -218,20 +232,25 @@
       if (crafting.filter(c => c.type).length === 1 && g.includes('wood')) res = {type: 'planks', count: 4};
       if (g[0]==='planks' && g[2]==='planks' && !g[1] && !g[3]) res = {type: 'stick', count: 4};
       if (g.every(t => t === 'planks')) res = {type: 'crafting_table', count: 1};
+
       if(res) {
         out.style.background = getItemCSS(res.type); out.innerHTML = `<span class="item-count">${res.count}</span>`;
-        out.onclick = () => { crafting.forEach(c => { if(c.count > 0) c.count--; }); let s = inventory.find(s => !s.type || (s.type === res.type && s.count < 60)); s.type = res.type; s.count += res.count; updateUI(); };
+        out.onclick = () => { 
+            crafting.forEach(c => { if(c.count > 0) c.count--; }); 
+            let s = inventory.find(s => !s.type || (s.type === res.type && s.count < 60)); 
+            s.type = res.type; s.count += res.count; updateUI(); 
+        };
       }
     }
 
-    // --- 4. MECHANICS & ANIMATION ---
+    // --- 4. MECHANICS (SINGLE DROP) ---
     function dropSingle() {
         let item = inventory[activeSlot];
         if (!item.type || item.count <= 0) return;
         let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({color:colors[item.type]||'#fff'})); 
         drop.position.copy(cam.position).addScaledVector(cam.getWorldDirection(new THREE.Vector3()), 1);
         sc.add(drop); drops.push({mesh: drop, type: item.type, velY: 0.1});
-        item.count--; updateUI();
+        item.count--; updateUI(); // Drop single block
     }
 
     function startGame() { cam.position.set(0, 10, 0); setMenu('PLAYING'); }
@@ -253,21 +272,26 @@
       requestAnimationFrame(animate);
       cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.22;
       cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.22;
+
       if(gameState !== "MAIN_MENU" && gameState !== "PAUSE_MENU") {
         let pX = Math.floor(cam.position.x / CHUNK_SIZE), pZ = Math.floor(cam.position.z / CHUNK_SIZE);
         for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) {
             if(!chunks.has(`${x},${z}`)) { generateChunk(x, z); chunks.set(`${x},${z}`, true); }
         }
+
         let speed = 0.12, dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; dir.normalize();
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
         if(gameState === "PLAYING") {
-          if(keys['KeyW']) if(!isSolid(cam.position.x+dir.x*0.4, cam.position.y-0.5, cam.position.z+dir.z*0.4)) cam.position.addScaledVector(dir, speed);
-          if(keys['KeyS']) if(!isSolid(cam.position.x-dir.x*0.4, cam.position.y-0.5, cam.position.z-dir.z*0.4)) cam.position.addScaledVector(dir, -speed);
-          if(keys['KeyA']) if(!isSolid(cam.position.x+side.x*0.4, cam.position.y-0.5, cam.position.z+side.z*0.4)) cam.position.addScaledVector(side, speed);
-          if(keys['KeyD']) if(!isSolid(cam.position.x-side.x*0.4, cam.position.y-0.5, cam.position.z-side.z*0.4)) cam.position.addScaledVector(side, -speed);
+          // Camera clipping fix: larger collision radius
+          if(keys['KeyW']) if(!isSolid(cam.position.x+dir.x*0.6, cam.position.y-1, cam.position.z+dir.z*0.6)) cam.position.addScaledVector(dir, speed);
+          if(keys['KeyS']) if(!isSolid(cam.position.x-dir.x*0.6, cam.position.y-1, cam.position.z-dir.z*0.6)) cam.position.addScaledVector(dir, -speed);
+          if(keys['KeyA']) if(!isSolid(cam.position.x+side.x*0.6, cam.position.y-1, cam.position.z+side.z*0.6)) cam.position.addScaledVector(side, speed);
+          if(keys['KeyD']) if(!isSolid(cam.position.x-side.x*0.6, cam.position.y-1, cam.position.z-side.z*0.6)) cam.position.addScaledVector(side, -speed);
         }
+
         vel.y -= 0.015; cam.position.y += vel.y;
         if(isSolid(cam.position.x, cam.position.y - 1.6, cam.position.z)) { cam.position.y = Math.floor(cam.position.y - 1.6) + 2.6; vel.y = 0; if(keys['Space'] && gameState === "PLAYING") vel.y = 0.25; }
+
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
           if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; }
@@ -277,13 +301,13 @@
             if(cam.position.distanceTo(d.mesh.position) < 0.7) { sc.remove(d.mesh); drops.splice(i, 1); let slot = inventory.find(s => (!s.type || s.type === d.type) && s.count < 64); if(slot) { slot.type = d.type; slot.count++; updateUI(); } }
           }
         });
+
         if(miningTarget && gameState === "PLAYING") {
             miningProgress += 0.03; let hardness = (miningTarget.name==='stone')?2.5:(miningTarget.name==='wood')?1.2:0.4;
             if(miningProgress >= hardness) {
                 let name = miningTarget.name; let dropPos = miningTarget.position.clone();
-                bMap.delete(`${Math.round(miningTarget.position.x)},${Math.round(miningTarget.position.y)},${Math.round(miningTarget.position.z)}`);
-                sc.remove(miningTarget); miningTarget = null;
-                if(name !== 'leaves') { 
+                removeB(miningTarget); miningTarget = null;
+                if(name !== 'leaves') { // Leaves drop nothing
                    let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({color:colors[name]||'#fff'})); 
                    drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: name, velY: 0.1});
                 }
@@ -316,7 +340,6 @@
           let item = inventory[activeSlot];
           if(item.type && item.count > 0 && item.type !== 'stick') {
             let p = b.position.clone().add(hits[0].face.normal);
-            if(Math.abs(p.x - cam.position.x) < 0.6 && Math.abs(p.z - cam.position.z) < 0.6 && Math.abs(p.y - cam.position.y) < 1.6) return;
             if(!bMap.has(`${Math.round(p.x)},${Math.round(p.y)},${Math.round(p.z)}`)) { addB(p.x, p.y, p.z, item.type); item.count--; updateUI(); }
           }
         }
