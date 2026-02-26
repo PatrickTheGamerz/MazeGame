@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.2 - Infinite Edition</title>
+  <title>ORANGECRAFT Alpha 1.3 - Deep World Edition</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; }
@@ -19,7 +19,7 @@
     #hotbar-display{display:flex;background:rgba(0,0,0,0.8);border:4px solid #222;padding:2px;margin-bottom:10px}
     .slot{width:36px;height:36px;border:2px solid #666;background:rgba(80,80,80,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px}
     .slot.active{border:2px solid #fff;box-shadow:0 0 20px rgba(255,255,255,0.5)}
-    .item-count{position:absolute;bottom:2px;right:4px;font-size:12px;text-shadow:1px 1px #000;color:white}
+    .item-count{position:absolute;bottom:2px;right:4px;font-size:12px;text-shadow:1px 1px #000;color:white;pointer-events:none;}
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
     .title{font-size:5rem;color:#FFA500;text-shadow:4px 4px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
     .splash{position:absolute;top:75px;right:-80px;color:#FF0;font-size:1.4rem;animation:pulse 0.5s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px #000; font-family: 'Courier New'}
@@ -60,7 +60,7 @@
             <div class="inv-slot" data-idx="0"></div><div class="inv-slot" data-idx="1"></div>
             <div class="inv-slot" data-idx="2"></div><div class="inv-slot" data-idx="3"></div>
           </div>
-          <div style="margin-top:5px">→ <span id="craft-output" class="inv-slot" style="display:inline-block; vertical-align:middle"></span></div>
+          <div style="margin-top:5px">→ <span id="craft-output" class="inv-slot" style="display:inline-block; vertical-align:middle; cursor:pointer;"></span></div>
         </div>
       </div>
       <div class="inv-main" id="m-inv-grid"></div>
@@ -70,8 +70,8 @@
 
   <script>
     // --- 1. DATA & TEXTURE GENERATOR ---
-    const colors = { grass:'#4e9e32', dirt:'#5e4431', stone:'#7a7a7a', wood:'#674e37', insideWood:'#d2b48c', leaves:'#2d7a22', planks:'#9a7f59', bedrock:'#222', stick: '#4b3c23', crafting_table: '#644628' };
-    const splashes = ["Infinite World!", "Chunk Loading!", "32x Textures!", "No more ghost blocks!"];
+    const colors = { grass:'#4e9e32', dirt:'#5e4431', stone:'#7a7a7a', wood:'#4a3520', insideWood:'#d5aa72', leaves:'#2d7a22', planks:'#9a7f59', bedrock:'#222', stick: '#705131', crafting_table: '#8a5c34' };
+    const splashes = ["Infinite World!", "Chunk Loading!", "50 Blocks Deep!", "Press Q to drop!"];
     
     // Improved Textures
     const texCache = {};
@@ -86,6 +86,11 @@
             ctx.fillStyle = `rgba(255,255,255,${Math.random()*noise})`;
             ctx.fillRect(Math.random()*size, Math.random()*size, 1, 1);
         }
+        // Little grid for crafting table top
+        if(color === colors.crafting_table) {
+            ctx.fillStyle = "rgba(0,0,0,0.3)";
+            ctx.fillRect(0, 7, 16, 2); ctx.fillRect(7, 0, 2, 16);
+        }
         const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter;
         texCache[color] = t; return t;
     }
@@ -99,7 +104,7 @@
     // --- 2. ENGINE & CHUNKS ---
     const sc = new THREE.Scene();
     sc.background = new THREE.Color(0x87CEEB);
-    sc.fog = new THREE.FogExp2(0x87CEEB, 0.05);
+    sc.fog = new THREE.FogExp2(0x87CEEB, 0.04);
     const cam = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const rnd = new THREE.WebGLRenderer({antialias:false});
     rnd.setSize(window.innerWidth, window.innerHeight);
@@ -111,16 +116,14 @@
     const boxG = new THREE.BoxGeometry(1, 1, 1);
     let bMap = new Map();
     let chunks = new Map();
-    const CHUNK_SIZE = 8; // Size of chunk for performance
-    const RENDER_DIST = 4; // Radial chunks
+    const CHUNK_SIZE = 8; 
+    const RENDER_DIST = 4; 
 
-    // --- FIX: Block Mining & Map Management ---
     function removeB(mesh) {
         if(!mesh) return;
         const key = `${Math.round(mesh.position.x)},${Math.round(mesh.position.y)},${Math.round(mesh.position.z)}`;
         bMap.delete(key);
         sc.remove(mesh);
-        // Clean up from blks array if needed (using bMap primarily now)
     }
 
     function addB(x,y,z,type){
@@ -154,14 +157,11 @@
                 }
             }
         }
-        // Cleanup distant blocks (Basic)
-        if(bMap.size > 4000) {
+        
+        if(bMap.size > 8000) {
             for(let [key, block] of bMap) {
                 if(block.position.distanceTo(cam.position) > (RENDER_DIST + 2) * CHUNK_SIZE) {
-                    sc.remove(block);
-                    bMap.delete(key);
-                    let ck = `${Math.floor(block.position.x/CHUNK_SIZE)},${Math.floor(block.position.z/CHUNK_SIZE)}`;
-                    chunks.delete(ck);
+                    sc.remove(block); bMap.delete(key);
                 }
             }
         }
@@ -174,12 +174,31 @@
                 let absZ = cz * CHUNK_SIZE + z;
                 let h = Math.floor(Math.sin(absX/10)*2 + Math.cos(absZ/10)*2);
                 
+                // Only render surface layers initially to prevent lag. 
+                // Underground blocks spawn dynamically when you dig!
                 addB(absX, h, absZ, 'grass');
-                addB(absX, h-1, absZ, 'dirt');
-                addB(absX, h-2, absZ, 'stone');
+                for(let y=h-1; y>=h-3; y--) addB(absX, y, absZ, 'dirt');
                 
-                if(Math.random() < 0.01) {
-                    for(let t=1; t<4; t++) addB(absX, h+t, absZ, 'wood');
+                // Trees
+                if(Math.random() < 0.005) { // Less density
+                    for(let t=1; t<=5; t++) addB(absX, h+t, absZ, 'wood');
+                    // Leaf Canopy Layer 1 & 2
+                    for(let ly=3; ly<=4; ly++) {
+                        for(let lx=-2; lx<=2; lx++) {
+                            for(let lz=-2; lz<=2; lz++) {
+                                if(lx===0 && lz===0) continue; 
+                                if(Math.abs(lx)===2 && Math.abs(lz)===2) continue; // Round corners
+                                addB(absX+lx, h+ly, absZ+lz, 'leaves');
+                            }
+                        }
+                    }
+                    // Leaf Canopy Top Layer
+                    for(let lx=-1; lx<=1; lx++) {
+                        for(let lz=-1; lz<=1; lz++) {
+                            if(Math.abs(lx)===1 && Math.abs(lz)===1) continue;
+                            addB(absX+lx, h+5, absZ+lz, 'leaves');
+                        }
+                    }
                 }
             }
         }
@@ -206,14 +225,17 @@
         if(i < 9) {
           hInv.appendChild(slot);
           let hs = document.createElement('div'); hs.className = 'slot' + (i === activeSlot ? ' active' : '');
-          if(item.type) { hs.style.background = colors[item.type]; hs.innerHTML = `<span class="item-count">${item.count}</span>`; }
+          if(item.type) { 
+              hs.style.background = item.type==='stick'?`linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`:colors[item.type]; 
+              hs.innerHTML = `<span class="item-count">${item.count}</span>`; 
+          }
           hDisp.appendChild(hs);
         } else mInv.appendChild(slot);
       });
       Array.from(cGrid.children).forEach((slot, i) => {
         if(crafting[i].count <= 0) { crafting[i].type = null; crafting[i].count = 0; }
         let item = crafting[i];
-        slot.style.background = item.type ? colors[item.type] : '#8b8b8b';
+        slot.style.background = item.type ? (item.type==='stick'?`linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`:colors[item.type]) : '#8b8b8b';
         slot.innerHTML = item.count > 0 ? `<span class="item-count">${item.count}</span>` : '';
         slot.onmousedown = (e) => handleSlotAction(crafting, i, e);
       });
@@ -222,7 +244,10 @@
 
     function createSlot(item, onDown) {
       let d = document.createElement('div'); d.className = 'inv-slot';
-      if(item.type) { d.style.background = colors[item.type]; d.innerHTML = `<span class="item-count">${item.count}</span>`; }
+      if(item.type) { 
+          d.style.background = item.type==='stick'?`linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`:colors[item.type]; 
+          d.innerHTML = `<span class="item-count">${item.count}</span>`; 
+      }
       d.onmousedown = onDown;
       return d;
     }
@@ -233,7 +258,8 @@
           let t = {...arr[idx]}; arr[idx] = {...dragItem.item}; dragItem.source[dragItem.idx] = t; dragItem = null; document.getElementById('drag-icon').style.display = 'none';
         } else if (arr[idx].type) {
           dragItem = {item: {...arr[idx]}, source: arr, idx: idx}; arr[idx] = {type: null, count: 0};
-          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.background = colors[dragItem.item.type];
+          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; 
+          icon.style.background = dragItem.item.type==='stick'?`linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`:colors[dragItem.item.type];
         }
       } else if (e.button === 2 && dragItem) {
         if (!arr[idx].type || arr[idx].type === dragItem.item.type) {
@@ -245,15 +271,36 @@
     }
 
     function checkRecipes() {
-      const out = document.getElementById('craft-output'); out.style.background = '#8b8b8b'; out.innerHTML = '';
-      let g = crafting.map(c => c.type);
-      if (crafting.filter(c => c.type).length === 1 && g.includes('wood')) {
+      const out = document.getElementById('craft-output'); out.style.background = '#8b8b8b'; out.innerHTML = ''; out.onclick = null;
+      let c0 = crafting[0].type, c1 = crafting[1].type, c2 = crafting[2].type, c3 = crafting[3].type;
+      let total = crafting.filter(c => c.type).length;
+
+      // 1 Wood -> 4 Planks
+      if (total === 1 && (c0==='wood' || c1==='wood' || c2==='wood' || c3==='wood')) {
         out.style.background = colors.planks; out.innerHTML = '<span class="item-count">4</span>';
-        out.onclick = () => { crafting.forEach(c => { if(c.count > 0) c.count--; }); let s = inventory.find(s => !s.type || (s.type==='planks'&&s.count<61)); s.type = 'planks'; s.count += 4; updateUI(); };
+        out.onclick = () => processCraft('planks', 4);
+      }
+      // 2 Planks (Vertical) -> 4 Sticks
+      else if (total === 2 && ((c0==='planks' && c2==='planks') || (c1==='planks' && c3==='planks'))) {
+        out.style.background = `linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`; 
+        out.innerHTML = '<span class="item-count">4</span>';
+        out.onclick = () => processCraft('stick', 4);
+      }
+      // 4 Planks (Square) -> 1 Crafting Table
+      else if (total === 4 && c0==='planks' && c1==='planks' && c2==='planks' && c3==='planks') {
+        out.style.background = colors.crafting_table; out.innerHTML = '<span class="item-count">1</span>';
+        out.onclick = () => processCraft('crafting_table', 1);
       }
     }
 
-    function startGame() { cam.position.set(0, 10, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); }
+    function processCraft(resultType, amount) {
+        crafting.forEach(c => { if(c.count > 0) c.count--; });
+        let slot = inventory.find(s => !s.type || (s.type === resultType && s.count <= 64 - amount));
+        if(slot) { slot.type = resultType; slot.count += amount; }
+        updateUI();
+    }
+
+    function startGame() { cam.position.set(0, 15, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); }
     
     function setMenu(s) {
       gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
@@ -274,7 +321,7 @@
     });
 
     let keys = {}, vel = new THREE.Vector3();
-    const isSolid = (x, y, z) => bMap.has(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`);
+    const isSolid = (x, y, z) => bMap.has(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`) && bMap.get(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`).name !== 'stick';
 
     function animate() {
       requestAnimationFrame(animate);
@@ -298,11 +345,16 @@
 
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
+          if(d.velDir) { d.mesh.position.x += d.velDir.x; d.mesh.position.z += d.velDir.z; d.velDir.multiplyScalar(0.9); }
           if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; }
-          d.mesh.rotation.y += 0.05;
+          d.mesh.rotation.y += 0.05; d.mesh.rotation.x += 0.02;
           if(cam.position.distanceTo(d.mesh.position) < 2.5) {
             d.mesh.position.lerp(cam.position, 0.25);
-            if(cam.position.distanceTo(d.mesh.position) < 0.7) { sc.remove(d.mesh); drops.splice(i, 1); let slot = inventory.find(s => (!s.type || s.type === d.type) && s.count < 64); if(slot) { slot.type = d.type; slot.count++; updateUI(); } }
+            if(cam.position.distanceTo(d.mesh.position) < 0.7) { 
+                sc.remove(d.mesh); drops.splice(i, 1); 
+                let slot = inventory.find(s => (!s.type || s.type === d.type) && s.count < 64); 
+                if(slot) { slot.type = d.type; slot.count++; updateUI(); } 
+            }
           }
         });
 
@@ -313,7 +365,23 @@
                 let name = miningTarget.name; 
                 let dropPos = miningTarget.position.clone();
                 removeB(miningTarget);
-                let drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({map: genTex(colors[name])})); 
+                
+                // JIT (Just-In-Time) Block Generation for Depth (Reveals stone when you mine!)
+                let mX = Math.round(dropPos.x), mY = Math.round(dropPos.y), mZ = Math.round(dropPos.z);
+                let surfaceH = Math.floor(Math.sin(mX/10)*2 + Math.cos(mZ/10)*2);
+                const adjs = [[0,-1,0],[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
+                adjs.forEach(off => {
+                    let nX = mX + off[0], nY = mY + off[1], nZ = mZ + off[2];
+                    let nH = Math.floor(Math.sin(nX/10)*2 + Math.cos(nZ/10)*2);
+                    if(nY <= nH && !bMap.has(`${nX},${nY},${nZ}`)) {
+                        if(nY === -50) addB(nX, nY, nZ, 'bedrock');
+                        else if(nY > nH - 3) addB(nX, nY, nZ, 'dirt');
+                        else if(nY > -50) addB(nX, nY, nZ, 'stone');
+                    }
+                });
+
+                let geo = name === 'stick' ? new THREE.BoxGeometry(0.1, 0.4, 0.1) : new THREE.BoxGeometry(0.3,0.3,0.3);
+                let drop = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map: genTex(colors[name])})); 
                 drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: name, velY: 0.1});
                 miningTarget = null; crackMesh.visible = false;
             } else { crackMesh.material = crackMats[Math.min(stage, 9)]; }
@@ -326,6 +394,23 @@
       keys[e.code] = true;
       if(e.code === 'KeyE') { if(gameState === "INV") setMenu('PLAYING'); else if(gameState === "PLAYING") setMenu('INV'); }
       if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key) - 1; updateUI(); }
+      
+      // Press Q to drop item
+      if(e.code === 'KeyQ' && gameState === "PLAYING") {
+          let slot = inventory[activeSlot];
+          if(slot.type && slot.count > 0) {
+              slot.count--; let type = slot.type;
+              if(slot.count <= 0) slot.type = null;
+              updateUI();
+              
+              let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
+              let dropPos = cam.position.clone().addScaledVector(dir, 1);
+              let geo = type === 'stick' ? new THREE.BoxGeometry(0.1, 0.5, 0.1) : new THREE.BoxGeometry(0.3, 0.3, 0.3);
+              let drop = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map: genTex(colors[type])}));
+              drop.position.copy(dropPos); sc.add(drop);
+              drops.push({mesh: drop, type: type, velY: 0.15, velDir: dir.multiplyScalar(0.2)});
+          }
+      }
     });
     document.addEventListener('keyup', e => { keys[e.code] = false; });
     document.addEventListener('mousemove', e => {
@@ -343,7 +428,7 @@
         if(e.button === 0 && b.name !== 'bedrock') { miningTarget = b; miningProgress = 0; crackMesh.position.copy(b.position); crackMesh.visible = true; }
         else if(e.button === 2) {
           let item = inventory[activeSlot];
-          if(item.type && item.count > 0 && item.type !== 'stick') {
+          if(item.type && item.count > 0 && item.type !== 'stick') { // Blocks sticks from being placed
             let p = b.position.clone().add(hits[0].face.normal);
             let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
             if(!bMap.has(`${pX},${pY},${pZ}`)) { addB(pX, pY, pZ, item.type); item.count--; updateUI(); }
