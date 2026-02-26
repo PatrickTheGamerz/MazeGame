@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.10 - Sights, Sounds, and Sprinting</title>
+  <title>ORANGECRAFT Alpha 1.11 - The Classics Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -27,7 +27,7 @@
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
     .title{font-size:5rem;color:#FFA500;text-shadow:6px 6px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
     
-    /* AUTHENTIC SPLASH TEXT */
+    /* CLASSIC SPLASH TEXT */
     .splash{position:absolute;top:65px;right:-90px;color:#ffff00;font-size:1.6rem;font-family: 'Arial Black', sans-serif; font-weight:bold; animation:pulse 0.4s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px 0 #3f3f00; pointer-events:none; white-space:nowrap;}
     @keyframes pulse{from{transform:rotate(-20deg) scale(0.95)}to{transform:rotate(-20deg) scale(1.05)}}
     
@@ -85,8 +85,7 @@
     function initAudio() { 
         if(!audioCtx) { 
             audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-            // Create impulse response for C418-style ambient reverb
-            let len = audioCtx.sampleRate * 3.0; // 3 sec tail
+            let len = audioCtx.sampleRate * 3.0; // 3 sec reverb tail
             let buffer = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
             for(let c=0; c<2; c++) {
                 let data = buffer.getChannelData(c);
@@ -103,7 +102,6 @@
         let g = audioCtx.createGain(); g.connect(audioCtx.destination);
         
         if(type === 'click') {
-            // Authentic snappy menu click
             let o = audioCtx.createOscillator(); o.type = 'triangle'; 
             o.frequency.setValueAtTime(800, now); o.frequency.exponentialRampToValueAtTime(100, now + 0.05);
             g.gain.setValueAtTime(0.4, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
@@ -126,16 +124,17 @@
         }
     }
 
+    // Four Iconic C418 Tracks
     function playMusic() {
         initAudio();
         if(document.getElementById('bgm').currentTime > 0 && !document.getElementById('bgm').paused) return;
         document.getElementById('bgm').play().catch(() => {
             if(musicSeq) clearInterval(musicSeq);
-            // Repertoire of classic tracks
             const tracks = [
-                [370.0, 440.0, 554.4, 415.3, null, 440.0, 370.0, null], // "Minecraft"
-                [293.66, 370.0, 440.0, 493.88, null, 440.0, 370.0], // "Sweden"
-                [370.0, 415.3, 554.4, 622.25, null, 554.4, 415.3]  // "Subwoofer Lullaby"
+                [370.0, 440.0, 554.4, 415.3, null, 440.0, 370.0, null], // 1. "Minecraft" (Calm 1)
+                [293.66, 370.0, 440.0, 493.88, null, 440.0, 370.0],     // 2. "Sweden" (Calm 3)
+                [370.0, 415.3, 554.4, 622.25, null, 554.4, 415.3],      // 3. "Subwoofer Lullaby"
+                [440.0, 554.4, 659.25, 740.0, null, 659.25, 554.4]      // 4. "Wet Hands"
             ];
             let seq = tracks[Math.floor(Math.random() * tracks.length)];
             let idx = 0;
@@ -149,10 +148,9 @@
                 let g = audioCtx.createGain();
                 let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 600;
                 
-                o.frequency.value = note / 2;
+                o.frequency.value = note / 2; // Lower, deeper piano-like octave
                 g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.1, now + 1.5); g.gain.linearRampToValueAtTime(0, now + 4);
                 
-                // Connect to destination AND the Reverb Node for that deep, spacey atmosphere!
                 o.connect(filter); filter.connect(g); 
                 g.connect(audioCtx.destination); g.connect(reverbNode);
                 
@@ -163,7 +161,10 @@
 
     // --- 2. EXACT PIXEL-ART TEXTURES & CRACKS ---
     const texCache = {}; const imgDataUrls = {};
-    const splashes = ["Hold Shift to Sprint!", "Authentic Audio!", "C418 Reverb!", "Better Wood Core!"];
+    const authenticSplashes = [
+        "Also try Terraria!", "Play him off, keyboard cat!", "Now with multiplayer!", 
+        "110% sugar!", "May contain nuts!", "More polygons!", "Water proof!", "Peter Griffin!"
+    ];
 
     function genTex(type) {
         if(texCache[type]) return texCache[type];
@@ -205,15 +206,10 @@
             ctx.fillStyle = '#3d2b1c'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#5c442c';
             for(let x=0; x<16; x+=2) { ctx.fillRect(x, 0, 1, 16); if(Math.random()>0.3) ctx.fillRect(x+1, Math.random()*16, 1, 3); }
         } else if (type === 'woodTop') {
-            // AUTHENTIC OAK LOG TOP
-            ctx.fillStyle = '#412e1c'; ctx.fillRect(0,0,16,16); // Bark Rim
-            ctx.fillStyle = '#b7935f'; ctx.fillRect(1,1,14,14); // Outer Light
-            ctx.fillStyle = '#a17e4d'; ctx.fillRect(2,2,12,12); // Outer Dark
-            ctx.fillStyle = '#b7935f'; ctx.fillRect(3,3,10,10); // Mid Light
-            ctx.fillStyle = '#a17e4d'; ctx.fillRect(5,5,6,6);   // Mid Dark
-            ctx.fillStyle = '#b7935f'; ctx.fillRect(6,6,4,4);   // Core Light
-            ctx.fillStyle = '#a17e4d'; ctx.fillRect(7,7,2,2);   // Core Center
-            // Add slight ring noise
+            ctx.fillStyle = '#412e1c'; ctx.fillRect(0,0,16,16); 
+            ctx.fillStyle = '#b7935f'; ctx.fillRect(1,1,14,14); ctx.fillStyle = '#a17e4d'; ctx.fillRect(2,2,12,12); 
+            ctx.fillStyle = '#b7935f'; ctx.fillRect(3,3,10,10); ctx.fillStyle = '#a17e4d'; ctx.fillRect(5,5,6,6); 
+            ctx.fillStyle = '#b7935f'; ctx.fillRect(6,6,4,4);   ctx.fillStyle = '#a17e4d'; ctx.fillRect(7,7,2,2); 
             for(let i=0; i<30; i++) { ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(2+Math.random()*12, 2+Math.random()*12, 1, 1); }
         } else if (type === 'ctTop') {
             ctx.fillStyle = '#b07f4f'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#593a20';
@@ -243,12 +239,9 @@
         texCache[type] = t; return t;
     }
 
-    // AUTHENTIC 10-STAGE JAGGED CRACKS
     const crackMats = Array(10).fill(null).map((_, i) => {
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
         const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.fillStyle = "rgba(0,0,0,0.85)";
-        
-        // Procedurally generating the branching fractal crack pattern
         if(i > 0) {
             let cx = 8, cy = 8;
             for(let pass=0; pass < i*3; pass++) {
@@ -383,14 +376,32 @@
       e.stopPropagation(); playSound('click');
       let slot = arr[idx];
 
-      if (e.button === 0 && e.shiftKey && !dragItem && slot.type) {
-          let half = Math.ceil(slot.count / 2);
-          dragItem = {item: {type: slot.type, count: half}, source: arr, idx: idx};
-          slot.count -= half; if(slot.count <= 0) slot.type = null;
-          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.backgroundImage = getUIImg(dragItem.item.type);
+      // CTRL + LEFT CLICK: Split Logic
+      if (e.button === 0 && e.ctrlKey) {
+          if (dragItem) {
+              // Holding item: Place EXACTLY HALF of the cursor stack into the slot
+              if (!slot.type || slot.type === dragItem.item.type) {
+                  let placeAmount = Math.ceil(dragItem.item.count / 2);
+                  let space = slot.type ? 64 - slot.count : 64;
+                  let actualPlace = Math.min(placeAmount, space);
+                  if (actualPlace > 0) {
+                      if (!slot.type) slot.type = dragItem.item.type;
+                      slot.count += actualPlace; dragItem.item.count -= actualPlace;
+                      if (dragItem.item.count <= 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
+                      else { document.getElementById('drag-icon').style.backgroundImage = getUIImg(dragItem.item.type); }
+                  }
+              }
+          } else if (slot.type) {
+              // Empty Hand: Pick up EXACTLY HALF of the slot
+              let half = Math.ceil(slot.count / 2);
+              dragItem = {item: {type: slot.type, count: half}, source: arr, idx: idx};
+              slot.count -= half; if(slot.count <= 0) slot.type = null;
+              let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.backgroundImage = getUIImg(dragItem.item.type);
+          }
           updateUI(); return;
       }
 
+      // Normal Left & Right Click Logic
       if (e.button === 0) { 
         if (dragItem) {
           if (!slot.type) { 
@@ -486,13 +497,18 @@
 
       if(gameState !== "MAIN_MENU" && gameState !== "PAUSE_MENU") {
         updateChunks();
-        let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; dir.normalize(); let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
         
-        // SPRINTING LOGIC
+        // FIX FOR MOVEMENT BUG: Prevent look-straight-down division by zero
+        let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; 
+        if (dir.lengthSq() < 0.0001) { dir.set(0, 0, -1); }
+        dir.normalize(); 
+        
+        let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
+        
         let isSprinting = (keys['ShiftLeft'] || keys['ShiftRight']) && keys['KeyW'];
         cam.fov = THREE.MathUtils.lerp(cam.fov, isSprinting ? 85 : 75, 0.1); cam.updateProjectionMatrix();
         
-        let accel = isSprinting ? 0.040 : 0.025; 
+        let accel = isSprinting ? 0.045 : 0.025; 
         let friction = 0.75; pVel.x *= friction; pVel.z *= friction; 
 
         if(gameState === "PLAYING") {
@@ -517,7 +533,7 @@
 
         if(onGround && (keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']) && gameState === "PLAYING") {
             stepTimer += Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z);
-            if(stepTimer > (isSprinting ? 1.2 : 0.8)) { 
+            if(stepTimer > (isSprinting ? 1.0 : 0.7)) { 
                 let bKey = `${Math.round(cam.position.x)},${Math.round(cam.position.y - 1.6)},${Math.round(cam.position.z)}`;
                 let blockUnder = bMap.has(bKey) ? bMap.get(bKey).name : 'grass';
                 playSound('step', blockUnder); stepTimer = 0; 
@@ -574,10 +590,11 @@
       if(e.code === 'KeyE') { playSound('click'); if(gameState === "INV") setMenu('PLAYING'); else if(gameState === "PLAYING") setMenu('INV'); }
       if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key) - 1; updateUI(); }
       
+      // Ctrl + Q to drop full stack
       if(e.code === 'KeyQ' && gameState === "PLAYING") {
           let slot = inventory[activeSlot];
           if(slot.type && slot.count > 0) { 
-              let dropAmount = e.shiftKey ? slot.count : 1;
+              let dropAmount = e.ctrlKey ? slot.count : 1;
               slot.count -= dropAmount; 
               let type = slot.type; if(slot.count <= 0) slot.type = null; 
               updateUI(); dropItemIntoWorld(type, dropAmount); 
@@ -594,7 +611,10 @@
     document.addEventListener('mousedown', e => {
       initAudio(); playMusic();
       if(gameState !== "PLAYING") return;
-      const ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(0,0), cam); let hits = ray.intersectObjects(Array.from(bMap.values()));
+      
+      let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.normalize();
+      const ray = new THREE.Raycaster(cam.position, dir); let hits = ray.intersectObjects(Array.from(bMap.values()));
+      
       if(hits.length > 0 && hits[0].distance < 5) {
         let b = hits[0].object;
         if(e.button === 0 && b.name !== 'bedrock') { miningTarget = b; miningProgress = 0; crackMesh.position.copy(b.position); crackMesh.visible = true; }
@@ -611,7 +631,7 @@
     });
     document.addEventListener('mouseup', () => { miningTarget = null; crackMesh.visible = false; });
 
-    document.getElementById('splash-text').innerText = splashes[Math.floor(Math.random() * splashes.length)];
+    document.getElementById('splash-text').innerText = authenticSplashes[Math.floor(Math.random() * authenticSplashes.length)];
     updateUI(); animate();
   </script>
 </body>
