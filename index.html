@@ -2,18 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.3 - Deep World Edition</title>
+  <title>ORANGECRAFT Alpha 1.4 - Deep VHS Edition</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
-    #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; }
-    #vhs-scanlines { position:absolute; width:100%; height:100%; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.3) 50%); background-size: 100% 3px; opacity: 0.8; }
-    #vhs-noise { position:absolute; width:100%; height:100%; opacity:0.15; background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/White_noise.png'); animation: noiseJitter 0.15s infinite; }
-    #vhs-fringe { position:absolute; width:100%; height:100%; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(255,0,0,0.1), rgba(0,255,0,0.03), rgba(0,0,255,0.1)); }
-    #vhs-tracking { position:absolute; bottom:5%; width:100%; height:15px; background: rgba(255,255,255,0.25); filter: blur(10px); opacity: 0.6; animation: tracking 6s linear infinite; }
-    @keyframes tracking { 0% { bottom: -15%; } 15% { bottom: 115%; } 100% { bottom: 115%; } }
-    @keyframes noiseJitter { 0% { transform:translate(0,0) } 50% { transform:translate(-1.5%,1.5%) } 100% { transform:translate(1.5%,-1.5%) } }
+    /* ENHANCED VHS EFFECT */
+    #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
+    #vhs-scanlines { position:absolute; width:100%; height:100%; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.5) 50%); background-size: 100% 4px; opacity: 0.9; }
+    #vhs-noise { position:absolute; width:100%; height:100%; opacity:0.25; background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/White_noise.png'); animation: noiseJitter 0.1s infinite; mix-blend-mode: multiply; }
+    #vhs-fringe { position:absolute; width:100%; height:100%; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(255,0,0,0.15), rgba(0,255,0,0.02), rgba(0,0,255,0.15)); }
+    #vhs-tracking { position:absolute; bottom:5%; width:100%; height:20px; background: rgba(255,255,255,0.3); filter: blur(8px); opacity: 0.7; animation: tracking 5s linear infinite; }
+    @keyframes tracking { 0% { bottom: -20%; } 15% { bottom: 120%; } 100% { bottom: 120%; } }
+    @keyframes noiseJitter { 0% { transform:translate(0,0) } 50% { transform:translate(-2%,2%) } 100% { transform:translate(2%,-2%) } }
+    
     #crosshair{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;z-index:100;display:none}
-    #crosshair::before,#crosshair::after{content:'';position:absolute;background:#fff}
+    #crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.8)}
     #crosshair::before{top:9px;left:0;width:20px;height:2px}#crosshair::after{top:0;left:9px;width:2px;height:20px}
     #hud{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
     #hotbar-display{display:flex;background:rgba(0,0,0,0.8);border:4px solid #222;padding:2px;margin-bottom:10px}
@@ -21,7 +23,7 @@
     .slot.active{border:2px solid #fff;box-shadow:0 0 20px rgba(255,255,255,0.5)}
     .item-count{position:absolute;bottom:2px;right:4px;font-size:12px;text-shadow:1px 1px #000;color:white;pointer-events:none;}
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
-    .title{font-size:5rem;color:#FFA500;text-shadow:4px 4px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
+    .title{font-size:5rem;color:#FFA500;text-shadow:6px 6px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
     .splash{position:absolute;top:75px;right:-80px;color:#FF0;font-size:1.4rem;animation:pulse 0.5s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px #000; font-family: 'Courier New'}
     @keyframes pulse{from{transform:rotate(-20deg) scale(1)}to{transform:rotate(-20deg) scale(1.2)}}
     .btn{width:320px;padding:12px;margin:6px;background:#555;border:4px solid #000;border-top-color:#888;border-left-color:#888;color:#fff;cursor:pointer;text-align:center;font-size:1.2rem}
@@ -46,7 +48,7 @@
   </div>
 
   <div id="pause-menu" class="menu-overlay">
-    <div style="font-size:1.5rem;margin-bottom:20px; text-shadow:2px 2px #000">Game Menu</div>
+    <div style="font-size:1.5rem;margin-bottom:20px; text-shadow:2px 2px #000; color:white;">Game Menu</div>
     <div class="btn" onclick="setMenu('PLAYING')">Back to Game</div>
     <div class="btn" onclick="setMenu('MAIN_MENU')">Quit to Title</div>
   </div>
@@ -69,30 +71,47 @@
   </div>
 
   <script>
-    // --- 1. DATA & TEXTURE GENERATOR ---
-    const colors = { grass:'#4e9e32', dirt:'#5e4431', stone:'#7a7a7a', wood:'#4a3520', insideWood:'#d5aa72', leaves:'#2d7a22', planks:'#9a7f59', bedrock:'#222', stick: '#705131', crafting_table: '#8a5c34' };
-    const splashes = ["Infinite World!", "Chunk Loading!", "50 Blocks Deep!", "Press Q to drop!"];
+    // --- 1. DATA & 16x16 TEXTURE GENERATOR ---
+    const colors = { grass:'#4e9e32', dirt:'#5e4431', stone:'#7a7a7a', wood:'#4a3520', woodTop:'#d5aa72', leaves:'#2d7a22', planks:'#9a7f59', bedrock:'#2a2a2a', stick: '#705131', ctTop: '#a57342', ctSide: '#734d28' };
+    const splashes = ["16x16 Pixel Art!", "Deep Stone Mining!", "Real Tree Rings!", "VHS Artifacts!"];
     
-    // Improved Textures
     const texCache = {};
-    function genTex(color, noise = 0.15, size = 16) {
-        if(texCache[color]) return texCache[color];
-        const canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size;
+    function genTex(type) {
+        if(texCache[type]) return texCache[type];
+        const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
         const ctx = canvas.getContext('2d');
-        ctx.fillStyle = color; ctx.fillRect(0,0,size,size);
-        for(let i=0; i<size*size*0.4; i++) {
-            ctx.fillStyle = `rgba(0,0,0,${Math.random()*noise})`;
-            ctx.fillRect(Math.random()*size, Math.random()*size, 1, 1);
-            ctx.fillStyle = `rgba(255,255,255,${Math.random()*noise})`;
-            ctx.fillRect(Math.random()*size, Math.random()*size, 1, 1);
+        
+        // Base fill
+        let color = colors[type] || '#ff00ff';
+        ctx.fillStyle = color; ctx.fillRect(0,0,16,16);
+        
+        // Custom 16x16 Pixel Art Logic
+        if(type === 'woodTop') {
+            ctx.fillStyle = '#b58a52';
+            for(let r=2; r<8; r+=2) { ctx.strokeRect(8-r, 8-r, r*2, r*2); } // Concentric rings
+        } else if (type === 'ctTop') {
+            ctx.fillStyle = '#6b4522'; 
+            ctx.fillRect(0, 5, 16, 1); ctx.fillRect(0, 10, 16, 1); // 3x3 Grid
+            ctx.fillRect(5, 0, 1, 16); ctx.fillRect(10, 0, 1, 16);
+        } else if (type === 'ctSide') {
+            ctx.fillStyle = '#3a2512'; ctx.fillRect(0,0,16,3); // Dark top edge
+            ctx.fillStyle = '#888'; ctx.fillRect(10, 5, 4, 3); // Fake tool head
+            ctx.fillStyle = '#d5aa72'; ctx.fillRect(11, 8, 2, 5); // Fake tool handle
+        } else if (type === 'bedrock') {
+            for(let i=0; i<150; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#111' : '#444';
+                ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1);
+            }
+        } else {
+            // General noise for dirt, stone, grass, etc.
+            for(let i=0; i<80; i++) {
+                ctx.fillStyle = `rgba(0,0,0,0.2)`; ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1);
+                ctx.fillStyle = `rgba(255,255,255,0.15)`; ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1);
+            }
         }
-        // Little grid for crafting table top
-        if(color === colors.crafting_table) {
-            ctx.fillStyle = "rgba(0,0,0,0.3)";
-            ctx.fillRect(0, 7, 16, 2); ctx.fillRect(7, 0, 2, 16);
-        }
+
         const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter;
-        texCache[color] = t; return t;
+        texCache[type] = t; return t;
     }
 
     let inventory = Array(36).fill(null).map(() => ({type: null, count: 0}));
@@ -122,8 +141,7 @@
     function removeB(mesh) {
         if(!mesh) return;
         const key = `${Math.round(mesh.position.x)},${Math.round(mesh.position.y)},${Math.round(mesh.position.z)}`;
-        bMap.delete(key);
-        sc.remove(mesh);
+        bMap.delete(key); sc.remove(mesh);
     }
 
     function addB(x,y,z,type){
@@ -132,16 +150,19 @@
 
       let mat;
       if(type === 'wood'){
-        const side = new THREE.MeshLambertMaterial({map: genTex(colors.wood)});
-        const top = new THREE.MeshLambertMaterial({map: genTex(colors.insideWood)});
+        const side = new THREE.MeshLambertMaterial({map: genTex('wood')});
+        const top = new THREE.MeshLambertMaterial({map: genTex('woodTop')});
         mat = [side, side, top, top, side, side];
-      } else mat = new THREE.MeshLambertMaterial({map: genTex(colors[type])});
+      } else if (type === 'crafting_table') {
+        const side = new THREE.MeshLambertMaterial({map: genTex('ctSide')});
+        const top = new THREE.MeshLambertMaterial({map: genTex('ctTop')});
+        const bottom = new THREE.MeshLambertMaterial({map: genTex('planks')});
+        mat = [side, side, top, bottom, side, side];
+      } else mat = new THREE.MeshLambertMaterial({map: genTex(type)});
       
       const b = new THREE.Mesh(boxG, mat);
       b.position.set(Math.round(x), Math.round(y), Math.round(z)); b.name = type;
-      sc.add(b);
-      bMap.set(key, b);
-      return b;
+      sc.add(b); bMap.set(key, b); return b;
     }
 
     function updateChunks() {
@@ -151,18 +172,7 @@
         for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) {
             for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) {
                 let cKey = `${x},${z}`;
-                if(!chunks.has(cKey)) {
-                    generateChunk(x, z);
-                    chunks.set(cKey, true);
-                }
-            }
-        }
-        
-        if(bMap.size > 8000) {
-            for(let [key, block] of bMap) {
-                if(block.position.distanceTo(cam.position) > (RENDER_DIST + 2) * CHUNK_SIZE) {
-                    sc.remove(block); bMap.delete(key);
-                }
+                if(!chunks.has(cKey)) { generateChunk(x, z); chunks.set(cKey, true); }
             }
         }
     }
@@ -174,25 +184,21 @@
                 let absZ = cz * CHUNK_SIZE + z;
                 let h = Math.floor(Math.sin(absX/10)*2 + Math.cos(absZ/10)*2);
                 
-                // Only render surface layers initially to prevent lag. 
-                // Underground blocks spawn dynamically when you dig!
                 addB(absX, h, absZ, 'grass');
                 for(let y=h-1; y>=h-3; y--) addB(absX, y, absZ, 'dirt');
                 
-                // Trees
-                if(Math.random() < 0.005) { // Less density
-                    for(let t=1; t<=5; t++) addB(absX, h+t, absZ, 'wood');
-                    // Leaf Canopy Layer 1 & 2
+                // Fixed Tree Logic: Trunk stops at t=4, leaves start around t=3 and peak at t=5
+                if(Math.random() < 0.005) { 
+                    for(let t=1; t<=4; t++) addB(absX, h+t, absZ, 'wood'); // Trunk stops 1 block lower
                     for(let ly=3; ly<=4; ly++) {
                         for(let lx=-2; lx<=2; lx++) {
                             for(let lz=-2; lz<=2; lz++) {
-                                if(lx===0 && lz===0) continue; 
-                                if(Math.abs(lx)===2 && Math.abs(lz)===2) continue; // Round corners
+                                if(lx===0 && lz===0 && ly<=4) continue; // Skip core where wood is
+                                if(Math.abs(lx)===2 && Math.abs(lz)===2) continue; 
                                 addB(absX+lx, h+ly, absZ+lz, 'leaves');
                             }
                         }
                     }
-                    // Leaf Canopy Top Layer
                     for(let lx=-1; lx<=1; lx++) {
                         for(let lz=-1; lz<=1; lz++) {
                             if(Math.abs(lx)===1 && Math.abs(lz)===1) continue;
@@ -219,23 +225,27 @@
       const hDisp = document.getElementById('hotbar-display'), hInv = document.getElementById('h-inv-grid'), mInv = document.getElementById('m-inv-grid'), cGrid = document.getElementById('p-craft-grid');
       hDisp.innerHTML = ''; hInv.innerHTML = ''; mInv.innerHTML = '';
       
+      const getSlotBg = (t) => {
+          if(!t) return 'rgba(80,80,80,0.8)';
+          if(t==='stick') return `linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`;
+          if(t==='crafting_table') return colors.ctTop;
+          return colors[t] || '#fff';
+      };
+
       inventory.forEach((item, i) => {
         if(item.count <= 0) { item.type = null; item.count = 0; }
         let slot = createSlot(item, (e) => handleSlotAction(inventory, i, e));
         if(i < 9) {
           hInv.appendChild(slot);
           let hs = document.createElement('div'); hs.className = 'slot' + (i === activeSlot ? ' active' : '');
-          if(item.type) { 
-              hs.style.background = item.type==='stick'?`linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`:colors[item.type]; 
-              hs.innerHTML = `<span class="item-count">${item.count}</span>`; 
-          }
+          if(item.type) { hs.style.background = getSlotBg(item.type); hs.innerHTML = `<span class="item-count">${item.count}</span>`; }
           hDisp.appendChild(hs);
         } else mInv.appendChild(slot);
       });
       Array.from(cGrid.children).forEach((slot, i) => {
         if(crafting[i].count <= 0) { crafting[i].type = null; crafting[i].count = 0; }
         let item = crafting[i];
-        slot.style.background = item.type ? (item.type==='stick'?`linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`:colors[item.type]) : '#8b8b8b';
+        slot.style.background = item.type ? getSlotBg(item.type) : '#8b8b8b';
         slot.innerHTML = item.count > 0 ? `<span class="item-count">${item.count}</span>` : '';
         slot.onmousedown = (e) => handleSlotAction(crafting, i, e);
       });
@@ -245,11 +255,10 @@
     function createSlot(item, onDown) {
       let d = document.createElement('div'); d.className = 'inv-slot';
       if(item.type) { 
-          d.style.background = item.type==='stick'?`linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`:colors[item.type]; 
+          d.style.background = item.type==='stick'?`linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`:(item.type==='crafting_table'?colors.ctTop:colors[item.type]); 
           d.innerHTML = `<span class="item-count">${item.count}</span>`; 
       }
-      d.onmousedown = onDown;
-      return d;
+      d.onmousedown = onDown; return d;
     }
 
     function handleSlotAction(arr, idx, e) {
@@ -259,7 +268,7 @@
         } else if (arr[idx].type) {
           dragItem = {item: {...arr[idx]}, source: arr, idx: idx}; arr[idx] = {type: null, count: 0};
           let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; 
-          icon.style.background = dragItem.item.type==='stick'?`linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`:colors[dragItem.item.type];
+          icon.style.background = dragItem.item.type==='stick'?`linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`:(dragItem.item.type==='crafting_table'?colors.ctTop:colors[dragItem.item.type]);
         }
       } else if (e.button === 2 && dragItem) {
         if (!arr[idx].type || arr[idx].type === dragItem.item.type) {
@@ -275,21 +284,13 @@
       let c0 = crafting[0].type, c1 = crafting[1].type, c2 = crafting[2].type, c3 = crafting[3].type;
       let total = crafting.filter(c => c.type).length;
 
-      // 1 Wood -> 4 Planks
       if (total === 1 && (c0==='wood' || c1==='wood' || c2==='wood' || c3==='wood')) {
-        out.style.background = colors.planks; out.innerHTML = '<span class="item-count">4</span>';
-        out.onclick = () => processCraft('planks', 4);
-      }
-      // 2 Planks (Vertical) -> 4 Sticks
-      else if (total === 2 && ((c0==='planks' && c2==='planks') || (c1==='planks' && c3==='planks'))) {
+        out.style.background = colors.planks; out.innerHTML = '<span class="item-count">4</span>'; out.onclick = () => processCraft('planks', 4);
+      } else if (total === 2 && ((c0==='planks' && c2==='planks') || (c1==='planks' && c3==='planks'))) {
         out.style.background = `linear-gradient(45deg, transparent 40%, ${colors.stick} 40%, ${colors.stick} 60%, transparent 60%)`; 
-        out.innerHTML = '<span class="item-count">4</span>';
-        out.onclick = () => processCraft('stick', 4);
-      }
-      // 4 Planks (Square) -> 1 Crafting Table
-      else if (total === 4 && c0==='planks' && c1==='planks' && c2==='planks' && c3==='planks') {
-        out.style.background = colors.crafting_table; out.innerHTML = '<span class="item-count">1</span>';
-        out.onclick = () => processCraft('crafting_table', 1);
+        out.innerHTML = '<span class="item-count">4</span>'; out.onclick = () => processCraft('stick', 4);
+      } else if (total === 4 && c0==='planks' && c1==='planks' && c2==='planks' && c3==='planks') {
+        out.style.background = colors.ctTop; out.innerHTML = '<span class="item-count">1</span>'; out.onclick = () => processCraft('crafting_table', 1);
       }
     }
 
@@ -316,12 +317,15 @@
       updateUI();
     }
 
-    document.addEventListener('pointerlockchange', () => {
-      if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU');
-    });
+    document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU'); });
 
     let keys = {}, vel = new THREE.Vector3();
-    const isSolid = (x, y, z) => bMap.has(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`) && bMap.get(`${Math.round(x)},${Math.floor(y)},${Math.round(z)}`).name !== 'stick';
+    
+    // Improved Collision: Checks exact coordinates. Sticks don't block movement.
+    const isSolid = (x, y, z) => {
+        let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`;
+        return bMap.has(key) && bMap.get(key).name !== 'stick';
+    };
 
     function animate() {
       requestAnimationFrame(animate);
@@ -334,14 +338,24 @@
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
         
         if(gameState === "PLAYING") {
-          if(keys['KeyW']) if(!isSolid(cam.position.x+dir.x*0.4, cam.position.y-1, cam.position.z+dir.z*0.4)) cam.position.addScaledVector(dir, speed);
-          if(keys['KeyS']) if(!isSolid(cam.position.x-dir.x*0.4, cam.position.y-1, cam.position.z-dir.z*0.4)) cam.position.addScaledVector(dir, -speed);
-          if(keys['KeyA']) if(!isSolid(cam.position.x+side.x*0.4, cam.position.y-1, cam.position.z+side.z*0.4)) cam.position.addScaledVector(side, speed);
-          if(keys['KeyD']) if(!isSolid(cam.position.x-side.x*0.4, cam.position.y-1, cam.position.z-side.z*0.4)) cam.position.addScaledVector(side, -speed);
+          // PLAYER IS 2 BLOCKS HIGH: We check feet (y - 1.6) AND head (y - 0.6)
+          let footY = Math.round(cam.position.y - 1.6), headY = Math.round(cam.position.y - 0.6);
+          let px = cam.position.x, pz = cam.position.z;
+
+          if(keys['KeyW']) if(!isSolid(px+dir.x*0.4, footY, pz+dir.z*0.4) && !isSolid(px+dir.x*0.4, headY, pz+dir.z*0.4)) cam.position.addScaledVector(dir, speed);
+          if(keys['KeyS']) if(!isSolid(px-dir.x*0.4, footY, pz-dir.z*0.4) && !isSolid(px-dir.x*0.4, headY, pz-dir.z*0.4)) cam.position.addScaledVector(dir, -speed);
+          if(keys['KeyA']) if(!isSolid(px+side.x*0.4, footY, pz+side.z*0.4) && !isSolid(px+side.x*0.4, headY, pz+side.z*0.4)) cam.position.addScaledVector(side, speed);
+          if(keys['KeyD']) if(!isSolid(px-side.x*0.4, footY, pz-side.z*0.4) && !isSolid(px-side.x*0.4, headY, pz-side.z*0.4)) cam.position.addScaledVector(side, -speed);
         }
 
         vel.y -= 0.015; cam.position.y += vel.y;
-        if(isSolid(cam.position.x, cam.position.y - 1.6, cam.position.z)) { cam.position.y = Math.floor(cam.position.y - 1.6) + 2.6; vel.y = 0; if(keys['Space'] && gameState === "PLAYING") vel.y = 0.25; }
+        
+        // Vertical Collision (Landing on blocks)
+        if(isSolid(cam.position.x, cam.position.y - 1.6, cam.position.z)) { 
+            cam.position.y = Math.round(cam.position.y - 1.6) + 2.1; // Exactly 1.6 units above the floor block
+            vel.y = 0; 
+            if(keys['Space'] && gameState === "PLAYING") vel.y = 0.25; 
+        }
 
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
@@ -359,30 +373,33 @@
         });
 
         if(miningTarget && gameState === "PLAYING") {
-            miningProgress += 0.025; let hardness = (miningTarget.name==='stone')?2.5:(miningTarget.name==='wood')?1.2:0.4;
+            miningProgress += 0.025; let hardness = (miningTarget.name==='stone')?2.5:(miningTarget.name==='wood')?1.2:(miningTarget.name==='leaves')?0.2:0.4;
             let stage = Math.floor((miningProgress / hardness) * 10);
             if(stage >= 10) {
-                let name = miningTarget.name; 
-                let dropPos = miningTarget.position.clone();
+                let name = miningTarget.name; let dropPos = miningTarget.position.clone();
                 removeB(miningTarget);
                 
-                // JIT (Just-In-Time) Block Generation for Depth (Reveals stone when you mine!)
+                // FIXED JIT Generation: Accurately spawn Stone/Dirt/Bedrock based on exact depth
                 let mX = Math.round(dropPos.x), mY = Math.round(dropPos.y), mZ = Math.round(dropPos.z);
-                let surfaceH = Math.floor(Math.sin(mX/10)*2 + Math.cos(mZ/10)*2);
                 const adjs = [[0,-1,0],[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
                 adjs.forEach(off => {
                     let nX = mX + off[0], nY = mY + off[1], nZ = mZ + off[2];
-                    let nH = Math.floor(Math.sin(nX/10)*2 + Math.cos(nZ/10)*2);
-                    if(nY <= nH && !bMap.has(`${nX},${nY},${nZ}`)) {
-                        if(nY === -50) addB(nX, nY, nZ, 'bedrock');
-                        else if(nY > nH - 3) addB(nX, nY, nZ, 'dirt');
-                        else if(nY > -50) addB(nX, nY, nZ, 'stone');
+                    let surfaceH = Math.floor(Math.sin(nX/10)*2 + Math.cos(nZ/10)*2);
+                    if(nY <= surfaceH && !bMap.has(`${nX},${nY},${nZ}`)) {
+                        if(nY <= -50) addB(nX, nY, nZ, 'bedrock');
+                        else if(nY <= surfaceH - 3) addB(nX, nY, nZ, 'stone');
+                        else if(nY < surfaceH) addB(nX, nY, nZ, 'dirt');
                     }
                 });
 
-                let geo = name === 'stick' ? new THREE.BoxGeometry(0.1, 0.4, 0.1) : new THREE.BoxGeometry(0.3,0.3,0.3);
-                let drop = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map: genTex(colors[name])})); 
-                drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: name, velY: 0.1});
+                // NO LEAVES DROPPING!
+                if(name !== 'leaves') {
+                    let geo = name === 'stick' ? new THREE.BoxGeometry(0.1, 0.4, 0.1) : new THREE.BoxGeometry(0.3,0.3,0.3);
+                    let mat = new THREE.MeshLambertMaterial({map: genTex(name === 'crafting_table' ? 'ctTop' : (name === 'wood' ? 'woodTop' : name))});
+                    let drop = new THREE.Mesh(geo, mat); 
+                    drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: name, velY: 0.1});
+                }
+                
                 miningTarget = null; crackMesh.visible = false;
             } else { crackMesh.material = crackMats[Math.min(stage, 9)]; }
         }
@@ -395,7 +412,6 @@
       if(e.code === 'KeyE') { if(gameState === "INV") setMenu('PLAYING'); else if(gameState === "PLAYING") setMenu('INV'); }
       if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key) - 1; updateUI(); }
       
-      // Press Q to drop item
       if(e.code === 'KeyQ' && gameState === "PLAYING") {
           let slot = inventory[activeSlot];
           if(slot.type && slot.count > 0) {
@@ -406,7 +422,7 @@
               let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
               let dropPos = cam.position.clone().addScaledVector(dir, 1);
               let geo = type === 'stick' ? new THREE.BoxGeometry(0.1, 0.5, 0.1) : new THREE.BoxGeometry(0.3, 0.3, 0.3);
-              let drop = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map: genTex(colors[type])}));
+              let drop = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map: genTex(type === 'crafting_table' ? 'ctTop' : (type === 'wood' ? 'woodTop' : type))}));
               drop.position.copy(dropPos); sc.add(drop);
               drops.push({mesh: drop, type: type, velY: 0.15, velDir: dir.multiplyScalar(0.2)});
           }
@@ -428,10 +444,12 @@
         if(e.button === 0 && b.name !== 'bedrock') { miningTarget = b; miningProgress = 0; crackMesh.position.copy(b.position); crackMesh.visible = true; }
         else if(e.button === 2) {
           let item = inventory[activeSlot];
-          if(item.type && item.count > 0 && item.type !== 'stick') { // Blocks sticks from being placed
+          if(item.type && item.count > 0 && item.type !== 'stick') { 
             let p = b.position.clone().add(hits[0].face.normal);
             let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
-            if(!bMap.has(`${pX},${pY},${pZ}`)) { addB(pX, pY, pZ, item.type); item.count--; updateUI(); }
+            if(!bMap.has(`${pX},${pY},${pZ}`) && (pY < Math.round(cam.position.y - 1.6) || pY > Math.round(cam.position.y - 0.6) || Math.abs(pX - cam.position.x) > 0.6 || Math.abs(pZ - cam.position.z) > 0.6)) { 
+                addB(pX, pY, pZ, item.type); item.count--; updateUI(); 
+            }
           }
         }
       }
