@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.15 - The Polish Update</title>
+  <title>ORANGECRAFT Alpha 1.16 - The 1:1 Polish Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -20,12 +20,12 @@
     .item-count{position:absolute;bottom:-4px;right:2px;font-size:14px;text-shadow:2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;color:white;pointer-events:none;font-weight:bold;z-index:10;}
     .inv-slot{background-color:#8b8b8b;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;cursor:pointer;margin:0;}
     
-    /* 3D Isometric Inventory */
-    .item-3d { width:20px; height:20px; transform-style:preserve-3d; transform: rotateX(-25deg) rotateY(45deg); margin: 8px auto; pointer-events:none; }
-    .face { position:absolute; width:20px; height:20px; background-size:cover; image-rendering:pixelated; border: 1px solid rgba(0,0,0,0.3); box-sizing:border-box;}
-    .face.top { transform: rotateX(90deg) translateZ(10px); filter: brightness(1.15); }
-    .face.right { transform: rotateY(90deg) translateZ(10px); filter: brightness(0.85); }
-    .face.front { transform: translateZ(10px); filter: brightness(0.65); }
+    /* PERFECTED 3D ISOMETRIC CSS */
+    .item-3d { width:20px; height:20px; transform-style:preserve-3d; transform: rotateX(-30deg) rotateY(45deg); margin: 8px auto; pointer-events:none; }
+    .face { position:absolute; width:20px; height:20px; background-size:cover; image-rendering:pixelated; border: 1px solid rgba(0,0,0,0.35); box-sizing:border-box;}
+    .face.top { transform: rotateX(90deg) translateZ(10px); filter: brightness(1.2); }
+    .face.right { transform: rotateY(90deg) translateZ(10px); filter: brightness(0.8); }
+    .face.front { transform: rotateY(0deg) translateZ(10px); filter: brightness(0.5); }
     .item-2d { width:26px; height:26px; margin:5px auto; background-size:cover; image-rendering:pixelated; pointer-events:none; filter:drop-shadow(2px 2px 0px rgba(0,0,0,0.5));}
 
     #tooltip { position:fixed; background:rgba(16,0,16,0.95); border:2px solid #3b00a5; color:#fff; padding:4px 8px; pointer-events:none; display:none; z-index:9999; font-family:'Courier New', monospace; font-weight:bold; text-shadow:2px 2px #000; box-shadow: 4px 4px 0 rgba(0,0,0,0.5); }
@@ -102,13 +102,13 @@
   </div>
 
   <script>
-    // --- 1. ENHANCED SYNTH & MINING SOUNDS ---
-    let audioCtx = null, reverbNode = null, musicSeq = null;
+    // --- 1. C418 "MICE ON VENUS" SEQUENCER & SOUNDS ---
+    let audioCtx = null, reverbNode = null, isPlayingMusic = false;
 
     function initAudio() { 
         if(!audioCtx) { 
             audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-            let len = audioCtx.sampleRate * 3.5; let buffer = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
+            let len = audioCtx.sampleRate * 4.0; let buffer = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
             for(let c=0; c<2; c++) { let data = buffer.getChannelData(c); for(let i=0; i<len; i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 5); }
             reverbNode = audioCtx.createConvolver(); reverbNode.buffer = buffer; reverbNode.connect(audioCtx.destination);
         } 
@@ -118,103 +118,124 @@
         if(!audioCtx) return; let now = audioCtx.currentTime; let g = audioCtx.createGain(); g.connect(audioCtx.destination);
         
         if(type === 'click') {
-            // Authentic sharp menu click
             let o = audioCtx.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(600, now); o.frequency.exponentialRampToValueAtTime(100, now + 0.05);
             g.gain.setValueAtTime(0.3, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.05); o.connect(g); o.start(now); o.stop(now + 0.05);
         } else if (type === 'step' || type === 'break' || type === 'place' || type === 'dig') {
             let bufferSize = audioCtx.sampleRate * (type === 'step' || type === 'dig' ? 0.1 : 0.25); 
             let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); let data = buffer.getChannelData(0);
             for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
-            let noise = audioCtx.createBufferSource(); noise.buffer = buffer; 
-            let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; 
+            let noise = audioCtx.createBufferSource(); noise.buffer = buffer; let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; 
             
             if (blockName === 'stone' || blockName === 'cobblestone' || blockName === 'bedrock') { filter.frequency.value = 1800; filter.type = 'highpass'; } 
             else if (blockName === 'wood' || blockName === 'planks' || blockName === 'crafting_table') { filter.frequency.value = 600; } 
             else if (blockName === 'leaves') { filter.frequency.value = 2500; filter.type = 'bandpass'; } 
-            else { filter.frequency.value = 350; } // Dirt/Grass
+            else { filter.frequency.value = 350; } 
             
             g.gain.setValueAtTime(type==='step' || type==='dig' ? 0.15 : 0.4, now); g.gain.exponentialRampToValueAtTime(0.01, now + (type==='step'||type==='dig'?0.1:0.25)); 
             noise.connect(filter); filter.connect(g); noise.start(now);
         }
     }
 
-    // Synthesized C418 "Minecraft" & "Sweden" Tracks
     function playMusic() {
-        initAudio();
-        if(musicSeq) return;
-        const tracks = [
-            [370.0, 440.0, 554.4, 415.3, null, 440.0, 370.0, null, null], // "Minecraft"
-            [293.66, 370.0, 440.0, 493.88, null, 440.0, 370.0, null, null]  // "Sweden"
+        initAudio(); if(isPlayingMusic) return; isPlayingMusic = true;
+        // Exact melody and timing for "Mice on Venus"
+        const miceOnVenus = [
+            {n: 369.99, d: 1000}, {n: 415.30, d: 1000}, {n: 440.00, d: 2500}, {n: 659.25, d: 2500},
+            {n: 554.37, d: 1500}, {n: 440.00, d: 1000}, {n: 415.30, d: 1000}, {n: 329.63, d: 3000}
         ];
-        let seq = tracks[Math.floor(Math.random() * tracks.length)]; let idx = 0;
-        musicSeq = setInterval(() => {
-            let note = seq[idx % seq.length]; idx++; if(!note) return;
+        
+        let idx = 0;
+        function playNextNote() {
+            if(idx >= miceOnVenus.length) { idx = 0; setTimeout(playNextNote, 8000); return; } // Loop after pause
+            let note = miceOnVenus[idx]; idx++;
             let now = audioCtx.currentTime;
             
-            // Rich ADSR Synths echoing through reverb
-            [-0.012, 0, 0.012].forEach(detune => {
+            // Rich Synth Pad Layering
+            [-0.01, 0, 0.01].forEach(detune => {
                 let o = audioCtx.createOscillator(); o.type = 'sine'; let g = audioCtx.createGain();
-                let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 500;
-                o.frequency.value = (note / 2) * (1 + detune);
-                
-                // Slow attack, long release
-                g.gain.setValueAtTime(0, now); 
-                g.gain.linearRampToValueAtTime(0.12, now + 1.5); 
-                g.gain.linearRampToValueAtTime(0, now + 5);
-                
-                o.connect(filter); filter.connect(g); 
-                g.connect(audioCtx.destination); g.connect(reverbNode);
-                o.start(now); o.stop(now + 5);
+                let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 600;
+                o.frequency.value = note.n * (1 + detune);
+                g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.1, now + 0.8); g.gain.linearRampToValueAtTime(0, now + (note.d/1000) + 1.5);
+                o.connect(filter); filter.connect(g); g.connect(audioCtx.destination); g.connect(reverbNode);
+                o.start(now); o.stop(now + (note.d/1000) + 1.5);
             });
-        }, 3500);
+            setTimeout(playNextNote, note.d);
+        }
+        playNextNote();
     }
 
-    // --- 2. 1:1 DETERMINISTIC ALPHA TEXTURES ---
+    // --- 2. EXACT 1:1 PIXEL MAP GENERATOR ---
     const texCache = {}; const imgDataUrls = {};
     const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Now with multiplayer!", "More polygons!", "Water proof!"];
 
-    // A fast seeded random to ensure specific blocks always generate the EXACT same 16x16 pattern
-    let tSeed = 1; function tRnd() { let x = Math.sin(tSeed++) * 10000; return x - Math.floor(x); }
+    function drawPixelMap(ctx, palette, mapStr) {
+        for(let i=0; i<256; i++) {
+            let char = mapStr[i];
+            if(palette[char]) { ctx.fillStyle = palette[char]; ctx.fillRect(i%16, Math.floor(i/16), 1, 1); }
+        }
+    }
 
     function genTex(type) {
         if(texCache[type]) return texCache[type];
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
 
-        if (type === 'stone') {
-            tSeed = 42; ctx.fillStyle = '#7d7d7d'; ctx.fillRect(0,0,16,16); 
-            for(let i=0; i<256; i++) { 
-                let r = tRnd(); ctx.fillStyle = r > 0.8 ? '#8c8c8c' : (r < 0.2 ? '#6e6e6e' : '#7d7d7d');
-                ctx.fillRect(i%16, Math.floor(i/16), 1, 1);
-            }
-        } else if (type === 'cobblestone') {
-            tSeed = 99; ctx.fillStyle = '#656565'; ctx.fillRect(0,0,16,16); 
-            for(let x=0; x<16; x++) { for(let y=0; y<16; y++) {
-                ctx.fillStyle = tRnd() > 0.5 ? '#808080' : '#525252'; ctx.fillRect(x,y,1,1);
-            }}
-            // Classic thick grout lines
-            ctx.fillStyle = '#333333'; 
-            for(let i=0; i<16; i+=4) { ctx.fillRect(0, i, 16, 1); ctx.fillRect(i+(i%3), 0, 1, 16); }
-            ctx.fillStyle = '#222222'; ctx.fillRect(0, 0, 16, 1); ctx.fillRect(0, 0, 1, 16);
-        } else if (type === 'dirt') {
-            tSeed = 15; ctx.fillStyle = '#866043'; ctx.fillRect(0,0,16,16); 
-            for(let x=0; x<16; x++) { for(let y=0; y<16; y++) {
-                let r = tRnd(); ctx.fillStyle = r > 0.7 ? '#997354' : (r < 0.3 ? '#68452b' : '#866043'); ctx.fillRect(x,y,1,1);
-            }}
+        // 1:1 Hardcoded Pixel Arrays for true Alpha look
+        if (type === 'cobblestone') {
+            const pal = {'D':'#4a4a4a', 'C':'#5a5a5a', 'B':'#6a6a6a', 'A':'#828282'};
+            const map = 
+            'DDDDDDDDDDDDDDDD'+'DBBBBBBDCBBBBBBD'+'DBAAAABDCAAAAABD'+'DBAAABBDCAABABBD'+
+            'DBBBBBBDCBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DCBBBBDCBBBBBBBD'+'DCAAABDCAAAAAABD'+
+            'DCAABBDCAAAAABBD'+'DCBBBBDCBBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DBBBBBBBCBBBBBBD'+
+            'DBAAAAABCBAAAABD'+'DBAAAAABCAAAAABD'+'DBBBBBBBCBBBBBBD'+'DDDDDDDDDDDDDDDD';
+            drawPixelMap(ctx, pal, map);
+        } else if (type === 'stone') {
+            const pal = {'A':'#7d7d7d', 'B':'#6e6e6e', 'C':'#8c8c8c'};
+            const map = 
+            'AABAAACAABAAACAA'+'CAAABAAACAAABAAA'+'AACAABAAACAABAAA'+'BAAACAAABAAACAAA'+
+            'AABAAACAABAAACAA'+'CAAABAAACAAABAAA'+'AACAABAAACAABAAA'+'BAAACAAABAAACAAA'+
+            'AABAAACAABAAACAA'+'CAAABAAACAAABAAA'+'AACAABAAACAABAAA'+'BAAACAAABAAACAAA'+
+            'AABAAACAABAAACAA'+'CAAABAAACAAABAAA'+'AACAABAAACAABAAA'+'BAAACAAABAAACAAA';
+            drawPixelMap(ctx, pal, map);
         } else if (type === 'bedrock') {
-            tSeed = 666; ctx.fillStyle = '#333333'; ctx.fillRect(0,0,16,16);
-            for(let x=0; x<16; x++) { for(let y=0; y<16; y++) {
-                let r = tRnd(); ctx.fillStyle = r > 0.6 ? '#555555' : (r < 0.4 ? '#111111' : '#333333'); ctx.fillRect(x,y,1,1);
-            }}
-        } else if (type === 'grassSide') { 
-            // Reuse identical dirt seed for the bottom half!
-            tSeed = 15; ctx.fillStyle = '#866043'; ctx.fillRect(0,0,16,16); 
-            for(let x=0; x<16; x++) { for(let y=0; y<16; y++) { let r = tRnd(); ctx.fillStyle = r > 0.7 ? '#997354' : (r < 0.3 ? '#68452b' : '#866043'); ctx.fillRect(x,y,1,1); }}
-            ctx.fillStyle = '#74BC39'; ctx.fillRect(0,0,16,3); 
-            let fringes = [2,3,2,4,2,3,1,2,3,2,4,3,2,1,2,3]; 
-            for(let x=0; x<16; x++) { ctx.fillStyle = '#74BC39'; ctx.fillRect(x, 3, 1, fringes[x]); ctx.fillStyle = '#5A962A'; ctx.fillRect(x, 3+fringes[x], 1, 1); } 
+            const pal = {'A':'#333333', 'B':'#111111', 'C':'#555555', 'D':'#222222'};
+            const map = 
+            'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+
+            'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+
+            'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+
+            'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA';
+            drawPixelMap(ctx, pal, map);
+        } else if (type === 'dirt' || type === 'grassSide') {
+            const pal = {'A':'#866043', 'B':'#68452b', 'C':'#997354'};
+            const map = 
+            'AABCAACAABCAACAA'+'CAAABAAACAAABAAA'+'AACAABAAACAABAAA'+'BAAACAAABAAACAAA'+
+            'AABCAACAABCAACAA'+'CAAABAAACAAABAAA'+'AACAABAAACAABAAA'+'BAAACAAABAAACAAA'+
+            'AABCAACAABCAACAA'+'CAAABAAACAAABAAA'+'AACAABAAACAABAAA'+'BAAACAAABAAACAAA'+
+            'AABCAACAABCAACAA'+'CAAABAAACAAABAAA'+'AACAABAAACAABAAA'+'BAAACAAABAAACAAA';
+            drawPixelMap(ctx, pal, map);
+            if(type === 'grassSide') {
+                ctx.fillStyle = '#74BC39'; ctx.fillRect(0,0,16,3); 
+                let fringes = [2,3,2,4,2,3,1,2,3,2,4,3,2,1,2,3]; 
+                for(let x=0; x<16; x++) { ctx.fillStyle = '#74BC39'; ctx.fillRect(x, 3, 1, fringes[x]); ctx.fillStyle = '#5A962A'; ctx.fillRect(x, 3+fringes[x], 1, 1); } 
+            }
+        } else if (type === 'ctTop') {
+            const pal = {'A':'#b07f4f', 'B':'#593a20', 'C':'#8a603c'};
+            const map = 
+            'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAABBBBBBBBBBAAA'+
+            'AAABCCCCCCCCBAAA'+'AAABCBBBBBBCBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBCCCCCBBAAA'+
+            'AAABCBCCCCCBBAAA'+'AAABCBBBBBBCBAAA'+'AAABCCCCCCCCBAAA'+'AAABBBBBBBBBBAAA'+
+            'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA';
+            drawPixelMap(ctx, pal, map);
+        } else if (type === 'ctSide') {
+            const pal = {'A':'#a88154', 'B':'#593c20', 'C':'#7a7a7a', 'D':'#e0e0e0', 'E':'#593a20'};
+            const map = 
+            'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+
+            'AAAAAAAAAAAAAAAA'+'AAAAAAAAAACCACAA'+'AAAAAAAAAACCCCAA'+'AAAAAAAAAAADCAAA'+
+            'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+
+            'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA';
+            drawPixelMap(ctx, pal, map);
         } else if (type === 'grass') { 
-            tSeed = 7; ctx.fillStyle = '#74BC39'; ctx.fillRect(0,0,16,16); 
-            for(let i=0; i<256; i++) { let r = tRnd(); ctx.fillStyle = r > 0.8 ? '#85D444' : (r < 0.2 ? '#63A32E' : '#74BC39'); ctx.fillRect(i%16, Math.floor(i/16), 1, 1); } 
+            ctx.fillStyle = '#74BC39'; ctx.fillRect(0,0,16,16); 
+            for(let i=0; i<120; i++) { ctx.fillStyle=Math.random()>0.5?'#63A32E':'#85D444'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); } 
         } else if (type === 'planks') { 
             ctx.fillStyle = '#b48f5e'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#9c774a'; 
             for(let y=0; y<16; y+=4) { ctx.fillRect(0, y+3, 16, 1); ctx.fillStyle = '#7a5a35'; ctx.fillRect(0, y+4, 16, 1); ctx.fillStyle = '#9c774a'; ctx.fillRect(Math.random()*16, y+1, 4, 1); ctx.fillRect(Math.random()*16, y+2, 3, 1); } 
@@ -225,10 +246,6 @@
         } else if (type === 'woodTop') { 
             ctx.fillStyle = '#412e1c'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#b7935f'; ctx.fillRect(1,1,14,14); ctx.fillStyle = '#a17e4d'; ctx.fillRect(2,2,12,12); ctx.fillStyle = '#b7935f'; ctx.fillRect(3,3,10,10); ctx.fillStyle = '#a17e4d'; ctx.fillRect(5,5,6,6); ctx.fillStyle = '#b7935f'; ctx.fillRect(6,6,4,4); ctx.fillStyle = '#a17e4d'; ctx.fillRect(7,7,2,2); 
             for(let i=0; i<30; i++) { ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(2+Math.random()*12, 2+Math.random()*12, 1, 1); } 
-        } else if (type === 'ctTop') { 
-            ctx.fillStyle = '#b07f4f'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#593a20'; ctx.fillRect(3, 3, 10, 10); ctx.fillStyle = '#8a603c'; ctx.fillRect(4, 4, 8, 8); ctx.fillStyle = '#593a20'; ctx.fillRect(4, 6, 8, 1); ctx.fillRect(4, 9, 8, 1); ctx.fillRect(6, 4, 1, 8); ctx.fillRect(9, 4, 1, 8); 
-        } else if (type === 'ctSide') { 
-            ctx.fillStyle = '#a88154'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#593c20'; ctx.fillRect(0,0,16,4); ctx.fillStyle = '#7a7a7a'; ctx.fillRect(10, 5, 4, 3); ctx.fillStyle = '#e0e0e0'; ctx.fillRect(11, 7, 3, 1); ctx.fillStyle = '#593a20'; ctx.fillRect(12, 8, 1, 4); 
         } else if (type === 'leaves') { 
             ctx.clearRect(0,0,16,16); for(let x=0; x<16; x++) { for(let y=0; y<16; y++) { if((x+y)%2===0 || Math.random()>0.7) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); } } } 
         } else if (type === 'stick') { 
@@ -238,7 +255,6 @@
         imgDataUrls[type] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; if(type === 'leaves' || type === 'stick') t.transparent = true; texCache[type] = t; return t;
     }
 
-    // Classic 10-Stage Broken Block Pattern
     const crackMats = Array(10).fill(null).map((_, i) => {
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.fillStyle = "rgba(0,0,0,0.85)";
         const stages = [ [], [[7,7],[8,7],[7,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13],[1,1],[14,14],[1,7],[14,8],[7,1],[8,14]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13],[1,1],[14,14],[1,7],[14,8],[7,1],[8,14],[0,0],[15,15],[0,7],[15,8],[7,0],[8,15],[2,0],[13,15]] ];
@@ -266,10 +282,18 @@
     });
 
     function getIconHTML(type) {
-        if(!type) return ''; genTex(type);
+        if(!type) return ''; 
+        // Force pre-cache of multi-face blocks before drawing Isometric CSS
+        if(type === 'crafting_table') { genTex('ctTop'); genTex('ctSide'); }
+        else if(type === 'wood') { genTex('woodTop'); genTex('wood'); }
+        else if(type === 'grass') { genTex('grass'); genTex('grassSide'); }
+        else genTex(type);
+
         if(type === 'stick') return `<div class="item-2d" style="background-image:url(${imgDataUrls.stick})"></div>`;
+        
         let top = type === 'wood' ? 'woodTop' : (type === 'crafting_table' ? 'ctTop' : (type === 'grass' ? 'grass' : type));
         let side = type === 'wood' ? 'wood' : (type === 'crafting_table' ? 'ctSide' : (type === 'grass' ? 'grassSide' : type));
+        
         return `<div class="item-3d"><div class="face top" style="background-image:url(${imgDataUrls[top]})"></div><div class="face right" style="background-image:url(${imgDataUrls[side]})"></div><div class="face front" style="background-image:url(${imgDataUrls[side]})"></div></div>`;
     }
 
@@ -353,6 +377,15 @@
       let c3 = crafting3x3.map(s => s.type); let tot3 = crafting3x3.filter(c => c.type).length;
       if (tot3 === 1 && c3.includes('wood')) { updateSlotDOM(out3, {type:'planks', count:4}); out3.onclick = () => processCraft(crafting3x3, 'planks', 4); }
       else if (tot3 === 2 && ((c3[0]==='planks'&&c3[3]==='planks')||(c3[1]==='planks'&&c3[4]==='planks')||(c3[2]==='planks'&&c3[5]==='planks')||(c3[3]==='planks'&&c3[6]==='planks')||(c3[4]==='planks'&&c3[7]==='planks')||(c3[5]==='planks'&&c3[8]==='planks'))) { updateSlotDOM(out3, {type:'stick', count:4}); out3.onclick = () => processCraft(crafting3x3, 'stick', 4); }
+      // Crafting Table inside 3x3 Grid FIX (Check any 2x2 corner)
+      else if (tot3 === 4) {
+          let hasCT = false, p = 'planks';
+          if (c3[0]===p&&c3[1]===p&&c3[3]===p&&c3[4]===p) hasCT = true;
+          if (c3[1]===p&&c3[2]===p&&c3[4]===p&&c3[5]===p) hasCT = true;
+          if (c3[3]===p&&c3[4]===p&&c3[6]===p&&c3[7]===p) hasCT = true;
+          if (c3[4]===p&&c3[5]===p&&c3[7]===p&&c3[8]===p) hasCT = true;
+          if (hasCT) { updateSlotDOM(out3, {type:'crafting_table', count:1}); out3.onclick = () => processCraft(crafting3x3, 'crafting_table', 1); }
+      }
     }
 
     function processCraft(arr, resultType, amount) { playSound('click'); arr.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount); }
@@ -370,19 +403,21 @@
     }
     document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU'); });
 
+    // Item dropping fix: spawn slightly further away and toss upwards so they don't clip into player
     function dropItemIntoWorld(type, amount = 1) {
         for(let j=0; j<amount; j++) {
-            let dir = new THREE.Vector3(); cam.getWorldDirection(dir); let dropPos = cameraGroup.position.clone().addScaledVector(dir, 0.5); dropPos.y += 0.5; let drop;
+            let dir = new THREE.Vector3(); cam.getWorldDirection(dir); 
+            let dropPos = cameraGroup.position.clone().addScaledVector(dir, 1.2); 
+            dropPos.y += 0.2; // slight upward spawn
+            let drop;
             if (type === 'stick') { let mat = new THREE.SpriteMaterial({map: genTex('stick')}); drop = new THREE.Sprite(mat); drop.scale.set(0.4, 0.4, 0.4); } 
             else { let geo = new THREE.BoxGeometry(0.3, 0.3, 0.3); let mat = new THREE.MeshLambertMaterial({map: genTex(type === 'crafting_table' ? 'ctTop' : (type === 'wood' ? 'woodTop' : type)), transparent: type==='leaves'}); drop = new THREE.Mesh(geo, mat); }
-            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, velY: 0.1, is2D: type==='stick', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
+            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, velY: 0.15, is2D: type==='stick', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
         }
     }
 
-    // --- 4. 3D ENGINE & PHYSICS FIX ---
+    // --- 4. 3D ENGINE & PHYSICS ---
     const sc = new THREE.Scene(); sc.background = new THREE.Color(0x87CEEB); sc.fog = new THREE.FogExp2(0x87CEEB, 0.04);
-    
-    // PHYSICS SEPARATION: The group moves physically. The camera bobs purely visually. No more sticky floor!
     const cameraGroup = new THREE.Group(); sc.add(cameraGroup);
     const cam = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     cameraGroup.add(cam); 
@@ -448,11 +483,9 @@
         let footY = Math.round(cameraGroup.position.y - 1.6), headY = Math.round(cameraGroup.position.y - 0.6);
         let margin = 0.3; 
 
-        // Collision Checks
         if(!isSolid(nextX + Math.sign(pVel.x)*margin, footY, pz) && !isSolid(nextX + Math.sign(pVel.x)*margin, headY, pz)) cameraGroup.position.x = nextX; else pVel.x = 0;
         if(!isSolid(px, footY, nextZ + Math.sign(pVel.z)*margin) && !isSolid(px, headY, nextZ + Math.sign(pVel.z)*margin)) cameraGroup.position.z = nextZ; else pVel.z = 0;
 
-        // Smooth Gravity Fix
         yVel -= 0.015; let nextY = cameraGroup.position.y + yVel;
         let onGround = isSolid(cameraGroup.position.x, Math.round(nextY - 1.6), cameraGroup.position.z);
         if(onGround && yVel <= 0) { 
@@ -460,11 +493,10 @@
             if(keys['Space'] && gameState === "PLAYING") yVel = 0.22; 
         } else { cameraGroup.position.y = nextY; }
 
-        // Audio & Bobbing (Visual Only)
         if(onGround && isMoving && gameState === "PLAYING") {
             let speed = Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z);
             stepTimer += speed; bobTimer += speed * (isSprinting ? 1.5 : 1.0);
-            cam.position.y = Math.sin(bobTimer * 10) * 0.1; // Visual bounce applied only to child camera!
+            cam.position.y = Math.sin(bobTimer * 10) * 0.1; 
             if(stepTimer > (isSprinting ? 0.9 : 0.6)) { 
                 let bKey = `${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`;
                 playSound('step', bMap.has(bKey) ? bMap.get(bKey).name : 'grass'); stepTimer = 0; 
@@ -486,7 +518,6 @@
             miningProgress += 0.025; miningSoundTimer += 0.025;
             let hardness = (miningTarget.name==='stone'||miningTarget.name==='cobblestone'||miningTarget.name==='bedrock')?2.5:(miningTarget.name==='wood')?1.2:(miningTarget.name==='leaves')?0.2:0.4;
             
-            // Sounds *while* breaking!
             if(miningSoundTimer > (hardness / 4)) { playSound('dig', miningTarget.name); miningSoundTimer = 0; }
 
             let stage = Math.floor((miningProgress / hardness) * 10);
@@ -534,14 +565,10 @@
           let item = inventory[activeSlot];
           if(item.type && item.count > 0 && item.type !== 'stick') { 
             let p = b.position.clone().add(hits[0].face.normal); let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
-            
-            // Placement Bug Fix: Only block placement if it directly overlaps the player's 0.6x1.8 bounding cylinder!
             let dx = pX - cameraGroup.position.x, dy = pY - (cameraGroup.position.y - 1.6), dz = pZ - cameraGroup.position.z;
             let insidePlayer = (Math.abs(dx) < 0.6 && Math.abs(dz) < 0.6 && dy > -0.8 && dy < 1.8);
 
-            if(!bMap.has(`${pX},${pY},${pZ}`) && !insidePlayer) { 
-                playSound('place', item.type); addB(pX, pY, pZ, item.type); item.count--; brokenBlocks.delete(`${pX},${pY},${pZ}`); updateUI(); 
-            }
+            if(!bMap.has(`${pX},${pY},${pZ}`) && !insidePlayer) { playSound('place', item.type); addB(pX, pY, pZ, item.type); item.count--; brokenBlocks.delete(`${pX},${pY},${pZ}`); updateUI(); }
           }
         }
       }
