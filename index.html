@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.19 - The Tools Update</title>
+  <title>ORANGECRAFT Alpha 1.20 - The Extruded Drops Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -25,7 +25,7 @@
     .face.top { transform: rotateX(90deg) translateZ(10px); filter: brightness(1.2); }
     .face.right { transform: rotateY(90deg) translateZ(10px); filter: brightness(0.8); }
     .face.front { transform: rotateY(0deg) translateZ(10px); filter: brightness(0.5); }
-    .item-2d { width:26px; height:26px; margin:5px auto; background-size:contain; background-repeat:no-repeat; background-position:center; image-rendering:pixelated; pointer-events:none; filter:drop-shadow(2px 2px 0px rgba(0,0,0,0.5));}
+    .item-2d { width:30px; height:30px; margin: 3px auto; background-size:contain; background-repeat:no-repeat; background-position:center; image-rendering:pixelated; pointer-events:none; filter:drop-shadow(2px 2px 0px rgba(0,0,0,0.5));}
 
     #tooltip { position:fixed; background:rgba(16,0,16,0.95); border:2px solid #3b00a5; color:#fff; padding:4px 8px; pointer-events:none; display:none; z-index:9999; font-family:'Courier New', monospace; font-weight:bold; text-shadow:2px 2px #000; box-shadow: 4px 4px 0 rgba(0,0,0,0.5); }
 
@@ -100,7 +100,7 @@
   </div>
 
   <script>
-    // --- 1. MICE ON VENUS AUDIO SYSTEM ---
+    // --- 1. AUDIO SYSTEM ---
     let audioCtx = null, reverbNode = null, isPlayingMusic = false;
 
     function initAudio() { 
@@ -121,39 +121,33 @@
             let o = audioCtx.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(400, now); o.frequency.exponentialRampToValueAtTime(50, now + 0.2);
             g.gain.setValueAtTime(0.5, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.2); o.connect(g); o.start(now); o.stop(now + 0.2);
         } else if (type === 'step' || type === 'break' || type === 'place' || type === 'dig') {
-            let bufferSize = audioCtx.sampleRate * (type === 'step' || type === 'dig' ? 0.1 : 0.25); 
+            let bufferSize = audioCtx.sampleRate * (type === 'step' || type === 'dig' ? 0.08 : 0.18); 
             let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); let data = buffer.getChannelData(0);
             for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
             let noise = audioCtx.createBufferSource(); noise.buffer = buffer; let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; 
             
-            if (blockName === 'stone' || blockName === 'cobblestone' || blockName === 'bedrock') { filter.frequency.value = 1800; filter.type = 'highpass'; } 
-            else if (blockName === 'wood' || blockName === 'planks' || blockName === 'crafting_table') { filter.frequency.value = 600; } 
+            if (blockName === 'stone' || blockName === 'cobblestone' || blockName === 'bedrock') { filter.frequency.value = 1600; filter.type = 'highpass'; } 
+            else if (blockName === 'wood' || blockName === 'planks' || blockName === 'crafting_table') { filter.frequency.value = 500; } 
             else if (blockName === 'leaves') { filter.frequency.value = 2500; filter.type = 'bandpass'; } 
-            else { filter.frequency.value = 350; } 
+            else { filter.frequency.value = 250; } 
             
-            g.gain.setValueAtTime(type==='step' || type==='dig' ? 0.15 : 0.4, now); g.gain.exponentialRampToValueAtTime(0.01, now + (type==='step'||type==='dig'?0.1:0.25)); 
+            // Punchier sound decay
+            g.gain.setValueAtTime(type==='step' || type==='dig' ? 0.2 : 0.6, now); g.gain.exponentialRampToValueAtTime(0.01, now + (type==='step'||type==='dig'?0.08:0.18)); 
             noise.connect(filter); filter.connect(g); noise.start(now);
         }
     }
 
     function playMusic() {
         initAudio(); if(isPlayingMusic) return; isPlayingMusic = true;
-        // Exact C418 "Mice on Venus" sheet music mapping
         const seq = [
-            {n: 369.99, d: 800, wait: 800},   // F#4
-            {n: 415.30, d: 800, wait: 800},   // G#4
-            {n: 440.00, d: 1600, wait: 1600}, // A4
-            {n: 659.25, d: 2000, wait: 2000}, // E5
-            {n: 554.37, d: 1200, wait: 1200}, // C#5
-            {n: 440.00, d: 800, wait: 800},   // A4
-            {n: 415.30, d: 800, wait: 800},   // G#4
-            {n: 329.63, d: 3000, wait: 4500}  // E4
+            {n: 369.99, d: 800, wait: 800}, {n: 415.30, d: 800, wait: 800}, {n: 440.00, d: 1600, wait: 1600}, 
+            {n: 659.25, d: 2000, wait: 2000}, {n: 554.37, d: 1200, wait: 1200}, {n: 440.00, d: 800, wait: 800}, 
+            {n: 415.30, d: 800, wait: 800}, {n: 329.63, d: 3000, wait: 4500} 
         ];
         let idx = 0;
         function playNextNote() {
             if(idx >= seq.length) { idx = 0; setTimeout(playNextNote, 8000); return; }
             let note = seq[idx]; idx++; let now = audioCtx.currentTime;
-            
             [-0.01, 0, 0.01].forEach(detune => {
                 let o = audioCtx.createOscillator(); o.type = 'sine'; let g = audioCtx.createGain();
                 let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 600;
@@ -166,9 +160,10 @@
         playNextNote();
     }
 
-    // --- 2. PERFECTED 1:1 PIXEL TEXTURES & PICKAXES ---
-    const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Now with multiplayer!", "More polygons!", "Water proof!"];
+    // --- 2. PIXEL DATA & EXTRUDED ITEMS ---
+    const texCache = {}; const imgDataUrls = {}; const pixelMaps = {};
+
+    function savePixelMap(type, palette, mapStr) { pixelMaps[type] = {pal: palette, map: mapStr}; return mapStr; }
 
     function drawPixelMap(ctx, palette, mapStr) {
         for(let i=0; i<256; i++) { let char = mapStr[i]; if(palette[char]) { ctx.fillStyle = palette[char]; ctx.fillRect(i%16, Math.floor(i/16), 1, 1); } }
@@ -180,26 +175,43 @@
 
         if (type === 'stone') {
             const pal = {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e'};
-            const map = 'ABACACABABAACABA'+'CABAABACABCAABAC'+'AABACABAABACABAA'+'BACABAABACABAACA'+'ACABCAABACABCAAB'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABAACA'+'ACABAACABCAABACA'+'CABAABACABAABACA'+'AABACABAABACABAA'+'BACABCAABACABAAC';
-            drawPixelMap(ctx, pal, map);
+            drawPixelMap(ctx, pal, savePixelMap(type, pal, 'ABACACABABAACABA'+'CABAABACABCAABAC'+'AABACABAABACABAA'+'BACABAABACABAACA'+'ACABCAABACABCAAB'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABAACA'+'ACABAACABCAABACA'+'CABAABACABAABACA'+'AABACABAABACABAA'+'BACABCAABACABAAC'));
         } else if (type === 'cobblestone') {
             const pal = {'D':'#4a4a4a', 'C':'#5a5a5a', 'B':'#6a6a6a', 'A':'#828282'};
-            const map = 'DDDDDDDDDDDDDDDD'+'DBBBBBBDCBBBBBBD'+'DBAAAABDCAAAAABD'+'DBAAABBDCAABABBD'+'DBBBBBBDCBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DCBBBBDCBBBBBBBD'+'DCAAABDCAAAAAABD'+'DCAABBDCAAAAABBD'+'DCBBBBDCBBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DBBBBBBBCBBBBBBD'+'DBAAAAABCBAAAABD'+'DBAAAAABCAAAAABD'+'DBBBBBBBCBBBBBBD'+'DDDDDDDDDDDDDDDD';
-            drawPixelMap(ctx, pal, map);
+            drawPixelMap(ctx, pal, savePixelMap(type, pal, 'DDDDDDDDDDDDDDDD'+'DBBBBBBDCBBBBBBD'+'DBAAAABDCAAAAABD'+'DBAAABBDCAABABBD'+'DBBBBBBDCBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DCBBBBDCBBBBBBBD'+'DCAAABDCAAAAAABD'+'DCAABBDCAAAAABBD'+'DCBBBBDCBBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DBBBBBBBCBBBBBBD'+'DBAAAAABCBAAAABD'+'DBAAAAABCAAAAABD'+'DBBBBBBBCBBBBBBD'+'DDDDDDDDDDDDDDDD'));
         } else if (type === 'dirt' || type === 'grassSide') {
             const pal = {'A':'#866043', 'B':'#755138', 'C':'#9b7150', 'D':'#63432b'};
-            const map = 'ABACAAABDBAACAAB'+'BAADACBAAABACBDA'+'CBBAAABACDAAAACA'+'AACDBAACBAABDAAB'+'DBACAACDBAABACDB'+'AABDCAAAACDBBAAA'+'ACBAABDCBAAAACBA'+'BAAACBAAABDCBAAB'+'ABDCBAAACBAAABDC'+'CBAAABDCBAAACBAA'+'AAABACBAAABDCAAB'+'ACDBAAACDBAAABAC'+'BAAACDBAAACDBAAA'+'ABDCAAAACDBAAACA'+'CBAAABDCAAAACDBA'+'AABDCAAAACDBAAAB';
-            drawPixelMap(ctx, pal, map);
+            drawPixelMap(ctx, pal, savePixelMap(type, pal, 'ABACAAABDBAACAAB'+'BAADACBAAABACBDA'+'CBBAAABACDAAAACA'+'AACDBAACBAABDAAB'+'DBACAACDBAABACDB'+'AABDCAAAACDBBAAA'+'ACBAABDCBAAAACBA'+'BAAACBAAABDCBAAB'+'ABDCBAAACBAAABDC'+'CBAAABDCBAAACBAA'+'AAABACBAAABDCAAB'+'ACDBAAACDBAAABAC'+'BAAACDBAAACDBAAA'+'ABDCAAAACDBAAACA'+'CBAAABDCAAAACDBA'+'AABDCAAAACDBAAAB'));
             if(type === 'grassSide') {
                 ctx.fillStyle = '#74BC39'; ctx.fillRect(0,0,16,3); 
                 let fringes = [2,3,2,4,2,3,1,2,3,2,4,3,2,1,2,3]; 
                 for(let x=0; x<16; x++) { ctx.fillStyle = '#74BC39'; ctx.fillRect(x, 3, 1, fringes[x]); ctx.fillStyle = '#5A962A'; ctx.fillRect(x, 3+fringes[x], 1, 1); } 
             }
-        } else if (type === 'wooden_pickaxe' || type === 'stone_pickaxe') {
-            const H = type === 'wooden_pickaxe' ? '#9c774a' : '#8e8e8e';
-            const h = type === 'wooden_pickaxe' ? '#b48f5e' : '#686868';
+        } else if (type.includes('_pickaxe')) {
+            const isWood = type.startsWith('wooden');
+            const isDamaged = type.endsWith('_damaged');
+            const H = isWood ? '#9c774a' : '#8e8e8e'; const h = isWood ? '#b48f5e' : '#686868';
             const pal = {'H':H, 'h':h, 's':'#8a5c34', 'S':'#5c3a21', '_':null};
-            const map = 
+            
+            // Damaged pickaxe has missing pixels in top left/right
+            const map = isDamaged ?
+            '__H_H_H_H_H_____'+
+            '_H_h_h_h_h_H____'+
+            'Hh_______ssS____'+
+            '_h______ssS_____'+
+            'Hh_____ssS______'+
+            '_H____ssS_______'+
+            '_____ssS________'+
+            '____ssS_________'+
+            '___ssS__________'+
+            '__ssS___________'+
+            '_ssS____________'+
+            'ssS_____________'+
+            'sS______________'+
+            '________________'+
+            '________________'+
+            '________________' 
+            : 
             '__HHHHHHHHH_____'+
             '_HhhhhhhhhhH____'+
             'Hh_______ssSH___'+
@@ -216,19 +228,36 @@
             '________________'+
             '________________'+
             '________________';
-            drawPixelMap(ctx, pal, map);
+            drawPixelMap(ctx, pal, savePixelMap(type, pal, map));
+        } else if (type === 'stick') {
+            const pal = {'s':'#8a5c34', 'S':'#5c3a21', '_':null};
+            const map = 
+            '________________'+
+            '______________S_'+
+            '_____________sS_'+
+            '____________sS__'+
+            '___________sS___'+
+            '__________sS____'+
+            '_________sS_____'+
+            '________sS______'+
+            '_______sS_______'+
+            '______sS________'+
+            '_____sS_________'+
+            '____sS__________'+
+            '___sS___________'+
+            '__sS____________'+
+            '_sS_____________'+
+            'sS______________';
+            drawPixelMap(ctx, pal, savePixelMap(type, pal, map));
         } else if (type === 'bedrock') {
             const pal = {'A':'#333333', 'B':'#111111', 'C':'#555555', 'D':'#222222'};
-            const map = 'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA';
-            drawPixelMap(ctx, pal, map);
+            drawPixelMap(ctx, pal, savePixelMap(type, pal, 'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'));
         } else if (type === 'ctTop') {
             const pal = {'A':'#b07f4f', 'B':'#593a20', 'C':'#8a603c'};
-            const map = 'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAABBBBBBBBBBAAA'+'AAABCCCCCCCCBAAA'+'AAABCBBBBBBCBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBBBBBBCBAAA'+'AAABCCCCCCCCBAAA'+'AAABBBBBBBBBBAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA';
-            drawPixelMap(ctx, pal, map);
+            drawPixelMap(ctx, pal, savePixelMap(type, pal, 'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAABBBBBBBBBBAAA'+'AAABCCCCCCCCBAAA'+'AAABCBBBBBBCBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBBBBBBCBAAA'+'AAABCCCCCCCCBAAA'+'AAABBBBBBBBBBAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'));
         } else if (type === 'ctSide') {
             const pal = {'A':'#a88154', 'B':'#593c20', 'C':'#7a7a7a', 'D':'#e0e0e0', 'E':'#593a20'};
-            const map = 'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAACCACAA'+'AAAAAAAAAACCCCAA'+'AAAAAAAAAAADCAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA';
-            drawPixelMap(ctx, pal, map);
+            drawPixelMap(ctx, pal, savePixelMap(type, pal, 'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAACCACAA'+'AAAAAAAAAACCCCAA'+'AAAAAAAAAAADCAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'));
         } else if (type === 'grass') { 
             ctx.fillStyle = '#74BC39'; ctx.fillRect(0,0,16,16); 
             for(let i=0; i<120; i++) { ctx.fillStyle=Math.random()>0.5?'#63A32E':'#85D444'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); } 
@@ -244,11 +273,28 @@
             for(let i=0; i<30; i++) { ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(2+Math.random()*12, 2+Math.random()*12, 1, 1); } 
         } else if (type === 'leaves') { 
             ctx.clearRect(0,0,16,16); for(let x=0; x<16; x++) { for(let y=0; y<16; y++) { if((x+y)%2===0 || Math.random()>0.7) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); } } } 
-        } else if (type === 'stick') { 
-            ctx.clearRect(0,0,16,16); ctx.fillStyle = '#36200b'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 2, 2); } ctx.fillStyle = '#8a5c34'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 1, 1); } 
         }
 
-        imgDataUrls[type] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; if(type === 'leaves' || type === 'stick' || type.endsWith('_pickaxe')) t.transparent = true; texCache[type] = t; return t;
+        imgDataUrls[type] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; if(type === 'leaves' || type === 'stick' || type.includes('_pickaxe')) t.transparent = true; texCache[type] = t; return t;
+    }
+
+    // VOXEL EXTRUDER FOR DROPPED 2D ITEMS!
+    function createVoxelItem(type) {
+        genTex(type); // Ensure pixel map is saved
+        let mapData = pixelMaps[type];
+        let group = new THREE.Group();
+        let matCache = {};
+        for(let i=0; i<256; i++) {
+            let char = mapData.map[i];
+            if(char && mapData.pal[char]) {
+                if(!matCache[char]) matCache[char] = new THREE.MeshLambertMaterial({color: mapData.pal[char]});
+                let mesh = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.05), matCache[char]); // Actual physical depth!
+                mesh.position.set((i%16)*0.04 - 0.32, 0.32 - Math.floor(i/16)*0.04, 0);
+                group.add(mesh);
+            }
+        }
+        group.scale.set(0.8, 0.8, 0.8);
+        return group;
     }
 
     const crackMats = Array(10).fill(null).map((_, i) => {
@@ -277,12 +323,19 @@
         if(gameState === "PLAYING") { targetRotation.y -= e.movementX*0.002; targetRotation.x -= e.movementY*0.002; targetRotation.x = Math.max(-1.5, Math.min(1.5, targetRotation.x)); }
     });
 
-    function getIconHTML(type, damage=0) {
-        if(!type) return ''; 
+    function getIconHTML(baseType, damage=0) {
+        if(!baseType) return ''; 
+        
+        let type = baseType;
+        let maxD = type === 'stone_pickaxe' ? 131 : 59;
+        
+        // Swap to broken texture if severely damaged
+        if (type.endsWith('_pickaxe') && damage > maxD * 0.7) { type = type + '_damaged'; }
+
         if(type === 'crafting_table') { genTex('ctTop'); genTex('ctSide'); } else if(type === 'wood') { genTex('woodTop'); genTex('wood'); } else if(type === 'grass') { genTex('grass'); genTex('grassSide'); } else genTex(type);
         
         let html = '';
-        if(type === 'stick' || type.endsWith('_pickaxe')) {
+        if(type === 'stick' || type.includes('_pickaxe')) {
             html = `<div class="item-2d" style="background-image:url(${imgDataUrls[type]})"></div>`;
         } else {
             let top = type === 'wood' ? 'woodTop' : (type === 'crafting_table' ? 'ctTop' : (type === 'grass' ? 'grass' : type));
@@ -290,9 +343,7 @@
             html = `<div class="item-3d"><div class="face top" style="background-image:url(${imgDataUrls[top]})"></div><div class="face right" style="background-image:url(${imgDataUrls[side]})"></div><div class="face front" style="background-image:url(${imgDataUrls[side]})"></div></div>`;
         }
 
-        // Durability Bar rendering
-        if(type.endsWith('_pickaxe')) {
-            let maxD = type === 'stone_pickaxe' ? 131 : 59;
+        if(baseType.endsWith('_pickaxe')) {
             if (damage > 0) {
                 let pct = (maxD - damage) / maxD;
                 let color = pct > 0.5 ? '#0f0' : (pct > 0.2 ? '#fa0' : '#f00');
@@ -359,7 +410,7 @@
     document.addEventListener('mouseup', (e) => {
         if((gameState === "INV" || gameState === "CRAFTING") && dragItem) {
             let box = gameState === "INV" ? document.getElementById('inv-box') : document.getElementById('ct-box');
-            if(!box.contains(e.target) && e.target.id !== 'drag-icon') { dropItemIntoWorld(dragItem.item.type, dragItem.item.count); dragItem = null; document.getElementById('drag-icon').style.display = 'none'; updateUI(); }
+            if(!box.contains(e.target) && e.target.id !== 'drag-icon') { dropItemIntoWorld(dragItem.item.type, dragItem.item.count, dragItem.item.damage); dragItem = null; document.getElementById('drag-icon').style.display = 'none'; updateUI(); }
         }
     });
 
@@ -381,7 +432,6 @@
           if (hasCT) { updateSlotDOM(out3, {type:'crafting_table', count:1}); out3.onclick = () => processCraft(crafting3x3, 'crafting_table', 1); }
       }
       
-      // PICKAXE RECIPES
       let isWoodPick = c3[0]==='planks' && c3[1]==='planks' && c3[2]==='planks' && c3[4]==='stick' && c3[7]==='stick' && !c3[3] && !c3[5] && !c3[6] && !c3[8];
       let isStonePick = c3[0]==='cobblestone' && c3[1]==='cobblestone' && c3[2]==='cobblestone' && c3[4]==='stick' && c3[7]==='stick' && !c3[3] && !c3[5] && !c3[6] && !c3[8];
       if(isWoodPick) { updateSlotDOM(out3, {type:'wooden_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_pickaxe', 1); }
@@ -393,7 +443,7 @@
     function startGame() { initAudio(); playMusic(); cameraGroup.position.set(0, 15, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); }
     
     function setMenu(s) {
-      if(gameState === "INV" || gameState === "CRAFTING") { let arr = gameState === "INV" ? crafting2x2 : crafting3x3; arr.forEach(c => { if(c.count > 0) { dropItemIntoWorld(c.type, c.count); c.count = 0; c.type = null; } }); }
+      if(gameState === "INV" || gameState === "CRAFTING") { let arr = gameState === "INV" ? crafting2x2 : crafting3x3; arr.forEach(c => { if(c.count > 0) { dropItemIntoWorld(c.type, c.count, c.damage); c.count = 0; c.type = null; c.damage = 0; } }); }
       gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
       document.getElementById('hud').style.display = (s === "PLAYING" || s === "INV" || s === "CRAFTING") ? 'flex' : 'none';
       document.getElementById('crosshair').style.display = s === "PLAYING" ? 'block' : 'none';
@@ -403,31 +453,35 @@
     }
     document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU'); });
 
-    function dropItemIntoWorld(type, amount = 1) {
+    function dropItemIntoWorld(baseType, amount = 1, damage = 0) {
+        let type = baseType;
+        let maxD = type === 'stone_pickaxe' ? 131 : 59;
+        if (type.endsWith('_pickaxe') && damage > maxD * 0.7) type = type + '_damaged'; // Apply damaged visual
+
         for(let j=0; j<amount; j++) {
             let dir = new THREE.Vector3(); cam.getWorldDirection(dir); 
             let dropPos = cameraGroup.position.clone().addScaledVector(dir, 1.2); dropPos.y += 0.2; 
-            let drop, mat;
+            let drop;
             
-            // Extruded 3D Tools/Sticks
-            if (type === 'stick' || type.endsWith('_pickaxe')) { 
-                mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: true, alphaTest: 0.5, side: THREE.DoubleSide}); 
-                drop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.05), mat); 
+            if (type === 'stick' || type.includes('_pickaxe')) { 
+                drop = createVoxelItem(type);
             } 
             else { 
+                let mat;
                 if (type === 'wood') { mat = [new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')})]; }
                 else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctTop')}), new THREE.MeshLambertMaterial({map: genTex('planks')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')})]; }
                 else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
                 else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'}); }
                 drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), mat); 
             }
-            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, velY: 0.15, is2D: type.endsWith('_pickaxe') || type==='stick', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
+            drop.position.copy(dropPos); sc.add(drop); 
+            drops.push({mesh: drop, type: baseType, damage: damage, velY: 0.15, velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
         }
     }
 
     // --- 4. 3D ENGINE, FOG, & COLLISION ---
     const sc = new THREE.Scene(); 
-    const skyColor = 0x88BBEB; sc.background = new THREE.Color(skyColor); sc.fog = new THREE.Fog(skyColor, 8, 24); // Classic tiny render distance fog
+    const skyColor = 0x88BBEB; sc.background = new THREE.Color(skyColor); sc.fog = new THREE.Fog(skyColor, 8, 24);
 
     const cameraGroup = new THREE.Group(); sc.add(cameraGroup);
     const cam = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000); cameraGroup.add(cam); 
@@ -514,11 +568,16 @@
           d.velY -= 0.01; d.mesh.position.y += d.velY;
           if(d.velDir) { d.mesh.position.x += d.velDir.x; d.mesh.position.z += d.velDir.z; d.velDir.multiplyScalar(0.9); }
           if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; d.velDir.x=0; d.velDir.z=0; }
-          if(!d.is2D) { d.mesh.rotation.y += 0.03; d.mesh.rotation.x += 0.01; } else { d.mesh.rotation.y += 0.05; }
-          if(Date.now() - d.spawnTime > 1500 && cameraGroup.position.distanceTo(d.mesh.position) < 2.5) { d.mesh.position.lerp(cameraGroup.position, 0.25); if(cameraGroup.position.distanceTo(d.mesh.position) < 0.7) { playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); addToInventory(d.type, 1, 0); } }
+          d.mesh.rotation.y += 0.03; if(!d.mesh.isGroup) d.mesh.rotation.x += 0.01;
+          
+          if(Date.now() - d.spawnTime > 1500 && cameraGroup.position.distanceTo(d.mesh.position) < 2.5) { 
+              d.mesh.position.lerp(cameraGroup.position, 0.25); 
+              if(cameraGroup.position.distanceTo(d.mesh.position) < 0.7) { 
+                  playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); addToInventory(d.type, 1, d.damage); 
+              } 
+          }
         });
 
-        // MINING LOGIC (Tools & Durability)
         if(miningTarget && gameState === "PLAYING") {
             let activeItem = inventory[activeSlot];
             let activeType = activeItem.type;
@@ -526,9 +585,9 @@
             
             let hardness = 2.5; let canHarvest = true;
             if (miningTarget.name === 'stone' || miningTarget.name === 'cobblestone') {
-                if (activeType === 'stone_pickaxe') { hardness = 0.5; }
-                else if (activeType === 'wooden_pickaxe') { hardness = 1.0; }
-                else { hardness = 7.5; canHarvest = false; } // Hand takes ages
+                if (activeType === 'stone_pickaxe') { hardness = 1.0; }
+                else if (activeType === 'wooden_pickaxe') { hardness = 1.8; }
+                else { hardness = 12.5; canHarvest = false; } // Punishing hand speed
             }
 
             miningProgress += 0.025; miningSoundTimer += 0.025;
@@ -544,8 +603,8 @@
                     if(nY <= surfaceH && !bMap.has(k) && !brokenBlocks.has(k)) { if(nY <= -50) addB(nX, nY, nZ, 'bedrock'); else if(nY <= surfaceH - 3) addB(nX, nY, nZ, 'stone'); else if(nY < surfaceH) addB(nX, nY, nZ, 'dirt'); }
                 });
 
-                // Tool Durability Logic
-                if (isPick && (name === 'stone' || name === 'cobblestone')) {
+                // Durability degrades on ANY block broken with a tool
+                if (isPick) {
                     activeItem.damage = (activeItem.damage || 0) + 1;
                     let maxD = activeType === 'stone_pickaxe' ? 131 : 59;
                     if (activeItem.damage >= maxD) {
@@ -557,10 +616,10 @@
 
                 if(name !== 'leaves') {
                     let dropName = name === 'stone' ? 'cobblestone' : (name === 'grass' ? 'dirt' : name);
-                    if (name === 'stone' && !canHarvest) dropName = null; // No drop without tool
+                    if (name === 'stone' && !canHarvest) dropName = null; // No drop
                     
                     if(dropName) {
-                        dropItemIntoWorld(dropName, 1); 
+                        dropItemIntoWorld(dropName, 1, 0); 
                         drops[drops.length-1].mesh.position.copy(dropPos); 
                         drops[drops.length-1].spawnTime = Date.now() - 1500;
                     }
@@ -576,7 +635,7 @@
       keys[e.code] = true;
       if(e.code === 'KeyE') { playSound('click'); if(gameState === "INV" || gameState === "CRAFTING") setMenu('PLAYING'); else if(gameState === "PLAYING") setMenu('INV'); }
       if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key) - 1; updateUI(); }
-      if(e.code === 'KeyQ' && gameState === "PLAYING") { let slot = inventory[activeSlot]; if(slot.type && slot.count > 0) { let dropAmount = e.ctrlKey ? slot.count : 1; slot.count -= dropAmount; let type = slot.type; let dmg = slot.damage; if(slot.count <= 0) { slot.type = null; slot.damage = 0; } updateUI(); dropItemIntoWorld(type, dropAmount); } }
+      if(e.code === 'KeyQ' && gameState === "PLAYING") { let slot = inventory[activeSlot]; if(slot.type && slot.count > 0) { let dropAmount = e.ctrlKey ? slot.count : 1; let type = slot.type; let dmg = slot.damage; slot.count -= dropAmount; if(slot.count <= 0) { slot.type = null; slot.damage = 0; } updateUI(); dropItemIntoWorld(type, dropAmount, dmg); } }
     });
     document.addEventListener('keyup', e => { keys[e.code] = false; });
 
@@ -591,7 +650,7 @@
         else if(e.button === 2) {
           if(b.name === 'crafting_table') { setMenu('CRAFTING'); return; }
           let item = inventory[activeSlot];
-          if(item.type && item.count > 0 && item.type !== 'stick' && !item.type.endsWith('_pickaxe')) { 
+          if(item.type && item.count > 0 && !item.type.endsWith('_pickaxe') && item.type !== 'stick') { 
             let p = b.position.clone().add(hits[0].face.normal); let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
             let dx = pX - cameraGroup.position.x, dy = pY - (cameraGroup.position.y - 1.6), dz = pZ - cameraGroup.position.z;
             let insidePlayer = (Math.abs(dx) < 0.6 && Math.abs(dz) < 0.6 && dy > -0.8 && dy < 1.8);
