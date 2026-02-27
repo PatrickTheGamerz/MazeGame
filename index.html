@@ -2,16 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.11 - The Classics Update</title>
+  <title>ORANGECRAFT Alpha 1.12 - The GUI & Audio Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
     #vhs-scanlines { position:absolute; width:100%; height:100%; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.5) 50%); background-size: 100% 4px; opacity: 0.9; }
     #vhs-noise { position:absolute; width:100%; height:100%; opacity:0.25; background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/White_noise.png'); animation: noiseJitter 0.1s infinite; mix-blend-mode: multiply; }
     #vhs-fringe { position:absolute; width:100%; height:100%; mix-blend-mode: screen; background: linear-gradient(90deg, rgba(255,0,0,0.15), rgba(0,255,0,0.02), rgba(0,0,255,0.15)); }
-    #vhs-tracking { position:absolute; bottom:5%; width:100%; height:20px; background: rgba(255,255,255,0.3); filter: blur(8px); opacity: 0.7; animation: tracking 5s linear infinite; }
-    @keyframes tracking { 0% { bottom: -20%; } 15% { bottom: 120%; } 100% { bottom: 120%; } }
-    @keyframes noiseJitter { 0% { transform:translate(0,0) } 50% { transform:translate(-2%,2%) } 100% { transform:translate(2%,-2%) } }
     
     #crosshair{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;z-index:100;display:none}
     #crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.8)}
@@ -19,15 +16,24 @@
     #hud{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;z-index:100;pointer-events:none}
     #hotbar-display{display:flex;background:rgba(0,0,0,0.8);border:4px solid #222;padding:2px;margin-bottom:10px}
     
-    .slot, .inv-slot {width:36px;height:36px;border:2px solid #666;background-color:rgba(80,80,80,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px; background-size: cover; image-rendering: pixelated;}
+    .slot, .inv-slot {width:36px;height:36px;border:2px solid #666;background-color:rgba(80,80,80,0.8);margin:0 2px;position:relative;text-align:center;line-height:36px;}
     .slot.active{border:2px solid #fff;box-shadow:0 0 20px rgba(255,255,255,0.5)}
-    .item-count{position:absolute;bottom:2px;right:4px;font-size:14px;text-shadow:2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;color:white;pointer-events:none;font-weight:bold;}
+    .item-count{position:absolute;bottom:-4px;right:2px;font-size:14px;text-shadow:2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;color:white;pointer-events:none;font-weight:bold;z-index:10;}
     .inv-slot{background-color:#8b8b8b;border-top-color:#333;border-left-color:#333;border-bottom-color:#fff;border-right-color:#fff;cursor:pointer;margin:0;}
     
+    /* ISOMETRIC 3D INVENTORY CSS */
+    .item-3d { width:20px; height:20px; transform-style:preserve-3d; transform: rotateX(-25deg) rotateY(45deg); margin: 8px auto; pointer-events:none; }
+    .face { position:absolute; width:20px; height:20px; background-size:cover; image-rendering:pixelated; border: 1px solid rgba(0,0,0,0.2); box-sizing:border-box;}
+    .face.top { transform: rotateX(90deg) translateZ(10px); filter: brightness(1.1); }
+    .face.right { transform: rotateY(90deg) translateZ(10px); filter: brightness(0.8); }
+    .face.front { transform: translateZ(10px); filter: brightness(0.5); }
+    .item-2d { width:26px; height:26px; margin:5px auto; background-size:cover; image-rendering:pixelated; pointer-events:none; filter:drop-shadow(2px 2px 0px rgba(0,0,0,0.5));}
+
+    #tooltip { position:fixed; background:rgba(16,0,16,0.95); border:2px solid #3b00a5; color:#fff; padding:4px 8px; pointer-events:none; display:none; z-index:9999; font-family:'Courier New', monospace; font-weight:bold; text-shadow:2px 2px #000; box-shadow: 4px 4px 0 rgba(0,0,0,0.5); }
+
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
     .title{font-size:5rem;color:#FFA500;text-shadow:6px 6px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
     
-    /* CLASSIC SPLASH TEXT */
     .splash{position:absolute;top:65px;right:-90px;color:#ffff00;font-size:1.6rem;font-family: 'Arial Black', sans-serif; font-weight:bold; animation:pulse 0.4s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px 0 #3f3f00; pointer-events:none; white-space:nowrap;}
     @keyframes pulse{from{transform:rotate(-20deg) scale(0.95)}to{transform:rotate(-20deg) scale(1.05)}}
     
@@ -35,15 +41,16 @@
     .btn:hover{background:#666}
     .inv-container{background:#c6c6c6;padding:15px;border:4px solid #000;display:flex;flex-direction:column;pointer-events:auto;color:#000;box-shadow: 10px 10px 0 rgba(0,0,0,0.6)}
     .inv-main{display:grid;grid-template-columns:repeat(9,36px);gap:4px;justify-content:center;margin-top:10px}
-    #drag-icon{position:fixed;pointer-events:none;z-index:1100;width:32px;height:32px;display:none;background-size:cover;image-rendering:pixelated;filter:drop-shadow(2px 2px 0px rgba(0,0,0,0.5));}
+    #drag-icon{position:fixed;pointer-events:none;z-index:1100;width:36px;height:36px;display:none;}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body oncontextmenu="return false;">
 
   <audio id="bgm" src="calm1.mp3" loop></audio>
+  <div id="tooltip">Item Name</div>
 
-  <div id="vhs-master"><div id="vhs-scanlines"></div><div id="vhs-noise"></div><div id="vhs-fringe"></div><div id="vhs-tracking"></div></div>
+  <div id="vhs-master"><div id="vhs-scanlines"></div><div id="vhs-noise"></div><div id="vhs-fringe"></div></div>
   <div id="crosshair"></div>
   <div id="drag-icon"></div>
   <div id="hud"><div id="hotbar-display"></div></div>
@@ -77,213 +84,137 @@
     </div>
   </div>
 
+  <div id="crafting-table-screen" class="menu-overlay">
+    <div class="inv-container" id="ct-box">
+      <div style="display:flex; justify-content:center; margin-bottom:10px">
+        <div style="text-align:center; color:#333; font-weight:bold; display:flex; align-items:center;">
+          <div>Crafting<br>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:2px; margin-top:5px" id="ct-craft-grid">
+              <div class="inv-slot" data-idx="0"></div><div class="inv-slot" data-idx="1"></div><div class="inv-slot" data-idx="2"></div>
+              <div class="inv-slot" data-idx="3"></div><div class="inv-slot" data-idx="4"></div><div class="inv-slot" data-idx="5"></div>
+              <div class="inv-slot" data-idx="6"></div><div class="inv-slot" data-idx="7"></div><div class="inv-slot" data-idx="8"></div>
+            </div>
+          </div>
+          <div style="margin-left:20px; font-size:24px;">→</div>
+          <div style="margin-left:20px;"><span id="ct-craft-output" class="inv-slot" style="display:inline-block; width:50px; height:50px; line-height:50px; cursor:pointer;"></span></div>
+        </div>
+      </div>
+      <div class="inv-main" id="ct-m-inv-grid"></div>
+      <div class="inv-main" id="ct-h-inv-grid" style="margin-top:10px"></div>
+    </div>
+  </div>
+
   <script>
-    // --- 1. ENHANCED C418 AUDIO & REVERB ENGINE ---
-    let audioCtx = null, reverbNode = null;
-    let musicSeq = null;
+    // --- 1. ENHANCED C418 AUDIO & PADS ---
+    let audioCtx = null, reverbNode = null; let musicSeq = null;
 
     function initAudio() { 
         if(!audioCtx) { 
             audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-            let len = audioCtx.sampleRate * 3.0; // 3 sec reverb tail
+            let len = audioCtx.sampleRate * 3.5; 
             let buffer = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
-            for(let c=0; c<2; c++) {
-                let data = buffer.getChannelData(c);
-                for(let i=0; i<len; i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 4);
-            }
-            reverbNode = audioCtx.createConvolver(); reverbNode.buffer = buffer;
-            reverbNode.connect(audioCtx.destination);
+            for(let c=0; c<2; c++) { let data = buffer.getChannelData(c); for(let i=0; i<len; i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 5); }
+            reverbNode = audioCtx.createConvolver(); reverbNode.buffer = buffer; reverbNode.connect(audioCtx.destination);
         } 
     }
 
     function playSound(type, blockName = '') {
-        if(!audioCtx) return;
-        let now = audioCtx.currentTime;
-        let g = audioCtx.createGain(); g.connect(audioCtx.destination);
-        
+        if(!audioCtx) return; let now = audioCtx.currentTime; let g = audioCtx.createGain(); g.connect(audioCtx.destination);
         if(type === 'click') {
-            let o = audioCtx.createOscillator(); o.type = 'triangle'; 
-            o.frequency.setValueAtTime(800, now); o.frequency.exponentialRampToValueAtTime(100, now + 0.05);
-            g.gain.setValueAtTime(0.4, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-            o.connect(g); o.start(now); o.stop(now + 0.05);
+            let o = audioCtx.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(800, now); o.frequency.exponentialRampToValueAtTime(100, now + 0.05);
+            g.gain.setValueAtTime(0.4, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.05); o.connect(g); o.start(now); o.stop(now + 0.05);
         } else if (type === 'step') {
             let bufferSize = audioCtx.sampleRate * 0.1; let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); let data = buffer.getChannelData(0);
             for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
-            let noise = audioCtx.createBufferSource(); noise.buffer = buffer;
-            let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = (blockName==='stone'||blockName==='cobblestone') ? 800 : 400;
-            g.gain.setValueAtTime(0.04, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            noise.connect(filter); filter.connect(g); noise.start(now);
+            let noise = audioCtx.createBufferSource(); noise.buffer = buffer; let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = (blockName==='stone'||blockName==='cobblestone') ? 800 : 400;
+            g.gain.setValueAtTime(0.04, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.1); noise.connect(filter); filter.connect(g); noise.start(now);
         } else if (type === 'break' || type === 'place') {
             let bufferSize = audioCtx.sampleRate * 0.2; let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); let data = buffer.getChannelData(0);
             for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
-            let noise = audioCtx.createBufferSource(); noise.buffer = buffer;
-            let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; 
+            let noise = audioCtx.createBufferSource(); noise.buffer = buffer; let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; 
             filter.frequency.value = (blockName==='stone'||blockName==='cobblestone') ? 1200 : (blockName==='wood' ? 600 : 300);
-            g.gain.setValueAtTime(0.25, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-            noise.connect(filter); filter.connect(g); noise.start(now);
+            g.gain.setValueAtTime(0.25, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.2); noise.connect(filter); filter.connect(g); noise.start(now);
         }
     }
 
-    // Four Iconic C418 Tracks
     function playMusic() {
         initAudio();
         if(document.getElementById('bgm').currentTime > 0 && !document.getElementById('bgm').paused) return;
         document.getElementById('bgm').play().catch(() => {
             if(musicSeq) clearInterval(musicSeq);
             const tracks = [
-                [370.0, 440.0, 554.4, 415.3, null, 440.0, 370.0, null], // 1. "Minecraft" (Calm 1)
-                [293.66, 370.0, 440.0, 493.88, null, 440.0, 370.0],     // 2. "Sweden" (Calm 3)
-                [370.0, 415.3, 554.4, 622.25, null, 554.4, 415.3],      // 3. "Subwoofer Lullaby"
-                [440.0, 554.4, 659.25, 740.0, null, 659.25, 554.4]      // 4. "Wet Hands"
+                [370.0, 440.0, 554.4, 415.3, null, 440.0, 370.0, null], [293.66, 370.0, 440.0, 493.88, null, 440.0, 370.0],
+                [370.0, 415.3, 554.4, 622.25, null, 554.4, 415.3], [440.0, 554.4, 659.25, 740.0, null, 659.25, 554.4]
             ];
-            let seq = tracks[Math.floor(Math.random() * tracks.length)];
-            let idx = 0;
-
+            let seq = tracks[Math.floor(Math.random() * tracks.length)]; let idx = 0;
             musicSeq = setInterval(() => {
-                let note = seq[idx % seq.length]; idx++;
-                if(!note) return;
-                
+                let note = seq[idx % seq.length]; idx++; if(!note) return;
                 let now = audioCtx.currentTime;
-                let o = audioCtx.createOscillator(); o.type = 'sine';
-                let g = audioCtx.createGain();
-                let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 600;
-                
-                o.frequency.value = note / 2; // Lower, deeper piano-like octave
-                g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.1, now + 1.5); g.gain.linearRampToValueAtTime(0, now + 4);
-                
-                o.connect(filter); filter.connect(g); 
-                g.connect(audioCtx.destination); g.connect(reverbNode);
-                
-                o.start(now); o.stop(now + 4);
+                // Rich 3-oscillator pad
+                [-0.01, 0, 0.01].forEach(detune => {
+                    let o = audioCtx.createOscillator(); o.type = 'sine'; let g = audioCtx.createGain();
+                    let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 600;
+                    o.frequency.value = (note / 2) * (1 + detune);
+                    g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.06, now + 1.5); g.gain.linearRampToValueAtTime(0, now + 4);
+                    o.connect(filter); filter.connect(g); g.connect(audioCtx.destination); g.connect(reverbNode);
+                    o.start(now); o.stop(now + 4);
+                });
             }, 3000);
         });
     }
 
-    // --- 2. EXACT PIXEL-ART TEXTURES & CRACKS ---
+    // --- 2. TEXTURES & TOOLTIPS ---
     const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = [
-        "Also try Terraria!", "Play him off, keyboard cat!", "Now with multiplayer!", 
-        "110% sugar!", "May contain nuts!", "More polygons!", "Water proof!", "Peter Griffin!"
-    ];
+    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Now with multiplayer!", "110% sugar!", "May contain nuts!", "More polygons!", "Water proof!", "Peter Griffin!"];
 
     function genTex(type) {
         if(texCache[type]) return texCache[type];
-        const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
-        const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
+        const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
 
-        if (type === 'planks') {
-            ctx.fillStyle = '#b48f5e'; ctx.fillRect(0,0,16,16); 
-            ctx.fillStyle = '#9c774a'; 
-            for(let y=0; y<16; y+=4) {
-                ctx.fillRect(0, y+3, 16, 1); ctx.fillStyle = '#7a5a35'; ctx.fillRect(0, y+4, 16, 1); ctx.fillStyle = '#9c774a';
-                ctx.fillRect(Math.random()*16, y+1, 4, 1); ctx.fillRect(Math.random()*16, y+2, 3, 1);
-            }
-            ctx.fillStyle = '#6b4b2b'; ctx.fillRect(3,0,1,3); ctx.fillRect(11,4,1,3); ctx.fillRect(5,8,1,3); ctx.fillRect(13,12,1,3);
-        } else if (type === 'cobblestone') {
-            ctx.fillStyle = '#656565'; ctx.fillRect(0,0,16,16); 
-            for(let i=0; i<40; i++) { 
-                ctx.fillStyle = Math.random()>0.5 ? '#808080' : '#525252';
-                ctx.fillRect(Math.floor(Math.random()*14), Math.floor(Math.random()*14), 2+Math.random()*2, 2+Math.random()*2);
-            }
-            ctx.fillStyle = '#3a3a3a'; 
-            for(let i=0; i<16; i+=4) { ctx.fillRect(0, i, 16, 1); ctx.fillRect(i+(i%3), 0, 1, 16); }
-        } else if (type === 'stone') {
-            ctx.fillStyle = '#7d7d7d'; ctx.fillRect(0,0,16,16);
-            for(let i=0; i<90; i++) { ctx.fillStyle=Math.random()>0.5?'#707070':'#8c8c8c'; ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1); }
-        } else if (type === 'dirt') {
-            ctx.fillStyle = '#866043'; ctx.fillRect(0,0,16,16); 
-            for(let i=0; i<60; i++) { ctx.fillStyle = Math.random()>0.5 ? '#68452b' : '#997354'; ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1); }
-        } else if (type === 'grassSide') {
-            ctx.fillStyle = '#866043'; ctx.fillRect(0,0,16,16); 
-            for(let i=0; i<40; i++) { ctx.fillStyle='#68452b'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
-            ctx.fillStyle = '#65b847'; ctx.fillRect(0,0,16,3); 
-            let fringes = [2,3,2,4,2,3,1,2,3,2,4,3,2,1,2,3]; 
-            for(let x=0; x<16; x++) { ctx.fillStyle = '#65b847'; ctx.fillRect(x, 3, 1, fringes[x]); ctx.fillStyle = '#4f9136'; ctx.fillRect(x, 3+fringes[x], 1, 1); } 
-        } else if (type === 'grass') {
-            ctx.fillStyle = '#65b847'; ctx.fillRect(0,0,16,16); 
-            for(let i=0; i<80; i++) { ctx.fillStyle=Math.random()>0.5?'#549c39':'#78cc58'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
-        } else if (type === 'wood') {
-            ctx.fillStyle = '#3d2b1c'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#5c442c';
-            for(let x=0; x<16; x+=2) { ctx.fillRect(x, 0, 1, 16); if(Math.random()>0.3) ctx.fillRect(x+1, Math.random()*16, 1, 3); }
-        } else if (type === 'woodTop') {
-            ctx.fillStyle = '#412e1c'; ctx.fillRect(0,0,16,16); 
-            ctx.fillStyle = '#b7935f'; ctx.fillRect(1,1,14,14); ctx.fillStyle = '#a17e4d'; ctx.fillRect(2,2,12,12); 
-            ctx.fillStyle = '#b7935f'; ctx.fillRect(3,3,10,10); ctx.fillStyle = '#a17e4d'; ctx.fillRect(5,5,6,6); 
-            ctx.fillStyle = '#b7935f'; ctx.fillRect(6,6,4,4);   ctx.fillStyle = '#a17e4d'; ctx.fillRect(7,7,2,2); 
-            for(let i=0; i<30; i++) { ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(2+Math.random()*12, 2+Math.random()*12, 1, 1); }
-        } else if (type === 'ctTop') {
-            ctx.fillStyle = '#b07f4f'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#593a20';
-            ctx.fillRect(3, 3, 10, 10); ctx.fillStyle = '#8a603c'; ctx.fillRect(4, 4, 8, 8);
-            ctx.fillStyle = '#593a20'; ctx.fillRect(4, 6, 8, 1); ctx.fillRect(4, 9, 8, 1); ctx.fillRect(6, 4, 1, 8); ctx.fillRect(9, 4, 1, 8);
-        } else if (type === 'ctSide') {
-            ctx.fillStyle = '#a88154'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#593c20'; ctx.fillRect(0,0,16,4);
-            ctx.fillStyle = '#7a7a7a'; ctx.fillRect(10, 5, 4, 3); ctx.fillStyle = '#e0e0e0'; ctx.fillRect(11, 7, 3, 1);
-            ctx.fillStyle = '#593a20'; ctx.fillRect(12, 8, 1, 4);
-        } else if (type === 'leaves') {
-            ctx.clearRect(0,0,16,16);
-            for(let x=0; x<16; x++) { for(let y=0; y<16; y++) {
-                if((x+y)%2===0 || Math.random()>0.7) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); }
-            }}
-        } else if (type === 'bedrock') {
-            ctx.fillStyle = '#222'; ctx.fillRect(0,0,16,16);
-            for(let i=0; i<150; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#111' : '#333'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); }
-        } else if (type === 'stick') {
-            ctx.clearRect(0,0,16,16); ctx.fillStyle = '#36200b';
-            for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 2, 2); }
-            ctx.fillStyle = '#8a5c34'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 1, 1); }
-        }
+        if (type === 'planks') { ctx.fillStyle = '#b48f5e'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#9c774a'; for(let y=0; y<16; y+=4) { ctx.fillRect(0, y+3, 16, 1); ctx.fillStyle = '#7a5a35'; ctx.fillRect(0, y+4, 16, 1); ctx.fillStyle = '#9c774a'; ctx.fillRect(Math.random()*16, y+1, 4, 1); ctx.fillRect(Math.random()*16, y+2, 3, 1); } ctx.fillStyle = '#6b4b2b'; ctx.fillRect(3,0,1,3); ctx.fillRect(11,4,1,3); ctx.fillRect(5,8,1,3); ctx.fillRect(13,12,1,3); } 
+        else if (type === 'cobblestone') { ctx.fillStyle = '#656565'; ctx.fillRect(0,0,16,16); for(let i=0; i<40; i++) { ctx.fillStyle = Math.random()>0.5 ? '#808080' : '#525252'; ctx.fillRect(Math.floor(Math.random()*14), Math.floor(Math.random()*14), 2+Math.random()*2, 2+Math.random()*2); } ctx.fillStyle = '#3a3a3a'; for(let i=0; i<16; i+=4) { ctx.fillRect(0, i, 16, 1); ctx.fillRect(i+(i%3), 0, 1, 16); } } 
+        else if (type === 'stone') { ctx.fillStyle = '#7d7d7d'; ctx.fillRect(0,0,16,16); for(let i=0; i<90; i++) { ctx.fillStyle=Math.random()>0.5?'#707070':'#8c8c8c'; ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1); } } 
+        else if (type === 'dirt') { ctx.fillStyle = '#866043'; ctx.fillRect(0,0,16,16); for(let i=0; i<60; i++) { ctx.fillStyle = Math.random()>0.5 ? '#68452b' : '#997354'; ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1); } } 
+        else if (type === 'grassSide') { ctx.fillStyle = '#866043'; ctx.fillRect(0,0,16,16); for(let i=0; i<40; i++) { ctx.fillStyle='#68452b'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); } ctx.fillStyle = '#65b847'; ctx.fillRect(0,0,16,3); let fringes = [2,3,2,4,2,3,1,2,3,2,4,3,2,1,2,3]; for(let x=0; x<16; x++) { ctx.fillStyle = '#65b847'; ctx.fillRect(x, 3, 1, fringes[x]); ctx.fillStyle = '#4f9136'; ctx.fillRect(x, 3+fringes[x], 1, 1); } } 
+        else if (type === 'grass') { ctx.fillStyle = '#65b847'; ctx.fillRect(0,0,16,16); for(let i=0; i<80; i++) { ctx.fillStyle=Math.random()>0.5?'#549c39':'#78cc58'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); } } 
+        else if (type === 'wood') { ctx.fillStyle = '#3d2b1c'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#5c442c'; for(let x=0; x<16; x+=2) { ctx.fillRect(x, 0, 1, 16); if(Math.random()>0.3) ctx.fillRect(x+1, Math.random()*16, 1, 3); } } 
+        else if (type === 'woodTop') { ctx.fillStyle = '#412e1c'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#b7935f'; ctx.fillRect(1,1,14,14); ctx.fillStyle = '#a17e4d'; ctx.fillRect(2,2,12,12); ctx.fillStyle = '#b7935f'; ctx.fillRect(3,3,10,10); ctx.fillStyle = '#a17e4d'; ctx.fillRect(5,5,6,6); ctx.fillStyle = '#b7935f'; ctx.fillRect(6,6,4,4); ctx.fillStyle = '#a17e4d'; ctx.fillRect(7,7,2,2); for(let i=0; i<30; i++) { ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(2+Math.random()*12, 2+Math.random()*12, 1, 1); } } 
+        else if (type === 'ctTop') { ctx.fillStyle = '#b07f4f'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#593a20'; ctx.fillRect(3, 3, 10, 10); ctx.fillStyle = '#8a603c'; ctx.fillRect(4, 4, 8, 8); ctx.fillStyle = '#593a20'; ctx.fillRect(4, 6, 8, 1); ctx.fillRect(4, 9, 8, 1); ctx.fillRect(6, 4, 1, 8); ctx.fillRect(9, 4, 1, 8); } 
+        else if (type === 'ctSide') { ctx.fillStyle = '#a88154'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#593c20'; ctx.fillRect(0,0,16,4); ctx.fillStyle = '#7a7a7a'; ctx.fillRect(10, 5, 4, 3); ctx.fillStyle = '#e0e0e0'; ctx.fillRect(11, 7, 3, 1); ctx.fillStyle = '#593a20'; ctx.fillRect(12, 8, 1, 4); } 
+        else if (type === 'leaves') { ctx.clearRect(0,0,16,16); for(let x=0; x<16; x++) { for(let y=0; y<16; y++) { if((x+y)%2===0 || Math.random()>0.7) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); } } } } 
+        else if (type === 'bedrock') { ctx.fillStyle = '#222'; ctx.fillRect(0,0,16,16); for(let i=0; i<150; i++) { ctx.fillStyle = Math.random() > 0.5 ? '#111' : '#333'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); } } 
+        else if (type === 'stick') { ctx.clearRect(0,0,16,16); ctx.fillStyle = '#36200b'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 2, 2); } ctx.fillStyle = '#8a5c34'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 1, 1); } }
 
-        imgDataUrls[type] = canvas.toDataURL(); 
-        const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter;
-        if(type === 'leaves' || type === 'stick') t.transparent = true;
-        texCache[type] = t; return t;
+        imgDataUrls[type] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; if(type === 'leaves' || type === 'stick') t.transparent = true; texCache[type] = t; return t;
     }
 
+    // Generate accurate 10-stage cracks
     const crackMats = Array(10).fill(null).map((_, i) => {
-        const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16;
-        const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.fillStyle = "rgba(0,0,0,0.85)";
-        if(i > 0) {
-            let cx = 8, cy = 8;
-            for(let pass=0; pass < i*3; pass++) {
-                let x = cx, y = cy;
-                for(let step=0; step < i; step++) {
-                    ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
-                    x += (Math.random() - 0.5) * 3; y += (Math.random() - 0.5) * 3;
-                    x = Math.max(0, Math.min(15, x)); y = Math.max(0, Math.min(15, y));
-                }
-            }
-        }
-        const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter;
-        return new THREE.MeshBasicMaterial({ map: t, transparent: true, polygonOffset: true, polygonOffsetFactor: -1 });
+        const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.fillStyle = "rgba(0,0,0,0.85)";
+        if(i > 0) { let cx = 8, cy = 8; for(let pass=0; pass < i*3; pass++) { let x = cx, y = cy; for(let step=0; step < i; step++) { ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1); x += (Math.random() - 0.5) * 3; y += (Math.random() - 0.5) * 3; x = Math.max(0, Math.min(15, x)); y = Math.max(0, Math.min(15, y)); } } }
+        const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; return new THREE.MeshBasicMaterial({ map: t, transparent: true, polygonOffset: true, polygonOffsetFactor: -1 });
     });
 
+    // --- 3. ENGINE & CHUNKS ---
     let inventory = Array(36).fill(null).map(() => ({type: null, count: 0}));
-    let crafting = Array(4).fill(null).map(() => ({type: null, count: 0}));
+    let crafting2x2 = Array(4).fill(null).map(() => ({type: null, count: 0}));
+    let crafting3x3 = Array(9).fill(null).map(() => ({type: null, count: 0}));
     let activeSlot = 0, dragItem = null, gameState = "MAIN_MENU", drops = [];
-    let miningTarget = null, miningProgress = 0, stepTimer = 0;
+    let miningTarget = null, miningProgress = 0, stepTimer = 0, bobTimer = 0;
     let targetRotation = new THREE.Euler(0, 0, 0, "YXZ");
 
-    // --- 3. ENGINE & CHUNKS ---
     const sc = new THREE.Scene(); sc.background = new THREE.Color(0x87CEEB); sc.fog = new THREE.FogExp2(0x87CEEB, 0.04);
     const cam = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const cameraGroup = new THREE.Group(); sc.add(cameraGroup); cameraGroup.add(cam); // For bobbing
+    
     const rnd = new THREE.WebGLRenderer({antialias:false}); rnd.setSize(window.innerWidth, window.innerHeight); document.body.appendChild(rnd.domElement);
-    const amb = new THREE.AmbientLight(0xffffff, 0.8); sc.add(amb);
-    const sun = new THREE.DirectionalLight(0xffffff, 0.4); sun.position.set(10, 50, 10); sc.add(sun);
+    const amb = new THREE.AmbientLight(0xffffff, 0.8); sc.add(amb); const sun = new THREE.DirectionalLight(0xffffff, 0.4); sun.position.set(10, 50, 10); sc.add(sun);
 
-    const boxG = new THREE.BoxGeometry(1, 1, 1);
-    let bMap = new Map(), chunks = new Map(), brokenBlocks = new Set();
-    const CHUNK_SIZE = 8, RENDER_DIST = 4; 
+    const boxG = new THREE.BoxGeometry(1, 1, 1); let bMap = new Map(), chunks = new Map(), brokenBlocks = new Set(); const CHUNK_SIZE = 8, RENDER_DIST = 4; 
 
-    function removeB(mesh) {
-        if(!mesh) return;
-        const key = `${Math.round(mesh.position.x)},${Math.round(mesh.position.y)},${Math.round(mesh.position.z)}`;
-        bMap.delete(key); brokenBlocks.add(key); sc.remove(mesh);
-    }
-
+    function removeB(mesh) { if(!mesh) return; const key = `${Math.round(mesh.position.x)},${Math.round(mesh.position.y)},${Math.round(mesh.position.z)}`; bMap.delete(key); brokenBlocks.add(key); sc.remove(mesh); }
     function addB(x,y,z,type){
-      let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`;
-      if(bMap.has(key) || brokenBlocks.has(key)) return;
-      let mat;
+      let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; if(bMap.has(key) || brokenBlocks.has(key)) return; let mat;
       if(type === 'wood'){ mat = [new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')})]; }
       else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctTop')}), new THREE.MeshLambertMaterial({map: genTex('planks')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')})]; }
       else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
@@ -291,180 +222,157 @@
       const b = new THREE.Mesh(boxG, mat); b.position.set(Math.round(x), Math.round(y), Math.round(z)); b.name = type; sc.add(b); bMap.set(key, b); return b;
     }
 
-    function updateChunks() {
-        let pX = Math.floor(cam.position.x / CHUNK_SIZE), pZ = Math.floor(cam.position.z / CHUNK_SIZE);
-        for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) {
-            for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) {
-                let cKey = `${x},${z}`; if(!chunks.has(cKey)) { generateChunk(x, z); chunks.set(cKey, true); }
-            }
-        }
-    }
-
-    function generateChunk(cx, cz) {
-        for(let x = 0; x < CHUNK_SIZE; x++) {
-            for(let z = 0; z < CHUNK_SIZE; z++) {
-                let absX = cx * CHUNK_SIZE + x, absZ = cz * CHUNK_SIZE + z;
-                let h = Math.floor(Math.sin(absX/10)*2 + Math.cos(absZ/10)*2);
-                addB(absX, h, absZ, 'grass');
-                for(let y=h-1; y>=h-3; y--) addB(absX, y, absZ, 'dirt');
-                if(Math.random() < 0.005) { 
-                    for(let t=1; t<=4; t++) addB(absX, h+t, absZ, 'wood'); 
-                    for(let ly=3; ly<=4; ly++) { for(let lx=-2; lx<=2; lx++) { for(let lz=-2; lz<=2; lz++) {
-                        if(lx===0 && lz===0 && ly<=4) continue; if(Math.abs(lx)===2 && Math.abs(lz)===2) continue; 
-                        addB(absX+lx, h+ly, absZ+lz, 'leaves');
-                    }}}
-                    for(let lx=-1; lx<=1; lx++) { for(let lz=-1; lz<=1; lz++) {
-                        if(Math.abs(lx)===1 && Math.abs(lz)===1) continue; addB(absX+lx, h+5, absZ+lz, 'leaves');
-                    }}
-                }
-            }
-        }
-    }
-
+    function updateChunks() { let pX = Math.floor(cameraGroup.position.x / CHUNK_SIZE), pZ = Math.floor(cameraGroup.position.z / CHUNK_SIZE); for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) { for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) { let cKey = `${x},${z}`; if(!chunks.has(cKey)) { generateChunk(x, z); chunks.set(cKey, true); } } } }
+    function generateChunk(cx, cz) { for(let x = 0; x < CHUNK_SIZE; x++) { for(let z = 0; z < CHUNK_SIZE; z++) { let absX = cx * CHUNK_SIZE + x, absZ = cz * CHUNK_SIZE + z; let h = Math.floor(Math.sin(absX/10)*2 + Math.cos(absZ/10)*2); addB(absX, h, absZ, 'grass'); for(let y=h-1; y>=h-3; y--) addB(absX, y, absZ, 'dirt'); if(Math.random() < 0.005) { for(let t=1; t<=4; t++) addB(absX, h+t, absZ, 'wood'); for(let ly=3; ly<=4; ly++) { for(let lx=-2; lx<=2; lx++) { for(let lz=-2; lz<=2; lz++) { if(lx===0 && lz===0 && ly<=4) continue; if(Math.abs(lx)===2 && Math.abs(lz)===2) continue; addB(absX+lx, h+ly, absZ+lz, 'leaves'); }}} for(let lx=-1; lx<=1; lx++) { for(let lz=-1; lz<=1; lz++) { if(Math.abs(lx)===1 && Math.abs(lz)===1) continue; addB(absX+lx, h+5, absZ+lz, 'leaves'); }} } } } }
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.01, 1.01, 1.01), crackMats[0]); sc.add(crackMesh); crackMesh.visible = false;
 
-    // --- 4. UI & PERFECTED INVENTORY DRAG/DROP/SPLIT ---
-    function getUIImg(type) {
-        if(!type) return 'none'; genTex(type);
-        let uiType = type === 'wood' ? 'wood' : (type === 'crafting_table' ? 'ctTop' : type);
-        return `url(${imgDataUrls[uiType]})`;
+    // --- 4. ISOMETRIC UI, TOOLTIPS, & 3x3 CRAFTING ---
+    function formatName(str) { return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '); }
+    
+    document.addEventListener('mousemove', (e) => {
+        let tt = document.getElementById('tooltip');
+        if (gameState === "INV" || gameState === "CRAFTING") {
+            let hovered = e.target.closest('.inv-slot');
+            if (hovered && hovered.dataset.itemType) {
+                tt.style.display = 'block'; tt.style.left = (e.clientX + 15) + 'px'; tt.style.top = (e.clientY + 15) + 'px';
+                tt.innerText = formatName(hovered.dataset.itemType);
+            } else { tt.style.display = 'none'; }
+        } else { tt.style.display = 'none'; }
+        if(dragItem) { document.getElementById('drag-icon').style.left = e.clientX-18+'px'; document.getElementById('drag-icon').style.top = e.clientY-18+'px'; }
+    });
+
+    function getIconHTML(type) {
+        if(!type) return ''; genTex(type);
+        if(type === 'stick') return `<div class="item-2d" style="background-image:url(${imgDataUrls.stick})"></div>`;
+        let top = type === 'wood' ? 'woodTop' : (type === 'crafting_table' ? 'ctTop' : (type === 'grass' ? 'grass' : type));
+        let side = type === 'wood' ? 'wood' : (type === 'crafting_table' ? 'ctSide' : (type === 'grass' ? 'grassSide' : type));
+        return `<div class="item-3d"><div class="face top" style="background-image:url(${imgDataUrls[top]})"></div><div class="face right" style="background-image:url(${imgDataUrls[side]})"></div><div class="face front" style="background-image:url(${imgDataUrls[side]})"></div></div>`;
     }
 
     function addToInventory(type, amount) {
-        for(let i=0; i<36; i++) {
-            if(inventory[i].type === type && inventory[i].count < 64) {
-                let add = Math.min(64 - inventory[i].count, amount);
-                inventory[i].count += add; amount -= add;
-                if(amount <= 0) break;
-            }
-        }
-        if(amount > 0) {
-            for(let i=0; i<36; i++) {
-                if(!inventory[i].type) { inventory[i].type = type; inventory[i].count = amount; amount = 0; break; }
-            }
-        }
+        for(let i=0; i<36; i++) { if(inventory[i].type === type && inventory[i].count < 64) { let add = Math.min(64 - inventory[i].count, amount); inventory[i].count += add; amount -= add; if(amount <= 0) break; } }
+        if(amount > 0) { for(let i=0; i<36; i++) { if(!inventory[i].type) { inventory[i].type = type; inventory[i].count = amount; amount = 0; break; } } }
         updateUI(); return amount === 0;
     }
 
     function updateUI(){
-      const hDisp = document.getElementById('hotbar-display'), hInv = document.getElementById('h-inv-grid'), mInv = document.getElementById('m-inv-grid'), cGrid = document.getElementById('p-craft-grid');
-      hDisp.innerHTML = ''; hInv.innerHTML = ''; mInv.innerHTML = '';
+      const hDisp = document.getElementById('hotbar-display'), hInv = document.getElementById('h-inv-grid'), mInv = document.getElementById('m-inv-grid'), cGrid2 = document.getElementById('p-craft-grid');
+      const ctMInv = document.getElementById('ct-m-inv-grid'), ctHInv = document.getElementById('ct-h-inv-grid'), cGrid3 = document.getElementById('ct-craft-grid');
+      hDisp.innerHTML = ''; hInv.innerHTML = ''; mInv.innerHTML = ''; ctMInv.innerHTML = ''; ctHInv.innerHTML = '';
+      
       inventory.forEach((item, i) => {
         if(item.count <= 0) { item.type = null; item.count = 0; }
         let slot = createSlot(item, (e) => handleSlotAction(inventory, i, e));
+        let slot2 = createSlot(item, (e) => handleSlotAction(inventory, i, e)); // For CT screen
         if(i < 9) {
-          hInv.appendChild(slot); let hs = document.createElement('div'); hs.className = 'slot' + (i === activeSlot ? ' active' : '');
-          if(item.type) { hs.style.backgroundImage = getUIImg(item.type); hs.innerHTML = `<span class="item-count">${item.count}</span>`; }
+          hInv.appendChild(slot); ctHInv.appendChild(slot2);
+          let hs = document.createElement('div'); hs.className = 'slot' + (i === activeSlot ? ' active' : '');
+          if(item.type) { hs.innerHTML = getIconHTML(item.type) + `<span class="item-count">${item.count}</span>`; }
           hDisp.appendChild(hs);
-        } else mInv.appendChild(slot);
+        } else { mInv.appendChild(slot); ctMInv.appendChild(slot2); }
       });
-      Array.from(cGrid.children).forEach((slot, i) => {
-        if(crafting[i].count <= 0) { crafting[i].type = null; crafting[i].count = 0; }
-        let item = crafting[i]; slot.style.backgroundImage = getUIImg(item.type); slot.innerHTML = item.count > 0 ? `<span class="item-count">${item.count}</span>` : '';
-        slot.onmousedown = (e) => handleSlotAction(crafting, i, e);
+      
+      Array.from(cGrid2.children).forEach((slot, i) => {
+        if(crafting2x2[i].count <= 0) { crafting2x2[i].type = null; crafting2x2[i].count = 0; }
+        let item = crafting2x2[i]; updateSlotDOM(slot, item); slot.onmousedown = (e) => handleSlotAction(crafting2x2, i, e);
+      });
+      Array.from(cGrid3.children).forEach((slot, i) => {
+        if(crafting3x3[i].count <= 0) { crafting3x3[i].type = null; crafting3x3[i].count = 0; }
+        let item = crafting3x3[i]; updateSlotDOM(slot, item); slot.onmousedown = (e) => handleSlotAction(crafting3x3, i, e);
       });
       checkRecipes();
     }
 
+    function updateSlotDOM(el, item) {
+        if(item.type) { el.innerHTML = getIconHTML(item.type) + `<span class="item-count">${item.count}</span>`; el.dataset.itemType = item.type; }
+        else { el.innerHTML = ''; delete el.dataset.itemType; }
+    }
+
     function createSlot(item, onDown) {
-      let d = document.createElement('div'); d.className = 'inv-slot';
-      if(item.type) { d.style.backgroundImage = getUIImg(item.type); d.innerHTML = `<span class="item-count">${item.count}</span>`; }
-      d.onmousedown = onDown; return d;
+      let d = document.createElement('div'); d.className = 'inv-slot'; updateSlotDOM(d, item); d.onmousedown = onDown; return d;
     }
 
     function handleSlotAction(arr, idx, e) {
-      e.stopPropagation(); playSound('click');
-      let slot = arr[idx];
+      e.stopPropagation(); playSound('click'); let slot = arr[idx];
 
-      // CTRL + LEFT CLICK: Split Logic
       if (e.button === 0 && e.ctrlKey) {
           if (dragItem) {
-              // Holding item: Place EXACTLY HALF of the cursor stack into the slot
               if (!slot.type || slot.type === dragItem.item.type) {
-                  let placeAmount = Math.ceil(dragItem.item.count / 2);
-                  let space = slot.type ? 64 - slot.count : 64;
-                  let actualPlace = Math.min(placeAmount, space);
+                  let placeAmount = Math.ceil(dragItem.item.count / 2); let space = slot.type ? 64 - slot.count : 64; let actualPlace = Math.min(placeAmount, space);
                   if (actualPlace > 0) {
-                      if (!slot.type) slot.type = dragItem.item.type;
-                      slot.count += actualPlace; dragItem.item.count -= actualPlace;
+                      if (!slot.type) slot.type = dragItem.item.type; slot.count += actualPlace; dragItem.item.count -= actualPlace;
                       if (dragItem.item.count <= 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
-                      else { document.getElementById('drag-icon').style.backgroundImage = getUIImg(dragItem.item.type); }
+                      else { document.getElementById('drag-icon').innerHTML = getIconHTML(dragItem.item.type); }
                   }
               }
           } else if (slot.type) {
-              // Empty Hand: Pick up EXACTLY HALF of the slot
-              let half = Math.ceil(slot.count / 2);
-              dragItem = {item: {type: slot.type, count: half}, source: arr, idx: idx};
+              let half = Math.ceil(slot.count / 2); dragItem = {item: {type: slot.type, count: half}, source: arr, idx: idx};
               slot.count -= half; if(slot.count <= 0) slot.type = null;
-              let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.backgroundImage = getUIImg(dragItem.item.type);
+              let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.innerHTML = getIconHTML(dragItem.item.type);
           }
           updateUI(); return;
       }
 
-      // Normal Left & Right Click Logic
       if (e.button === 0) { 
         if (dragItem) {
-          if (!slot.type) { 
-            arr[idx] = {type: dragItem.item.type, count: dragItem.item.count}; dragItem = null; document.getElementById('drag-icon').style.display = 'none';
-          } else if (slot.type === dragItem.item.type) {
-            let space = 64 - slot.count;
-            if (space > 0) {
-              let add = Math.min(space, dragItem.item.count);
-              slot.count += add; dragItem.item.count -= add;
-              if (dragItem.item.count <= 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
-            }
-          } else { 
-            let temp = {...slot}; arr[idx] = {...dragItem.item}; dragItem.item = temp; document.getElementById('drag-icon').style.backgroundImage = getUIImg(dragItem.item.type);
-          }
+          if (!slot.type) { arr[idx] = {type: dragItem.item.type, count: dragItem.item.count}; dragItem = null; document.getElementById('drag-icon').style.display = 'none'; } 
+          else if (slot.type === dragItem.item.type) {
+            let space = 64 - slot.count; if (space > 0) { let add = Math.min(space, dragItem.item.count); slot.count += add; dragItem.item.count -= add; if (dragItem.item.count <= 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; } }
+          } else { let temp = {...slot}; arr[idx] = {...dragItem.item}; dragItem.item = temp; document.getElementById('drag-icon').innerHTML = getIconHTML(dragItem.item.type); }
         } else if (slot.type) {
           dragItem = {item: {...slot}, source: arr, idx: idx}; arr[idx] = {type: null, count: 0};
-          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.backgroundImage = getUIImg(dragItem.item.type);
+          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.innerHTML = getIconHTML(dragItem.item.type);
         }
       } else if (e.button === 2) { 
         if (dragItem) {
-          if (!slot.type || (slot.type === dragItem.item.type && slot.count < 64)) {
-            if(!slot.type) arr[idx] = {type: dragItem.item.type, count: 0};
-            arr[idx].count++; dragItem.item.count--;
-            if(dragItem.item.count <= 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; }
-          }
+          if (!slot.type || (slot.type === dragItem.item.type && slot.count < 64)) { if(!slot.type) arr[idx] = {type: dragItem.item.type, count: 0}; arr[idx].count++; dragItem.item.count--; if(dragItem.item.count <= 0) { dragItem = null; document.getElementById('drag-icon').style.display = 'none'; } }
         } else if (slot.type) {
-          let half = Math.ceil(slot.count / 2);
-          dragItem = {item: {type: slot.type, count: half}, source: arr, idx: idx};
+          let half = Math.ceil(slot.count / 2); dragItem = {item: {type: slot.type, count: half}, source: arr, idx: idx};
           slot.count -= half; if(slot.count <= 0) slot.type = null;
-          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.style.backgroundImage = getUIImg(dragItem.item.type);
+          let icon = document.getElementById('drag-icon'); icon.style.display = 'block'; icon.innerHTML = getIconHTML(dragItem.item.type);
         }
       }
       updateUI();
     }
 
     document.addEventListener('mouseup', (e) => {
-        if(gameState === "INV" && dragItem) {
-            let invBox = document.getElementById('inv-box');
-            if(!invBox.contains(e.target) && e.target.id !== 'drag-icon') {
-                dropItemIntoWorld(dragItem.item.type, dragItem.item.count);
-                dragItem = null; document.getElementById('drag-icon').style.display = 'none'; updateUI();
-            }
+        if((gameState === "INV" || gameState === "CRAFTING") && dragItem) {
+            let box = gameState === "INV" ? document.getElementById('inv-box') : document.getElementById('ct-box');
+            if(!box.contains(e.target) && e.target.id !== 'drag-icon') { dropItemIntoWorld(dragItem.item.type, dragItem.item.count); dragItem = null; document.getElementById('drag-icon').style.display = 'none'; updateUI(); }
         }
     });
 
     function checkRecipes() {
-      const out = document.getElementById('craft-output'); out.style.backgroundImage = 'none'; out.innerHTML = ''; out.onclick = null;
-      let c0 = crafting[0].type, c1 = crafting[1].type, c2 = crafting[2].type, c3 = crafting[3].type; let total = crafting.filter(c => c.type).length;
-      if (total === 1 && (c0==='wood' || c1==='wood' || c2==='wood' || c3==='wood')) { out.style.backgroundImage = getUIImg('planks'); out.innerHTML = '<span class="item-count">4</span>'; out.onclick = () => processCraft('planks', 4); } 
-      else if (total === 2 && ((c0==='planks' && c2==='planks') || (c1==='planks' && c3==='planks'))) { out.style.backgroundImage = getUIImg('stick'); out.innerHTML = '<span class="item-count">4</span>'; out.onclick = () => processCraft('stick', 4); } 
-      else if (total === 4 && c0==='planks' && c1==='planks' && c2==='planks' && c3==='planks') { out.style.backgroundImage = getUIImg('crafting_table'); out.innerHTML = '<span class="item-count">1</span>'; out.onclick = () => processCraft('crafting_table', 1); }
+      // 2x2 Logic
+      const out2 = document.getElementById('craft-output'); updateSlotDOM(out2, {type:null}); out2.onclick = null;
+      let c2_0 = crafting2x2[0].type, c2_1 = crafting2x2[1].type, c2_2 = crafting2x2[2].type, c2_3 = crafting2x2[3].type; let tot2 = crafting2x2.filter(c => c.type).length;
+      if (tot2 === 1 && (c2_0==='wood' || c2_1==='wood' || c2_2==='wood' || c2_3==='wood')) { updateSlotDOM(out2, {type:'planks', count:4}); out2.onclick = () => processCraft(crafting2x2, 'planks', 4); } 
+      else if (tot2 === 2 && ((c2_0==='planks' && c2_2==='planks') || (c2_1==='planks' && c2_3==='planks'))) { updateSlotDOM(out2, {type:'stick', count:4}); out2.onclick = () => processCraft(crafting2x2, 'stick', 4); } 
+      else if (tot2 === 4 && c2_0==='planks' && c2_1==='planks' && c2_2==='planks' && c2_3==='planks') { updateSlotDOM(out2, {type:'crafting_table', count:1}); out2.onclick = () => processCraft(crafting2x2, 'crafting_table', 1); }
+
+      // 3x3 Logic
+      const out3 = document.getElementById('ct-craft-output'); updateSlotDOM(out3, {type:null}); out3.onclick = null;
+      let c3 = crafting3x3.map(s => s.type); let tot3 = crafting3x3.filter(c => c.type).length;
+      if (tot3 === 1 && c3.includes('wood')) { updateSlotDOM(out3, {type:'planks', count:4}); out3.onclick = () => processCraft(crafting3x3, 'planks', 4); }
+      else if (tot3 === 2 && ((c3[0]==='planks'&&c3[3]==='planks')||(c3[1]==='planks'&&c3[4]==='planks')||(c3[2]==='planks'&&c3[5]==='planks')||(c3[3]==='planks'&&c3[6]==='planks')||(c3[4]==='planks'&&c3[7]==='planks')||(c3[5]==='planks'&&c3[8]==='planks'))) { updateSlotDOM(out3, {type:'stick', count:4}); out3.onclick = () => processCraft(crafting3x3, 'stick', 4); }
+      // Could easily add Pickaxe logic here later!
     }
 
-    function processCraft(resultType, amount) { playSound('click'); crafting.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount); }
+    function processCraft(arr, resultType, amount) { playSound('click'); arr.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount); }
 
-    function startGame() { initAudio(); playMusic(); cam.position.set(0, 15, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); }
+    function startGame() { initAudio(); playMusic(); cameraGroup.position.set(0, 15, 0); targetRotation.copy(cameraGroup.rotation); setMenu('PLAYING'); }
     
     function setMenu(s) {
+      // If closing a crafting menu, drop the items inside!
+      if(gameState === "INV" || gameState === "CRAFTING") {
+          let arr = gameState === "INV" ? crafting2x2 : crafting3x3;
+          arr.forEach(c => { if(c.count > 0) { dropItemIntoWorld(c.type, c.count); c.count = 0; c.type = null; } });
+      }
       gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
-      document.getElementById('hud').style.display = (s === "PLAYING" || s === "INV") ? 'flex' : 'none';
+      document.getElementById('hud').style.display = (s === "PLAYING" || s === "INV" || s === "CRAFTING") ? 'flex' : 'none';
       document.getElementById('crosshair').style.display = s === "PLAYING" ? 'block' : 'none';
       if(s === "PLAYING") document.body.requestPointerLock();
-      else { document.exitPointerLock(); if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex'; else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex'; else if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex'; }
+      else { document.exitPointerLock(); if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex'; else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex'; else if(s === "CRAFTING") document.getElementById('crafting-table-screen').style.display = 'flex'; else if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex'; }
       updateUI();
     }
 
@@ -475,85 +383,58 @@
 
     function dropItemIntoWorld(type, amount = 1) {
         for(let j=0; j<amount; j++) {
-            let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
-            let dropPos = cam.position.clone().addScaledVector(dir, 0.5);
-            let drop;
-            if (type === 'stick') { 
-                let mat = new THREE.SpriteMaterial({map: genTex('stick')});
-                drop = new THREE.Sprite(mat); drop.scale.set(0.4, 0.4, 0.4);
-            } else {
-                let geo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-                let mat = new THREE.MeshLambertMaterial({map: genTex(type === 'crafting_table' ? 'ctTop' : (type === 'wood' ? 'woodTop' : type)), transparent: type==='leaves'});
-                drop = new THREE.Mesh(geo, mat);
-            }
-            drop.position.copy(dropPos); sc.add(drop);
-            drops.push({mesh: drop, type: type, velY: 0.1, is2D: type==='stick', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
+            let dir = new THREE.Vector3(); cam.getWorldDirection(dir); let dropPos = cameraGroup.position.clone().addScaledVector(dir, 0.5); let drop;
+            if (type === 'stick') { let mat = new THREE.SpriteMaterial({map: genTex('stick')}); drop = new THREE.Sprite(mat); drop.scale.set(0.4, 0.4, 0.4); } 
+            else { let geo = new THREE.BoxGeometry(0.3, 0.3, 0.3); let mat = new THREE.MeshLambertMaterial({map: genTex(type === 'crafting_table' ? 'ctTop' : (type === 'wood' ? 'woodTop' : type)), transparent: type==='leaves'}); drop = new THREE.Mesh(geo, mat); }
+            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, velY: 0.1, is2D: type==='stick', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
         }
     }
 
     function animate() {
       requestAnimationFrame(animate);
-      cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.22; cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.22;
+      cameraGroup.rotation.x += (targetRotation.x - cameraGroup.rotation.x) * 0.22; cameraGroup.rotation.y += (targetRotation.y - cameraGroup.rotation.y) * 0.22;
 
       if(gameState !== "MAIN_MENU" && gameState !== "PAUSE_MENU") {
         updateChunks();
-        
-        // FIX FOR MOVEMENT BUG: Prevent look-straight-down division by zero
-        let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; 
-        if (dir.lengthSq() < 0.0001) { dir.set(0, 0, -1); }
-        dir.normalize(); 
-        
+        let dir = new THREE.Vector3(); cameraGroup.getWorldDirection(dir); dir.y = 0; if (dir.lengthSq() < 0.0001) dir.set(0, 0, -1); dir.normalize(); 
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
         
+        // SPRINTING & BOBBING
+        let isMoving = (keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']);
         let isSprinting = (keys['ShiftLeft'] || keys['ShiftRight']) && keys['KeyW'];
         cam.fov = THREE.MathUtils.lerp(cam.fov, isSprinting ? 85 : 75, 0.1); cam.updateProjectionMatrix();
         
-        let accel = isSprinting ? 0.045 : 0.025; 
-        let friction = 0.75; pVel.x *= friction; pVel.z *= friction; 
-
+        let accel = isSprinting ? 0.05 : 0.025; let friction = 0.75; pVel.x *= friction; pVel.z *= friction; 
         if(gameState === "PLAYING") {
-          if(keys['KeyW']) { pVel.x += dir.x * accel; pVel.z += dir.z * accel; }
-          if(keys['KeyS']) { pVel.x -= dir.x * accel; pVel.z -= dir.z * accel; }
-          if(keys['KeyA']) { pVel.x += side.x * accel; pVel.z += side.z * accel; }
-          if(keys['KeyD']) { pVel.x -= side.x * accel; pVel.z -= side.z * accel; }
+          if(keys['KeyW']) { pVel.x += dir.x * accel; pVel.z += dir.z * accel; } if(keys['KeyS']) { pVel.x -= dir.x * accel; pVel.z -= dir.z * accel; }
+          if(keys['KeyA']) { pVel.x += side.x * accel; pVel.z += side.z * accel; } if(keys['KeyD']) { pVel.x -= side.x * accel; pVel.z -= side.z * accel; }
         }
 
-        let footY = Math.round(cam.position.y - 1.6), headY = Math.round(cam.position.y - 0.6);
-        let px = cam.position.x, pz = cam.position.z, nextX = px + pVel.x, nextZ = pz + pVel.z;
+        let footY = Math.round(cameraGroup.position.y - 1.6), headY = Math.round(cameraGroup.position.y - 0.6);
+        let px = cameraGroup.position.x, pz = cameraGroup.position.z, nextX = px + pVel.x, nextZ = pz + pVel.z;
+        let cM = 0.3; // Collision margin (tightened for better placement)
+        if(!isSolid(nextX + Math.sign(pVel.x)*cM, footY, pz) && !isSolid(nextX + Math.sign(pVel.x)*cM, headY, pz)) cameraGroup.position.x = nextX; else pVel.x = 0;
+        if(!isSolid(px, footY, nextZ + Math.sign(pVel.z)*cM) && !isSolid(px, headY, nextZ + Math.sign(pVel.z)*cM)) cameraGroup.position.z = nextZ; else pVel.z = 0;
 
-        if(!isSolid(nextX + Math.sign(pVel.x)*0.3, footY, pz) && !isSolid(nextX + Math.sign(pVel.x)*0.3, headY, pz)) cam.position.x = nextX; else pVel.x = 0;
-        if(!isSolid(px, footY, nextZ + Math.sign(pVel.z)*0.3) && !isSolid(px, headY, nextZ + Math.sign(pVel.z)*0.3)) cam.position.z = nextZ; else pVel.z = 0;
+        yVel -= 0.015; cameraGroup.position.y += yVel;
+        let onGround = isSolid(cameraGroup.position.x, cameraGroup.position.y - 1.6, cameraGroup.position.z);
+        if(onGround) { cameraGroup.position.y = Math.round(cameraGroup.position.y - 1.6) + 2.1; yVel = 0; if(keys['Space'] && gameState === "PLAYING") yVel = 0.25; }
 
-        yVel -= 0.015; cam.position.y += yVel;
-        let onGround = isSolid(cam.position.x, cam.position.y - 1.6, cam.position.z);
-        if(onGround) { 
-            cam.position.y = Math.round(cam.position.y - 1.6) + 2.1; yVel = 0; 
-            if(keys['Space'] && gameState === "PLAYING") yVel = 0.25; 
-        }
-
-        if(onGround && (keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']) && gameState === "PLAYING") {
-            stepTimer += Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z);
-            if(stepTimer > (isSprinting ? 1.0 : 0.7)) { 
-                let bKey = `${Math.round(cam.position.x)},${Math.round(cam.position.y - 1.6)},${Math.round(cam.position.z)}`;
-                let blockUnder = bMap.has(bKey) ? bMap.get(bKey).name : 'grass';
-                playSound('step', blockUnder); stepTimer = 0; 
-            }
-        } else { stepTimer = 0; }
+        if(onGround && isMoving && gameState === "PLAYING") {
+            let speed = Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z);
+            stepTimer += speed; bobTimer += speed * (isSprinting ? 1.5 : 1.0);
+            cam.position.y = Math.sin(bobTimer * 10) * 0.08; // CAMERA BOB
+            if(stepTimer > (isSprinting ? 1.0 : 0.7)) { let bKey = `${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`; playSound('step', bMap.has(bKey) ? bMap.get(bKey).name : 'grass'); stepTimer = 0; }
+        } else { stepTimer = 0; cam.position.y = THREE.MathUtils.lerp(cam.position.y, 0, 0.1); }
 
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
           if(d.velDir) { d.mesh.position.x += d.velDir.x; d.mesh.position.z += d.velDir.z; d.velDir.multiplyScalar(0.9); }
           if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; d.velDir.x=0; d.velDir.z=0; }
-          
           if(!d.is2D) { d.mesh.rotation.y += 0.03; d.mesh.rotation.x += 0.01; } 
-          
-          if(Date.now() - d.spawnTime > 1500) {
-              if(cam.position.distanceTo(d.mesh.position) < 2.5) {
-                d.mesh.position.lerp(cam.position, 0.25);
-                if(cam.position.distanceTo(d.mesh.position) < 0.7) { 
-                    playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); addToInventory(d.type, 1); 
-                }
-              }
+          if(Date.now() - d.spawnTime > 1500 && cameraGroup.position.distanceTo(d.mesh.position) < 2.5) {
+              d.mesh.position.lerp(cameraGroup.position, 0.25);
+              if(cameraGroup.position.distanceTo(d.mesh.position) < 0.7) { playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); addToInventory(d.type, 1); }
           }
         });
 
@@ -566,16 +447,13 @@
                 const adjs = [[0,-1,0],[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
                 adjs.forEach(off => {
                     let nX = mX + off[0], nY = mY + off[1], nZ = mZ + off[2], surfaceH = Math.floor(Math.sin(nX/10)*2 + Math.cos(nZ/10)*2), k = `${nX},${nY},${nZ}`;
-                    if(nY <= surfaceH && !bMap.has(k) && !brokenBlocks.has(k)) {
-                        if(nY <= -50) addB(nX, nY, nZ, 'bedrock'); else if(nY <= surfaceH - 3) addB(nX, nY, nZ, 'stone'); else if(nY < surfaceH) addB(nX, nY, nZ, 'dirt');
-                    }
+                    if(nY <= surfaceH && !bMap.has(k) && !brokenBlocks.has(k)) { if(nY <= -50) addB(nX, nY, nZ, 'bedrock'); else if(nY <= surfaceH - 3) addB(nX, nY, nZ, 'stone'); else if(nY < surfaceH) addB(nX, nY, nZ, 'dirt'); }
                 });
 
                 if(name !== 'leaves') {
-                    let dropName = name === 'stone' ? 'cobblestone' : name;
-                    let drop;
-                    if(dropName === 'stick') { let mat = new THREE.SpriteMaterial({map: genTex('stick')}); drop = new THREE.Sprite(mat); drop.scale.set(0.4,0.4,0.4); }
-                    else { let geo = new THREE.BoxGeometry(0.3,0.3,0.3); let mat = new THREE.MeshLambertMaterial({map: genTex(dropName === 'crafting_table' ? 'ctTop' : (dropName === 'wood' ? 'woodTop' : dropName))}); drop = new THREE.Mesh(geo, mat); }
+                    // GRASS DROPS DIRT
+                    let dropName = name === 'stone' ? 'cobblestone' : (name === 'grass' ? 'dirt' : name);
+                    let drop; if(dropName === 'stick') { let mat = new THREE.SpriteMaterial({map: genTex('stick')}); drop = new THREE.Sprite(mat); drop.scale.set(0.4,0.4,0.4); } else { let geo = new THREE.BoxGeometry(0.3,0.3,0.3); let mat = new THREE.MeshLambertMaterial({map: genTex(dropName === 'crafting_table' ? 'ctTop' : (dropName === 'wood' ? 'woodTop' : dropName))}); drop = new THREE.Mesh(geo, mat); }
                     drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: dropName, velY: 0.1, is2D: dropName==='stick', spawnTime: Date.now() - 1500}); 
                 }
                 miningTarget = null; crackMesh.visible = false;
@@ -587,42 +465,29 @@
 
     document.addEventListener('keydown', e => {
       keys[e.code] = true;
-      if(e.code === 'KeyE') { playSound('click'); if(gameState === "INV") setMenu('PLAYING'); else if(gameState === "PLAYING") setMenu('INV'); }
+      if(e.code === 'KeyE') { playSound('click'); if(gameState === "INV" || gameState === "CRAFTING") setMenu('PLAYING'); else if(gameState === "PLAYING") setMenu('INV'); }
       if(e.key >= '1' && e.key <= '9') { activeSlot = parseInt(e.key) - 1; updateUI(); }
-      
-      // Ctrl + Q to drop full stack
-      if(e.code === 'KeyQ' && gameState === "PLAYING") {
-          let slot = inventory[activeSlot];
-          if(slot.type && slot.count > 0) { 
-              let dropAmount = e.ctrlKey ? slot.count : 1;
-              slot.count -= dropAmount; 
-              let type = slot.type; if(slot.count <= 0) slot.type = null; 
-              updateUI(); dropItemIntoWorld(type, dropAmount); 
-          }
-      }
+      if(e.code === 'KeyQ' && gameState === "PLAYING") { let slot = inventory[activeSlot]; if(slot.type && slot.count > 0) { let dropAmount = e.ctrlKey ? slot.count : 1; slot.count -= dropAmount; let type = slot.type; if(slot.count <= 0) slot.type = null; updateUI(); dropItemIntoWorld(type, dropAmount); } }
     });
     document.addEventListener('keyup', e => { keys[e.code] = false; });
-    document.addEventListener('mousemove', e => {
-      if(gameState === "PLAYING") { targetRotation.y -= e.movementX*0.002; targetRotation.x -= e.movementY*0.002; targetRotation.x = Math.max(-1.5, Math.min(1.5, targetRotation.x)); }
-      if(dragItem) { document.getElementById('drag-icon').style.left = e.clientX-16+'px'; document.getElementById('drag-icon').style.top = e.clientY-16+'px'; }
-    });
-    cam.rotation.order = "YXZ";
+    document.addEventListener('mousemove', e => { if(gameState === "PLAYING") { targetRotation.y -= e.movementX*0.002; targetRotation.x -= e.movementY*0.002; targetRotation.x = Math.max(-1.5, Math.min(1.5, targetRotation.x)); } });
+    cameraGroup.rotation.order = "YXZ";
 
     document.addEventListener('mousedown', e => {
-      initAudio(); playMusic();
-      if(gameState !== "PLAYING") return;
-      
-      let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.normalize();
-      const ray = new THREE.Raycaster(cam.position, dir); let hits = ray.intersectObjects(Array.from(bMap.values()));
-      
+      initAudio(); playMusic(); if(gameState !== "PLAYING") return;
+      let dir = new THREE.Vector3(); cameraGroup.getWorldDirection(dir); dir.normalize();
+      const ray = new THREE.Raycaster(cameraGroup.position, dir); let hits = ray.intersectObjects(Array.from(bMap.values()));
       if(hits.length > 0 && hits[0].distance < 5) {
         let b = hits[0].object;
         if(e.button === 0 && b.name !== 'bedrock') { miningTarget = b; miningProgress = 0; crackMesh.position.copy(b.position); crackMesh.visible = true; }
         else if(e.button === 2) {
+          // INTERACT (CRAFTING TABLE)
+          if(b.name === 'crafting_table') { setMenu('CRAFTING'); return; }
+          // PLACE BLOCK
           let item = inventory[activeSlot];
           if(item.type && item.count > 0 && item.type !== 'stick') { 
             let p = b.position.clone().add(hits[0].face.normal); let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
-            if(!bMap.has(`${pX},${pY},${pZ}`) && (pY < Math.round(cam.position.y - 1.6) || pY > Math.round(cam.position.y - 0.6) || Math.abs(pX - cam.position.x) > 0.6 || Math.abs(pZ - cam.position.z) > 0.6)) { 
+            if(!bMap.has(`${pX},${pY},${pZ}`) && (pY < Math.round(cameraGroup.position.y - 1.6) || pY > Math.round(cameraGroup.position.y - 0.6) || Math.abs(pX - cameraGroup.position.x) > 0.4 || Math.abs(pZ - cameraGroup.position.z) > 0.4)) { 
                 playSound('place', item.type); addB(pX, pY, pZ, item.type); item.count--; brokenBlocks.delete(`${pX},${pY},${pZ}`); updateUI(); 
             }
           }
