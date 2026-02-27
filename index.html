@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.17 - The Masterpiece Update</title>
+  <title>ORANGECRAFT Alpha 1.18 - The Perfected Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
     #vhs-scanlines { position:absolute; width:100%; height:100%; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.5) 50%); background-size: 100% 4px; opacity: 0.9; }
-    #vhs-noise { position:absolute; width:100%; height:100%; opacity:0.25; background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/White_noise.png'); animation: noiseJitter 0.1s infinite; mix-blend-mode: multiply; }
+    #vhs-noise { position:absolute; width:100%; height:100%; opacity:0.3; background: url('https://upload.wikimedia.org/wikipedia/commons/7/76/White_noise.png'); animation: noiseJitter 0.1s infinite; mix-blend-mode: multiply; }
     
     #crosshair{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;z-index:100;display:none}
     #crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,0.8)}
@@ -136,11 +136,16 @@
 
     function playMusic() {
         initAudio(); if(isPlayingMusic) return; isPlayingMusic = true;
-        // Exact melody mapped for C418 Mice on Venus
+        // Exact C418 "Mice on Venus" sheet music mapping
         const seq = [
-            {n: 370.0, d: 1000, wait: 1000}, {n: 415.3, d: 1000, wait: 1500}, {n: 440.0, d: 2000, wait: 2000}, 
-            {n: 659.3, d: 2000, wait: 2000}, {n: 554.4, d: 1500, wait: 1500}, {n: 440.0, d: 1000, wait: 1000}, 
-            {n: 415.3, d: 1000, wait: 1000}, {n: 329.6, d: 3000, wait: 6000}
+            {n: 369.99, d: 800, wait: 800},   // F#4
+            {n: 415.30, d: 800, wait: 800},   // G#4
+            {n: 440.00, d: 1600, wait: 1600}, // A4
+            {n: 659.25, d: 2000, wait: 2000}, // E5
+            {n: 554.37, d: 1200, wait: 1200}, // C#5
+            {n: 440.00, d: 800, wait: 800},   // A4
+            {n: 415.30, d: 800, wait: 800},   // G#4
+            {n: 329.63, d: 3000, wait: 4500}  // E4
         ];
         let idx = 0;
         function playNextNote() {
@@ -151,7 +156,7 @@
                 let o = audioCtx.createOscillator(); o.type = 'sine'; let g = audioCtx.createGain();
                 let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 600;
                 o.frequency.value = note.n * (1 + detune);
-                g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.12, now + 0.5); g.gain.linearRampToValueAtTime(0, now + (note.d/1000) + 1.5);
+                g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.12, now + 0.3); g.gain.linearRampToValueAtTime(0, now + (note.d/1000) + 1.5);
                 o.connect(filter); filter.connect(g); g.connect(audioCtx.destination); g.connect(reverbNode); o.start(now); o.stop(now + (note.d/1000) + 1.5);
             });
             setTimeout(playNextNote, note.wait);
@@ -171,13 +176,18 @@
         if(texCache[type]) return texCache[type];
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
 
-        if (type === 'cobblestone') {
+        if (type === 'stone') {
+            // Rebuilt 1:1 Pixel perfect stone to contrast dirt
+            const pal = {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e'};
+            const map = 
+            'ABACACABABAACABA'+'CABAABACABCAABAC'+'AABACABAABACABAA'+'BACABAABACABAACA'+
+            'ACABCAABACABCAAB'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABACAB'+
+            'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABAACA'+
+            'ACABAACABCAABACA'+'CABAABACABAABACA'+'AABACABAABACABAA'+'BACABCAABACABAAC';
+            drawPixelMap(ctx, pal, map);
+        } else if (type === 'cobblestone') {
             const pal = {'D':'#4a4a4a', 'C':'#5a5a5a', 'B':'#6a6a6a', 'A':'#828282'};
             const map = 'DDDDDDDDDDDDDDDD'+'DBBBBBBDCBBBBBBD'+'DBAAAABDCAAAAABD'+'DBAAABBDCAABABBD'+'DBBBBBBDCBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DCBBBBDCBBBBBBBD'+'DCAAABDCAAAAAABD'+'DCAABBDCAAAAABBD'+'DCBBBBDCBBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DBBBBBBBCBBBBBBD'+'DBAAAAABCBAAAABD'+'DBAAAAABCAAAAABD'+'DBBBBBBBCBBBBBBD'+'DDDDDDDDDDDDDDDD';
-            drawPixelMap(ctx, pal, map);
-        } else if (type === 'stone') {
-            const pal = {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e'};
-            const map = 'AAABACAABAAAACAA'+'ABAAAAABAAACAAAA'+'AAACAAAABAAAABAA'+'BAAAAAACAAABAAAA'+'AAAABAAAAACAAAAA'+'ACAAAAABAAAAAABA'+'AAAAACAAAABAAAAA'+'AABAAAAACAAAAACA'+'AAAAABAAAAAABAAA'+'AACAAAAACAAAAAAB'+'AAAAABAAAAACAAAA'+'ABAAAAAAABAAAAAA'+'AAAACAAAAAAAACAA'+'AAABAAAAACAAAAAA'+'AAAAAAABAAAAABAA'+'ACAAAABAAAAACAAA';
             drawPixelMap(ctx, pal, map);
         } else if (type === 'dirt' || type === 'grassSide') {
             const pal = {'A':'#866043', 'B':'#755138', 'C':'#9b7150', 'D':'#63432b'};
@@ -222,7 +232,6 @@
         imgDataUrls[type] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; if(type === 'leaves' || type === 'stick') t.transparent = true; texCache[type] = t; return t;
     }
 
-    // Shrink cracks slightly (1.002) to prevent visual glitching completely off-block
     const crackMats = Array(10).fill(null).map((_, i) => {
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.fillStyle = "rgba(0,0,0,0.85)";
         const stages = [ [], [[7,7],[8,7],[7,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13],[1,1],[14,14],[1,7],[14,8],[7,1],[8,14]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13],[1,1],[14,14],[1,7],[14,8],[7,1],[8,14],[0,0],[15,15],[0,7],[15,8],[7,0],[8,15],[2,0],[13,15]] ];
@@ -351,15 +360,12 @@
     }
     document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU'); });
 
-    // Ensure ceiling bounds & right drop material
-    const isSolid = (x, y, z) => { let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; return bMap.has(key) && bMap.get(key).name !== 'stick'; };
-
+    // Item dropping fix: spawn slightly further away and toss upwards so they don't clip into player
     function dropItemIntoWorld(type, amount = 1) {
         for(let j=0; j<amount; j++) {
             let dir = new THREE.Vector3(); cam.getWorldDirection(dir); 
             let dropPos = cameraGroup.position.clone().addScaledVector(dir, 1.2); 
-            if(isSolid(dropPos.x, dropPos.y, dropPos.z)) dropPos = cameraGroup.position.clone().addScaledVector(dir, 0.5); // Fall back if in wall
-            
+            dropPos.y += 0.2; 
             let drop, mat;
             if (type === 'stick') { mat = new THREE.SpriteMaterial({map: genTex('stick')}); drop = new THREE.Sprite(mat); drop.scale.set(0.4, 0.4, 0.4); } 
             else { 
@@ -373,8 +379,14 @@
         }
     }
 
-    // --- 4. 3D ENGINE & COLLISION ---
-    const sc = new THREE.Scene(); sc.background = new THREE.Color(0x87CEEB); sc.fog = new THREE.FogExp2(0x87CEEB, 0.04);
+    // --- 4. 3D ENGINE, FOG, & COLLISION ---
+    const sc = new THREE.Scene(); 
+    
+    // Classic Alpha Sky Color & Wall of Fog
+    const skyColor = 0x88BBEB; 
+    sc.background = new THREE.Color(skyColor); 
+    sc.fog = new THREE.Fog(skyColor, 12, 28); // Linear, highly oppressive fog!
+
     const cameraGroup = new THREE.Group(); sc.add(cameraGroup);
     const cam = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000); cameraGroup.add(cam); 
 
@@ -411,6 +423,7 @@
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.002, 1.002, 1.002), crackMats[0]); sc.add(crackMesh); crackMesh.visible = false;
 
     let keys = {}, pVel = new THREE.Vector3(), yVel = 0, stepTimer = 0, bobTimer = 0;
+    const isSolid = (x, y, z) => { let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; return bMap.has(key) && bMap.get(key).name !== 'stick'; };
 
     function animate() {
       requestAnimationFrame(animate);
@@ -422,7 +435,8 @@
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
         
         let isMoving = (keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']);
-        let isSprinting = (keys['ShiftLeft'] || keys['ShiftRight']) && keys['KeyW'];
+        // Added CTRL Sprint detection
+        let isSprinting = (keys['ShiftLeft'] || keys['ShiftRight'] || keys['ControlLeft'] || keys['ControlRight']) && keys['KeyW'];
         cam.fov = THREE.MathUtils.lerp(cam.fov, isSprinting ? 85 : 75, 0.1); cam.updateProjectionMatrix();
         
         let accel = isSprinting ? 0.05 : 0.03; let friction = 0.70; pVel.x *= friction; pVel.z *= friction; 
@@ -440,18 +454,17 @@
 
         yVel -= 0.015; let nextY = cameraGroup.position.y + yVel;
         
-        // Strict Ceiling and Floor Hitboxes
         if(yVel <= 0 && isSolid(cameraGroup.position.x, Math.round(nextY - 1.6), cameraGroup.position.z)) { 
             yVel = 0; cameraGroup.position.y = Math.round(nextY - 1.6) + 2.1; 
             if(keys['Space'] && gameState === "PLAYING") yVel = 0.22; 
         } else if (yVel > 0 && isSolid(cameraGroup.position.x, Math.round(nextY), cameraGroup.position.z)) {
-            yVel = 0; cameraGroup.position.y = Math.round(nextY) - 0.5; // Ceiling bonk
+            yVel = 0; cameraGroup.position.y = Math.round(nextY) - 0.5; 
         } else { 
             cameraGroup.position.y = nextY; 
         }
 
         if(isSolid(cameraGroup.position.x, Math.round(cameraGroup.position.y - 1.6), cameraGroup.position.z) && isMoving && gameState === "PLAYING") {
-            let speed = Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z); stepTimer += speed; bobTimer += speed * (isSSprint ? 1.5 : 1.0);
+            let speed = Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z); stepTimer += speed; bobTimer += speed * (isSprinting ? 1.5 : 1.0);
             cam.position.y = Math.sin(bobTimer * 10) * 0.1; 
             if(stepTimer > (isSprinting ? 0.9 : 0.6)) { 
                 let bKey = `${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`; playSound('step', bMap.has(bKey) ? bMap.get(bKey).name : 'grass'); stepTimer = 0; 
