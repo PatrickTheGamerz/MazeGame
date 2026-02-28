@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.26 - The Polish & Decay Update</title>
+  <title>ORANGECRAFT Alpha 1.27 - The Furnace Polish Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -259,7 +259,6 @@
         const stages = [ [], [[7,7],[8,7],[7,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13],[1,1],[14,14],[1,7],[14,8],[7,1],[8,14]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13],[1,1],[14,14],[1,7],[14,8],[7,1],[8,14],[0,0],[15,15],[0,7],[15,8],[7,0],[8,15],[2,0],[13,15]] ];
         stages[i].forEach(px => ctx.fillRect(px[0], px[1], 1, 1));
         const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; 
-        // Adding depthWrite: false prevents the crack mesh from making transparent leaves invisible
         return new THREE.MeshBasicMaterial({ map: t, transparent: true, polygonOffset: true, polygonOffsetFactor: -1, depthWrite: false });
     });
 
@@ -268,8 +267,7 @@
     let crafting2x2 = Array(4).fill(null).map(() => ({type: null, count: 0, damage: 0}));
     let crafting3x3 = Array(9).fill(null).map(() => ({type: null, count: 0, damage: 0}));
     
-    // Furnace Tile Entity Data: using an array of slots for correct memory referencing
-    let furnaces = new Map(); // Key: "x,y,z", Value: {slots: [input, fuel, output], burnTime, maxBurnTime, cookTime, maxCookTime}
+    let furnaces = new Map(); 
     let activeFurnacePos = null; 
 
     let activeSlot = 0, dragItem = null, gameState = "MAIN_MENU", drops = [];
@@ -365,14 +363,23 @@
       }
     }
 
-    const fuelValues = {'wood': 150, 'planks': 150, 'stick': 50, 'charcoal': 800, 'wooden_pickaxe': 100, 'wooden_axe': 100, 'wooden_shovel': 100, 'wooden_sword': 100, 'wooden_hoe': 100};
     const smeltingRecipes = {'cobblestone': 'stone', 'wood': 'charcoal'};
+
+    function getFuelTime(item) {
+        if(!item || !item.type) return 0;
+        const base = {'wood': 150, 'planks': 150, 'stick': 50, 'charcoal': 800}[item.type];
+        if(base) return base;
+        if(item.type.startsWith('wooden_')) {
+            let pct = Math.max(0.1, (59 - (item.damage || 0)) / 59);
+            return Math.floor(100 * pct);
+        }
+        return 0;
+    }
 
     function handleSlotAction(arr, idx, e, isFuelSlot = false) {
       e.stopPropagation(); let slot = arr[idx]; let maxStack = (slot.type && (slot.type.endsWith('_pickaxe') || slot.type.endsWith('_axe') || slot.type.endsWith('_shovel') || slot.type.endsWith('_sword') || slot.type.endsWith('_hoe'))) ? 1 : 64;
       
-      // Enforce fuel constraint on the fuel slot specifically
-      if(dragItem && isFuelSlot && !fuelValues[dragItem.item.type]) return; 
+      if(dragItem && isFuelSlot && getFuelTime(dragItem.item) <= 0) return; 
 
       playSound('click');
       if (e.button === 0 && e.ctrlKey) {
@@ -522,9 +529,10 @@
           let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
           let mSide = new THREE.MeshLambertMaterial({map: genTex('furnaceSide')}), mTop = new THREE.MeshLambertMaterial({map: genTex('furnaceTop')}), mFront = new THREE.MeshLambertMaterial({map: genTex('furnaceFront')});
           mat = [mSide, mSide, mTop, mTop, mSide, mSide];
-          if(Math.abs(dir.x) > Math.abs(dir.z)) { if(dir.x > 0) mat[1] = mFront; else mat[0] = mFront; } else { if(dir.z > 0) mat[5] = mFront; else mat[4] = mFront; }
-          // Initialize slots array directly: [Input, Fuel, Output]
-          furnaces.set(key, {slots: [{type:null, count:0, damage:0}, {type:null, count:0, damage:0}, {type:null, count:0, damage:0}], burnTime: 0, maxBurnTime: 0, cookTime: 0, maxCookTime: 100});
+          let fIdx = 4;
+          if(Math.abs(dir.x) > Math.abs(dir.z)) { if(dir.x > 0) fIdx = 1; else fIdx = 0; } else { if(dir.z > 0) fIdx = 5; else fIdx = 4; }
+          mat[fIdx] = mFront;
+          furnaces.set(key, {slots: [{type:null, count:0, damage:0}, {type:null, count:0, damage:0}, {type:null, count:0, damage:0}], burnTime: 0, maxBurnTime: 0, cookTime: 0, maxCookTime: 100, frontIdx: fIdx, lit: false});
       }
       else mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'});
       const b = new THREE.Mesh(boxG, mat); b.position.set(Math.round(x), Math.round(y), Math.round(z)); b.name = type; sc.add(b); bMap.set(key, b); return b;
@@ -542,7 +550,6 @@
         }}
     }
     
-    // Set renderOrder so cracks always draw on top of transparent blocks
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.002, 1.002, 1.002), crackMats[0]); crackMesh.renderOrder = 1; sc.add(crackMesh); crackMesh.visible = false;
 
     let keys = {}, pVel = new THREE.Vector3(), yVel = 0, stepTimer = 0, bobTimer = 0;
@@ -556,17 +563,15 @@
 
       globalTick++;
 
-      // Furnace Ticking
       if(globalTick % 2 === 0) { 
           let uiNeedsUpdate = false;
           furnaces.forEach((fd, key) => {
-              let isLit = fd.burnTime > 0;
               let canSmelt = fd.slots[0].count > 0 && smeltingRecipes[fd.slots[0].type] && (!fd.slots[2].type || (fd.slots[2].type === smeltingRecipes[fd.slots[0].type] && fd.slots[2].count < 64));
               
               if(fd.burnTime > 0) { fd.burnTime--; }
               
               if(fd.burnTime <= 0 && canSmelt && fd.slots[1].count > 0) {
-                  fd.maxBurnTime = fuelValues[fd.slots[1].type] || 0;
+                  fd.maxBurnTime = getFuelTime(fd.slots[1]);
                   if(fd.maxBurnTime > 0) {
                       fd.burnTime = fd.maxBurnTime;
                       fd.slots[1].count--;
@@ -578,8 +583,9 @@
                   fd.cookTime++;
                   if(fd.cookTime >= fd.maxCookTime) {
                       fd.cookTime = 0;
+                      let outType = smeltingRecipes[fd.slots[0].type];
                       fd.slots[0].count--; if(fd.slots[0].count <= 0) fd.slots[0].type = null;
-                      if(!fd.slots[2].type) { fd.slots[2].type = smeltingRecipes[fd.slots[0].type || 'cobblestone']; fd.slots[2].count = 0; }
+                      if(!fd.slots[2].type) { fd.slots[2].type = outType; fd.slots[2].count = 0; }
                       fd.slots[2].count++;
                   }
               } else {
@@ -587,22 +593,16 @@
               }
 
               let litNow = fd.burnTime > 0;
-              if (isLit !== litNow) {
+              if (fd.lit !== litNow) {
+                  fd.lit = litNow;
                   let b = bMap.get(key);
-                  if(b) {
-                      for(let i=0; i<6; i++) {
-                          if(b.material[i].map.image === texCache['furnaceFront_0'].image || b.material[i].map.image === texCache['furnaceFrontLit_0'].image) {
-                              b.material[i] = new THREE.MeshLambertMaterial({map: genTex(litNow ? 'furnaceFrontLit' : 'furnaceFront')});
-                          }
-                      }
-                  }
+                  if(b) b.material[fd.frontIdx] = new THREE.MeshLambertMaterial({map: genTex(litNow ? 'furnaceFrontLit' : 'furnaceFront')});
               }
               if(gameState === "FURNACE" && activeFurnacePos === key) uiNeedsUpdate = true;
           });
           if(uiNeedsUpdate) updateUI();
       }
 
-      // Leaf Decay System (Scans random blocks and decays leaves without adjacent wood)
       if(globalTick % 5 === 0) {
           let bKeys = Array.from(bMap.keys());
           if(bKeys.length > 0) {
@@ -670,7 +670,6 @@
             }
         } else { stepTimer = 0; cam.position.y = THREE.MathUtils.lerp(cam.position.y, 0, 0.1); }
 
-        // Grass Spreading
         if(Math.random() < 0.25) {
             let bKeys = Array.from(bMap.keys());
             if(bKeys.length > 0) {
