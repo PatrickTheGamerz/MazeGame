@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.31 - The Optimization & Loading Update</title>
+  <title>ORANGECRAFT Alpha 1.32 - The Ray-Marching Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -190,7 +190,7 @@
 
     // --- 2. TEXTURES & ASSETS ---
     const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Now with multiplayer!", "More polygons!", "Water proof!", "60 FPS!"];
+    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Now with multiplayer!", "More polygons!", "Water proof!", "Zero Lag Mining!"];
 
     function getDmgLevel(type, damage) {
         if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe') && !type.endsWith('_shovel') && !type.endsWith('_sword') && !type.endsWith('_hoe'))) return 0;
@@ -481,7 +481,6 @@
         gameState = "LOADING";
         initialLoadQueue = [];
         
-        // Massive Render Distance (Performance Boosted!)
         for(let x = -RENDER_DIST; x <= RENDER_DIST; x++) { 
             for(let z = -RENDER_DIST; z <= RENDER_DIST; z++) { 
                 initialLoadQueue.push({x, z}); 
@@ -495,7 +494,7 @@
     
     function processLoad() {
         let start = performance.now();
-        while(initialLoadQueue.length > 0 && performance.now() - start < 15) { // 15ms batch
+        while(initialLoadQueue.length > 0 && performance.now() - start < 15) {
             let c = initialLoadQueue.shift();
             let cKey = `${c.x},${c.z}`;
             if(!chunks.has(cKey)) {
@@ -587,7 +586,32 @@
     const chunks = new Map();
     const CHUNK_SIZE = 8, RENDER_DIST = 6; 
 
-    // Initialize Instanced Pools
+    // Custom Sub-Millisecond Ray-Marching Engine
+    function fastVoxelRaycast(origin, dir, maxDist) {
+        let pos = origin.clone();
+        let step = 0.05; 
+        let lastBx = Math.round(pos.x), lastBy = Math.round(pos.y), lastBz = Math.round(pos.z);
+        for(let d = 0; d < maxDist; d += step) {
+            pos.addScaledVector(dir, step);
+            let bx = Math.round(pos.x), by = Math.round(pos.y), bz = Math.round(pos.z);
+            let k = `${bx},${by},${bz}`;
+            if(voxels.has(k)) {
+                let nx = Math.max(-1, Math.min(1, lastBx - bx));
+                let ny = Math.max(-1, Math.min(1, lastBy - by));
+                let nz = Math.max(-1, Math.min(1, lastBz - bz));
+                if(Math.abs(nx) + Math.abs(ny) + Math.abs(nz) !== 1) {
+                    if (Math.abs(dir.x) > Math.abs(dir.y) && Math.abs(dir.x) > Math.abs(dir.z)) { nx = -Math.sign(dir.x); ny=0; nz=0; }
+                    else if (Math.abs(dir.y) > Math.abs(dir.z)) { ny = -Math.sign(dir.y); nx=0; nz=0; }
+                    else { nz = -Math.sign(dir.z); nx=0; ny=0; }
+                }
+                let normal = new THREE.Vector3(nx, ny, nz);
+                return {x: bx, y: by, z: bz, name: voxels.get(k), normal: normal};
+            }
+            lastBx = bx; lastBy = by; lastBz = bz;
+        }
+        return null;
+    }
+
     const instancedTypes = ['stone', 'dirt', 'grass', 'bedrock', 'coal_ore', 'cobblestone', 'coal_block'];
     instancedTypes.forEach(t => {
         let mat;
@@ -681,7 +705,6 @@
                 removeInstancedMesh(x,y,z);
             }
         } else {
-            // Regular Meshes
             if(exposed && !regularMeshes.has(key)) {
                 addRegularMesh(x,y,z,t);
             } else if (!exposed && regularMeshes.has(key)) {
@@ -921,18 +944,13 @@
         if(miningTarget && gameState === "PLAYING") {
             let activeItem = inventory[activeSlot]; let activeType = activeItem.type; 
             let lookDir = new THREE.Vector3(); cam.getWorldDirection(lookDir); lookDir.normalize();
-            const lookRay = new THREE.Raycaster(cameraGroup.position, lookDir); let lookHits = lookRay.intersectObjects([...Object.values(instancedMeshes), ...Array.from(regularMeshes.values())]);
             
-            let stillLooking = false;
-            if(lookHits.length > 0 && lookHits[0].distance < 6) {
-                let hitPos = new THREE.Vector3();
-                if(lookHits[0].object.isInstancedMesh) { let m = new THREE.Matrix4(); lookHits[0].object.getMatrixAt(lookHits[0].instanceId, m); hitPos.setFromMatrixPosition(m); }
-                else { hitPos.copy(lookHits[0].object.position); }
-                if(Math.round(hitPos.x) === miningTarget.x && Math.round(hitPos.y) === miningTarget.y && Math.round(hitPos.z) === miningTarget.z) stillLooking = true;
-            }
-
-            if(!stillLooking) { miningTarget = null; crackMesh.visible = false; }
-            else {
+            // Replaced physics raycaster with zero-lag math raycaster!
+            let hit = fastVoxelRaycast(cameraGroup.position, lookDir, 6);
+            
+            if(!hit || hit.x !== miningTarget.x || hit.y !== miningTarget.y || hit.z !== miningTarget.z) { 
+                miningTarget = null; crackMesh.visible = false; 
+            } else {
                 let name = miningTarget.name;
                 let isPick = activeType && activeType.endsWith('_pickaxe'); let isAxe = activeType && activeType.endsWith('_axe');
                 let isShovel = activeType && activeType.endsWith('_shovel'); let isSword = activeType && activeType.endsWith('_sword'); let isHoe = activeType && activeType.endsWith('_hoe');
@@ -988,32 +1006,35 @@
     document.addEventListener('mousedown', e => {
       initAudio(); if(!isPlayingMusic && gameState === "PLAYING") playMusic(); if(gameState !== "PLAYING") return;
       let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.normalize();
-      const ray = new THREE.Raycaster(cameraGroup.position, dir); let hits = ray.intersectObjects([...Object.values(instancedMeshes), ...Array.from(regularMeshes.values())]);
       
-      if(hits.length > 0 && hits[0].distance < 6) {
-        let obj = hits[0].object; let item = inventory[activeSlot];
+      // Zero-lag ray marching here too!
+      let hit = fastVoxelRaycast(cameraGroup.position, dir, 6);
+      
+      if(hit) {
+        let item = inventory[activeSlot];
         
-        let bPos = new THREE.Vector3(); let bName = '';
-        if(obj.isInstancedMesh) { let m = new THREE.Matrix4(); obj.getMatrixAt(hits[0].instanceId, m); bPos.setFromMatrixPosition(m); bName = voxels.get(`${Math.round(bPos.x)},${Math.round(bPos.y)},${Math.round(bPos.z)}`); }
-        else { bPos.copy(obj.position); bName = voxels.get(`${Math.round(bPos.x)},${Math.round(bPos.y)},${Math.round(bPos.z)}`); }
-        
-        if(e.button === 2 && item.type && item.type.endsWith('_hoe') && (bName === 'dirt' || bName === 'grass') && hits[0].face.normal.y === 1) {
-            let topKey = `${Math.round(bPos.x)},${Math.round(bPos.y)+1},${Math.round(bPos.z)}`;
+        if(e.button === 2 && item.type && item.type.endsWith('_hoe') && (hit.name === 'dirt' || hit.name === 'grass') && hit.normal.y === 1) {
+            let topKey = `${hit.x},${hit.y+1},${hit.z}`;
             if(!voxels.has(topKey)) {
-                removeB(Math.round(bPos.x), Math.round(bPos.y), Math.round(bPos.z)); placeB(Math.round(bPos.x), Math.round(bPos.y), Math.round(bPos.z), 'farmland');
+                removeB(hit.x, hit.y, hit.z); placeB(hit.x, hit.y, hit.z, 'farmland');
                 playSound('dig', 'dirt');
                 item.damage++; let maxD = item.type.startsWith('stone_') ? 131 : 59; if (item.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
                 updateUI(); return;
             }
         }
 
-        if(e.button === 0 && bName !== 'bedrock') { miningTarget = {x: Math.round(bPos.x), y: Math.round(bPos.y), z: Math.round(bPos.z), name: bName}; miningProgress = 0; miningSoundTimer = 0; crackMesh.position.copy(bPos); crackMesh.visible = true; }
+        if(e.button === 0 && hit.name !== 'bedrock') { 
+            miningTarget = {x: hit.x, y: hit.y, z: hit.z, name: hit.name}; 
+            miningProgress = 0; miningSoundTimer = 0; 
+            crackMesh.position.set(hit.x, hit.y, hit.z); 
+            crackMesh.visible = true; 
+        }
         else if(e.button === 2) {
-          if(bName === 'crafting_table') { setMenu('CRAFTING'); return; }
-          if(bName === 'furnace') { activeFurnacePos = `${Math.round(bPos.x)},${Math.round(bPos.y)},${Math.round(bPos.z)}`; setMenu('FURNACE'); return; }
+          if(hit.name === 'crafting_table') { setMenu('CRAFTING'); return; }
+          if(hit.name === 'furnace') { activeFurnacePos = `${hit.x},${hit.y},${hit.z}`; setMenu('FURNACE'); return; }
           
           if(item.type && item.count > 0 && item.type !== 'stick' && item.type !== 'charcoal' && item.type !== 'coal' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
-            let p = bPos.clone().add(hits[0].face.normal); let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
+            let pX = hit.x + hit.normal.x, pY = hit.y + hit.normal.y, pZ = hit.z + hit.normal.z;
             let dx = pX - cameraGroup.position.x, dy = pY - (cameraGroup.position.y - 1.6), dz = pZ - cameraGroup.position.z;
             
             let playerYMin = cameraGroup.position.y - 1.6; let playerYMax = cameraGroup.position.y - 0.1;
@@ -1022,7 +1043,7 @@
             let insidePlayer = (Math.abs(dx) < 0.35 && Math.abs(dz) < 0.35 && overlapY);
 
             if(!voxels.has(`${pX},${pY},${pZ}`) && (!insidePlayer || item.type === 'torch')) { 
-                playSound('place', item.type); placeB(pX, pY, pZ, item.type, hits[0].face.normal); item.count--; 
+                playSound('place', item.type); placeB(pX, pY, pZ, item.type, hit.normal); item.count--; 
                 let underKey = `${pX},${pY-1},${pZ}`; if(voxels.get(underKey) === 'grass' || voxels.get(underKey) === 'farmland') { removeB(pX, pY-1, pZ); placeB(pX, pY-1, pZ, 'dirt'); }
                 updateUI(); 
             }
