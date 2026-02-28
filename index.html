@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.24 - The Farming & Tool Polish Update</title>
+  <title>ORANGECRAFT Alpha 1.24 - The Farming & Mechanics Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -181,41 +181,44 @@
         if (type === 'stone') {
             drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e'}, 'ABACACABABAACABA'+'CABAABACABCAABAC'+'AABACABAABACABAA'+'BACABAABACABAACA'+'ACABCAABACABCAAB'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABAACA'+'ACABAACABCAABACA'+'CABAABACABAABACA'+'AABACABAABACABAA'+'BACABCAABACABAAC');
         } else if (type === 'wooden_pickaxe' || type === 'stone_pickaxe') {
-            const H = type === 'wooden_pickaxe' ? '#5c3a21' : '#4a4a4a'; const h = type === 'wooden_pickaxe' ? '#9c774a' : '#828282'; const S = '#36200b'; const s = '#8a5c34';
-            let mapArr = ("__HHHHHHHHH_____"+"_HhhhhhhhhhH____"+"HhH______sShH___"+"HH______sS_HH___"+"_______sS_______"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________"+"________________").split('');
-            if (dmgLevel >= 1) { mapArr[2*16+0] = '_'; mapArr[2*16+15] = '_'; }
-            if (dmgLevel >= 2) { mapArr[2*16+1] = '_'; mapArr[2*16+14] = '_'; mapArr[3*16+0] = '_'; mapArr[3*16+15] = '_'; }
+            const H = type === 'wooden_pickaxe' ? '#4a331c' : '#4a4a4a'; const h = type === 'wooden_pickaxe' ? '#8a6b47' : '#9d9d9d'; const S = '#4a331c'; const s = '#7a5431';
+            let mapArr = ("_HHHHHHHHH______"+"HhhhhhhhhhH_____"+"HhhH___HhhH_____"+"HhH_____sS______"+"_H_______sS_____"+"__________sS____"+"___________sS___"+"____________sS__"+"_____________sS_"+"______________sS"+"_______________S"+"________________"+"________________"+"________________"+"________________"+"________________").split('');
+            if (dmgLevel >= 1) { mapArr[1*16+10] = '_'; mapArr[2*16+10] = '_'; }
+            if (dmgLevel >= 2) { mapArr[1*16+1] = '_'; mapArr[2*16+1] = '_'; }
             drawPixelMap(ctx, {'H':H, 'h':h, 'S':S, 's':s, '_':null}, mapArr.join(''));
         } else if (type === 'wooden_axe' || type === 'stone_axe') {
-            const H = type === 'wooden_axe' ? '#5c3a21' : '#4a4a4a'; const h = type === 'wooden_axe' ? '#9c774a' : '#828282'; const S = '#36200b'; const s = '#8a5c34';
-            let mapArr = ("__HHH___________"+"_HhhhH__________"+"_HhhhhH_________"+"__HhhH_sS_______"+"___HH__sS_______"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________"+"________________").split('');
-            if (dmgLevel >= 1) { mapArr[1*16+1] = '_'; mapArr[2*16+1] = '_'; }
-            if (dmgLevel >= 2) { mapArr[1*16+2] = '_'; mapArr[3*16+2] = '_'; }
-            drawPixelMap(ctx, {'H':H, 'h':h, 'S':S, 's':s, '_':null}, mapArr.join(''));
-        } else if (type === 'wooden_shovel' || type === 'stone_shovel') {
-            const H = type === 'wooden_shovel' ? '#5c3a21' : '#4a4a4a'; const h = type === 'wooden_shovel' ? '#9c774a' : '#828282'; const S = '#36200b'; const s = '#8a5c34';
-            let mapArr = ("______HH________"+"_____HhhH_______"+"_____HhhH_______"+"______HH________"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________"+"________________"+"________________").split('');
-            if (dmgLevel >= 1) { mapArr[1*16+6] = '_'; }
-            if (dmgLevel >= 2) { mapArr[2*16+6] = '_'; mapArr[1*16+7] = '_'; }
-            drawPixelMap(ctx, {'H':H, 'h':h, 'S':S, 's':s, '_':null}, mapArr.join(''));
-        } else if (type === 'wooden_sword' || type === 'stone_sword') {
-            const H = type === 'wooden_sword' ? '#5c3a21' : '#4a4a4a'; const h = type === 'wooden_sword' ? '#9c774a' : '#828282'; const S = '#36200b'; const s = '#8a5c34';
-            let mapArr = ("______________H_"+"_____________HhH"+"____________HhhH"+"___________HhhH_"+"__________HhhH__"+"_________HhhH___"+"________HhhH____"+"_______HhhH_____"+"______HhhH______"+"_HH__HhhH_______"+"HHhHHhH_________"+"_HHhHH__________"+"__H_sS__________"+"___sS___________"+"__sS____________"+"_sS_____________").split('');
-            if (dmgLevel >= 1) { mapArr[1*16+14] = '_'; }
-            if (dmgLevel >= 2) { mapArr[2*16+13] = '_'; mapArr[3*16+12] = '_'; }
+            const H = type === 'wooden_axe' ? '#4a331c' : '#4a4a4a'; const h = type === 'wooden_axe' ? '#8a6b47' : '#9d9d9d'; const S = '#4a331c'; const s = '#7a5431';
+            let mapArr = ("_HHH____________"+"HhhhH___________"+"HhhhhH__________"+"HhhH_sS_________"+"_HH___sS________"+"_______sS_______"+"________sS______"+"_________sS_____"+"__________sS____"+"___________sS___"+"____________sS__"+"_____________sS_"+"______________sS"+"_______________S"+"________________"+"________________").split('');
+            if (dmgLevel >= 1) { mapArr[1*16+4] = '_'; mapArr[2*16+5] = '_'; }
+            if (dmgLevel >= 2) { mapArr[2*16+1] = '_'; mapArr[3*16+1] = '_'; }
             drawPixelMap(ctx, {'H':H, 'h':h, 'S':S, 's':s, '_':null}, mapArr.join(''));
         } else if (type === 'wooden_hoe' || type === 'stone_hoe') {
-            const H = type === 'wooden_hoe' ? '#5c3a21' : '#4a4a4a'; const h = type === 'wooden_hoe' ? '#9c774a' : '#828282'; const S = '#36200b'; const s = '#8a5c34';
-            let mapArr = ("__HHHH__________"+"_HhhhhH_________"+"HhHH_sS_________"+"HH___sS_________"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________"+"________________"+"________________").split('');
-            if (dmgLevel >= 1) { mapArr[1*16+1] = '_'; }
-            if (dmgLevel >= 2) { mapArr[2*16+0] = '_'; mapArr[1*16+2] = '_'; }
+            const H = type === 'wooden_hoe' ? '#4a331c' : '#4a4a4a'; const h = type === 'wooden_hoe' ? '#8a6b47' : '#9d9d9d'; const S = '#4a331c'; const s = '#7a5431';
+            let mapArr = ("_HHHH___________"+"HhhhhH__________"+"HhhH_sS_________"+"HhH___sS________"+"_H_____sS_______"+"________sS______"+"_________sS_____"+"__________sS____"+"___________sS___"+"____________sS__"+"_____________sS_"+"______________sS"+"_______________S"+"________________"+"________________"+"________________").split('');
+            if (dmgLevel >= 1) { mapArr[1*16+5] = '_'; }
+            if (dmgLevel >= 2) { mapArr[1*16+1] = '_'; }
+            drawPixelMap(ctx, {'H':H, 'h':h, 'S':S, 's':s, '_':null}, mapArr.join(''));
+        } else if (type === 'wooden_shovel' || type === 'stone_shovel') {
+            const H = type === 'wooden_shovel' ? '#4a331c' : '#4a4a4a'; const h = type === 'wooden_shovel' ? '#8a6b47' : '#9d9d9d'; const S = '#4a331c'; const s = '#7a5431';
+            let mapArr = ("_____HHH________"+"____HhhhH_______"+"____HhhhH_______"+"_____HhH________"+"______sS________"+"_______sS_______"+"________sS______"+"_________sS_____"+"__________sS____"+"___________sS___"+"____________sS__"+"_____________sS_"+"______________sS"+"_______________S"+"________________"+"________________").split('');
+            if (dmgLevel >= 1) { mapArr[1*16+4] = '_'; }
+            if (dmgLevel >= 2) { mapArr[1*16+8] = '_'; }
+            drawPixelMap(ctx, {'H':H, 'h':h, 'S':S, 's':s, '_':null}, mapArr.join(''));
+        } else if (type === 'wooden_sword' || type === 'stone_sword') {
+            const H = type === 'wooden_sword' ? '#4a331c' : '#4a4a4a'; const h = type === 'wooden_sword' ? '#8a6b47' : '#9d9d9d'; const S = '#4a331c'; const s = '#7a5431';
+            let mapArr = ("______________H_"+"_____________HhH"+"____________HhhH"+"___________HhhH_"+"__________HhhH__"+"_________HhhH___"+"________HhhH____"+"_______HhhH_____"+"______HhhH______"+"_HH__HhhH_______"+"_HHH_HhH________"+"_HhHHH_H________"+"__Hh_sS_________"+"___H_sS_________"+"____sS__________"+"____S___________").split('');
+            if (dmgLevel >= 1) { mapArr[1*16+14] = '_'; }
+            if (dmgLevel >= 2) { mapArr[2*16+14] = '_'; }
             drawPixelMap(ctx, {'H':H, 'h':h, 'S':S, 's':s, '_':null}, mapArr.join(''));
         } else if (type === 'stick') {
-            ctx.fillStyle = '#36200b'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 2, 2); } ctx.fillStyle = '#8a5c34'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 1, 1); } 
+            ctx.fillStyle = '#4a331c'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 2, 2); } ctx.fillStyle = '#7a5431'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 1, 1); } 
         } else if (type === 'cobblestone') { drawPixelMap(ctx, {'D':'#4a4a4a', 'C':'#5a5a5a', 'B':'#6a6a6a', 'A':'#828282'}, 'DDDDDDDDDDDDDDDD'+'DBBBBBBDCBBBBBBD'+'DBAAAABDCAAAAABD'+'DBAAABBDCAABABBD'+'DBBBBBBDCBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DCBBBBDCBBBBBBBD'+'DCAAABDCAAAAAABD'+'DCAABBDCAAAAABBD'+'DCBBBBDCBBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DBBBBBBBCBBBBBBD'+'DBAAAAABCBAAAABD'+'DBAAAAABCAAAAABD'+'DBBBBBBBCBBBBBBD'+'DDDDDDDDDDDDDDDD'); }
-        else if (type === 'dirt' || type === 'grassSide') {
+        else if (type === 'dirt' || type === 'grassSide' || type === 'farmlandSide') {
             drawPixelMap(ctx, {'A':'#866043', 'B':'#755138', 'C':'#9b7150', 'D':'#63432b'}, 'ABACAAABDBAACAAB'+'BAADACBAAABACBDA'+'CBBAAABACDAAAACA'+'AACDBAACBAABDAAB'+'DBACAACDBAABACDB'+'AABDCAAAACDBBAAA'+'ACBAABDCBAAAACBA'+'BAAACBAAABDCBAAB'+'ABDCBAAACBAAABDC'+'CBAAABDCBAAACBAA'+'AAABACBAAABDCAAB'+'ACDBAAACDBAAABAC'+'BAAACDBAAACDBAAA'+'ABDCAAAACDBAAACA'+'CBAAABDCAAAACDBA'+'AABDCAAAACDBAAAB');
             if(type === 'grassSide') { ctx.fillStyle = '#74BC39'; ctx.fillRect(0,0,16,3); let fringes = [2,3,2,4,2,3,1,2,3,2,4,3,2,1,2,3]; for(let x=0; x<16; x++) { ctx.fillStyle = '#74BC39'; ctx.fillRect(x, 3, 1, fringes[x]); ctx.fillStyle = '#5A962A'; ctx.fillRect(x, 3+fringes[x], 1, 1); } }
+            if(type === 'farmlandSide') { ctx.fillStyle = '#543b27'; ctx.fillRect(0,0,16,3); } // Slightly darker top for side of farmland
+        } else if (type === 'farmlandTop') {
+            drawPixelMap(ctx, {'A':'#543b27', 'B':'#422e1e', 'C':'#664931'}, 'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'CCCCCCCCCCCCCCCC'+'CCCCCCCCCCCCCCCC'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'CCCCCCCCCCCCCCCC'+'CCCCCCCCCCCCCCCC'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA');
         } else if (type === 'bedrock') { drawPixelMap(ctx, {'A':'#333333', 'B':'#111111', 'C':'#555555', 'D':'#222222'}, 'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'); }
         else if (type === 'ctTop') { drawPixelMap(ctx, {'A':'#b07f4f', 'B':'#593a20', 'C':'#8a603c'}, 'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAABBBBBBBBBBAAA'+'AAABCCCCCCCCBAAA'+'AAABCBBBBBBCBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBBBBBBCBAAA'+'AAABCCCCCCCCBAAA'+'AAABBBBBBBBBBAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'); }
         else if (type === 'ctSide') { drawPixelMap(ctx, {'A':'#a88154', 'B':'#593c20', 'C':'#7a7a7a', 'D':'#e0e0e0', 'E':'#593a20'}, 'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAACCACAA'+'AAAAAAAAAACCCCAA'+'AAAAAAAAAAADCAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'); }
@@ -224,9 +227,8 @@
         else if (type === 'wood') { ctx.fillStyle = '#3d2b1c'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#5c442c'; for(let x=0; x<16; x+=2) { ctx.fillRect(x, 0, 1, 16); if(Math.random()>0.3) ctx.fillRect(x+1, Math.random()*16, 1, 3); } }
         else if (type === 'woodTop') { ctx.fillStyle = '#412e1c'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#b7935f'; ctx.fillRect(1,1,14,14); ctx.fillStyle = '#a17e4d'; ctx.fillRect(2,2,12,12); ctx.fillStyle = '#b7935f'; ctx.fillRect(3,3,10,10); ctx.fillStyle = '#a17e4d'; ctx.fillRect(5,5,6,6); ctx.fillStyle = '#b7935f'; ctx.fillRect(6,6,4,4); ctx.fillStyle = '#a17e4d'; ctx.fillRect(7,7,2,2); }
         else if (type === 'leaves') { ctx.clearRect(0,0,16,16); for(let x=0; x<16; x++) { for(let y=0; y<16; y++) { if((x+y)%2===0 || Math.random()>0.7) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); } } } }
-        else if (type === 'farmlandTop') { drawPixelMap(ctx, {'A':'#513622', 'B':'#422a18'}, 'AAAAAAAAAAAAAAAA'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'AAAAAAAAAAAAAAAA'); }
 
-        imgDataUrls[cacheKey] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; if(type === 'leaves' || type === 'stick' || type.includes('_')) t.transparent = true; texCache[cacheKey] = t; return t;
+        imgDataUrls[cacheKey] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; if(type === 'leaves' || type === 'stick' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) t.transparent = true; texCache[cacheKey] = t; return t;
     }
 
     const crackMats = Array(10).fill(null).map((_, i) => {
@@ -259,19 +261,19 @@
         if(!type) return ''; 
         let dmgLevel = getDmgLevel(type, damage);
         
-        if(type === 'crafting_table') { genTex('ctTop'); genTex('ctSide'); } else if(type === 'wood') { genTex('woodTop'); genTex('wood'); } else if(type === 'grass') { genTex('grass'); genTex('grassSide'); } else if(type === 'farmland') { genTex('farmlandTop'); genTex('dirt'); } else genTex(type, dmgLevel);
+        if(type === 'crafting_table') { genTex('ctTop'); genTex('ctSide'); } else if(type === 'wood') { genTex('woodTop'); genTex('wood'); } else if(type === 'grass') { genTex('grass'); genTex('grassSide'); } else if(type === 'farmland') { genTex('farmlandTop'); genTex('farmlandSide'); } else genTex(type, dmgLevel);
         
         let html = '';
-        if(type === 'stick' || type.includes('_')) {
+        if(type === 'stick' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
             let cacheKey = type + '_' + dmgLevel;
             html = `<div class="item-2d" style="background-image:url(${imgDataUrls[cacheKey]})"></div>`;
         } else {
             let top = type === 'wood' ? 'woodTop' : (type === 'crafting_table' ? 'ctTop' : (type === 'grass' ? 'grass' : (type === 'farmland' ? 'farmlandTop' : type)));
-            let side = type === 'wood' ? 'wood' : (type === 'crafting_table' ? 'ctSide' : (type === 'grass' ? 'grassSide' : (type === 'farmland' ? 'dirt' : type)));
+            let side = type === 'wood' ? 'wood' : (type === 'crafting_table' ? 'ctSide' : (type === 'grass' ? 'grassSide' : (type === 'farmland' ? 'farmlandSide' : type)));
             html = `<div class="item-3d"><div class="face top" style="background-image:url(${imgDataUrls[top+'_0']})"></div><div class="face right" style="background-image:url(${imgDataUrls[side+'_0']})"></div><div class="face front" style="background-image:url(${imgDataUrls[side+'_0']})"></div></div>`;
         }
 
-        if(type.includes('_')) {
+        if(type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
             let maxD = type.startsWith('stone_') ? 131 : 59;
             if (damage > 0) {
                 let pct = (maxD - damage) / maxD; let color = pct > 0.5 ? '#0f0' : (pct > 0.2 ? '#fa0' : '#f00');
@@ -282,7 +284,7 @@
     }
 
     function addToInventory(type, amount, damage=0) {
-        let maxStack = (type.includes('_')) ? 1 : 64;
+        let maxStack = (type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) ? 1 : 64;
         for(let i=0; i<36; i++) { if(inventory[i].type === type && inventory[i].count < maxStack) { let add = Math.min(maxStack - inventory[i].count, amount); inventory[i].count += add; amount -= add; if(amount <= 0) break; } }
         if(amount > 0) { for(let i=0; i<36; i++) { if(!inventory[i].type) { inventory[i].type = type; inventory[i].count = amount; inventory[i].damage = damage; amount = 0; break; } } }
         updateUI(); return amount === 0;
@@ -308,7 +310,7 @@
     }
 
     function handleSlotAction(arr, idx, e) {
-      e.stopPropagation(); playSound('click'); let slot = arr[idx]; let maxStack = (slot.type && (slot.type.includes('_'))) ? 1 : 64;
+      e.stopPropagation(); playSound('click'); let slot = arr[idx]; let maxStack = (slot.type && (slot.type.endsWith('_pickaxe') || slot.type.endsWith('_axe') || slot.type.endsWith('_shovel') || slot.type.endsWith('_sword') || slot.type.endsWith('_hoe'))) ? 1 : 64;
       if (e.button === 0 && e.ctrlKey) {
           if (dragItem) {
               if (!slot.type || slot.type === dragItem.item.type) {
@@ -355,27 +357,21 @@
       let isWoodPick = c3[0]===p && c3[1]===p && c3[2]===p && c3[4]===s && c3[7]===s && !c3[3] && !c3[5] && !c3[6] && !c3[8];
       let isStonePick = c3[0]===c && c3[1]===c && c3[2]===c && c3[4]===s && c3[7]===s && !c3[3] && !c3[5] && !c3[6] && !c3[8];
       
-      let checkAxe = (mat) => {
-        return (c3[0]===mat && c3[1]===mat && c3[3]===mat && c3[4]===s && c3[7]===s && !c3[2] && !c3[5] && !c3[6] && !c3[8]) || 
-               (c3[1]===mat && c3[2]===mat && c3[4]===mat && c3[5]===s && c3[8]===s && !c3[0] && !c3[3] && !c3[6] && !c3[7]) || 
-               (c3[0]===mat && c3[1]===mat && c3[4]===mat && c3[3]===s && c3[6]===s && !c3[2] && !c3[5] && !c3[7] && !c3[8]) || 
-               (c3[1]===mat && c3[2]===mat && c3[5]===mat && c3[4]===s && c3[7]===s && !c3[0] && !c3[3] && !c3[6] && !c3[8]);
-      }
-      let checkHoe = (mat) => {
-        return (c3[0]===mat && c3[1]===mat && c3[4]===s && c3[7]===s && !c3[2] && !c3[3] && !c3[5] && !c3[6] && !c3[8]) || 
-               (c3[1]===mat && c3[2]===mat && c3[4]===s && c3[7]===s && !c3[0] && !c3[3] && !c3[5] && !c3[6] && !c3[8]) ||
-               (c3[0]===mat && c3[1]===mat && c3[3]===s && c3[6]===s && !c3[2] && !c3[4] && !c3[5] && !c3[7] && !c3[8]) || 
-               (c3[1]===mat && c3[2]===mat && c3[5]===s && c3[8]===s && !c3[0] && !c3[3] && !c3[4] && !c3[6] && !c3[7]);
-      }
+      let isWoodAxe = (c3[0]===p && c3[1]===p && c3[3]===p && c3[4]===s && c3[7]===s && !c3[2] && !c3[5] && !c3[6] && !c3[8]) || (c3[1]===p && c3[2]===p && c3[4]===p && c3[5]===s && c3[8]===s && !c3[0] && !c3[3] && !c3[6] && !c3[7]) || (c3[0]===p && c3[1]===p && c3[4]===p && c3[3]===s && c3[6]===s && !c3[2] && !c3[5] && !c3[7] && !c3[8]) || (c3[1]===p && c3[2]===p && c3[5]===p && c3[4]===s && c3[7]===s && !c3[0] && !c3[3] && !c3[6] && !c3[8]);
+      let isStoneAxe = (c3[0]===c && c3[1]===c && c3[3]===c && c3[4]===s && c3[7]===s && !c3[2] && !c3[5] && !c3[6] && !c3[8]) || (c3[1]===c && c3[2]===c && c3[4]===c && c3[5]===s && c3[8]===s && !c3[0] && !c3[3] && !c3[6] && !c3[7]) || (c3[0]===c && c3[1]===c && c3[4]===c && c3[3]===s && c3[6]===s && !c3[2] && !c3[5] && !c3[7] && !c3[8]) || (c3[1]===c && c3[2]===c && c3[5]===c && c3[4]===s && c3[7]===s && !c3[0] && !c3[3] && !c3[6] && !c3[8]);
+
+      let isWoodHoe = (c3[0]===p && c3[1]===p && c3[4]===s && c3[7]===s && !c3[2] && !c3[3] && !c3[5] && !c3[6] && !c3[8]) || (c3[1]===p && c3[2]===p && c3[5]===s && c3[8]===s && !c3[0] && !c3[3] && !c3[4] && !c3[6] && !c3[7]) || (c3[0]===p && c3[1]===p && c3[3]===s && c3[6]===s && !c3[2] && !c3[4] && !c3[5] && !c3[7] && !c3[8]) || (c3[1]===p && c3[2]===p && c3[4]===s && c3[7]===s && !c3[0] && !c3[3] && !c3[5] && !c3[6] && !c3[8]);
+      let isStoneHoe = (c3[0]===c && c3[1]===c && c3[4]===s && c3[7]===s && !c3[2] && !c3[3] && !c3[5] && !c3[6] && !c3[8]) || (c3[1]===c && c3[2]===c && c3[5]===s && c3[8]===s && !c3[0] && !c3[3] && !c3[4] && !c3[6] && !c3[7]) || (c3[0]===c && c3[1]===c && c3[3]===s && c3[6]===s && !c3[2] && !c3[4] && !c3[5] && !c3[7] && !c3[8]) || (c3[1]===c && c3[2]===c && c3[4]===s && c3[7]===s && !c3[0] && !c3[3] && !c3[5] && !c3[6] && !c3[8]);
+
       let checkShovel = (mat) => { for(let i=0; i<3; i++) { if(c3[i]===mat && c3[i+3]===s && c3[i+6]===s) { let empty=true; for(let j=0; j<9; j++) if(j!==i && j!==i+3 && j!==i+6 && c3[j]!==null) empty=false; if(empty) return true; } } return false; }
       let checkSword = (mat) => { for(let i=0; i<3; i++) { if(c3[i]===mat && c3[i+3]===mat && c3[i+6]===s) { let empty=true; for(let j=0; j<9; j++) if(j!==i && j!==i+3 && j!==i+6 && c3[j]!==null) empty=false; if(empty) return true; } } return false; }
 
       if(isWoodPick) { updateSlotDOM(out3, {type:'wooden_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_pickaxe', 1); }
       else if(isStonePick) { updateSlotDOM(out3, {type:'stone_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_pickaxe', 1); }
-      else if(checkAxe(p)) { updateSlotDOM(out3, {type:'wooden_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_axe', 1); }
-      else if(checkAxe(c)) { updateSlotDOM(out3, {type:'stone_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_axe', 1); }
-      else if(checkHoe(p)) { updateSlotDOM(out3, {type:'wooden_hoe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_hoe', 1); }
-      else if(checkHoe(c)) { updateSlotDOM(out3, {type:'stone_hoe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_hoe', 1); }
+      else if(isWoodAxe) { updateSlotDOM(out3, {type:'wooden_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_axe', 1); }
+      else if(isStoneAxe) { updateSlotDOM(out3, {type:'stone_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_axe', 1); }
+      else if(isWoodHoe) { updateSlotDOM(out3, {type:'wooden_hoe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_hoe', 1); }
+      else if(isStoneHoe) { updateSlotDOM(out3, {type:'stone_hoe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_hoe', 1); }
       else if(checkShovel(p)) { updateSlotDOM(out3, {type:'wooden_shovel', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_shovel', 1); }
       else if(checkShovel(c)) { updateSlotDOM(out3, {type:'stone_shovel', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_shovel', 1); }
       else if(checkSword(p)) { updateSlotDOM(out3, {type:'wooden_sword', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_sword', 1); }
@@ -403,7 +399,7 @@
             let dir = new THREE.Vector3(); cam.getWorldDirection(dir); let dropPos = cameraGroup.position.clone().addScaledVector(dir, 1.2); dropPos.y += 0.2; 
             let drop, mat;
             
-            if (type === 'stick' || type.includes('_')) { 
+            if (type === 'stick' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) { 
                 let group = new THREE.Group();
                 let tex = genTex(type, dmgLevel);
                 let matFront = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide});
@@ -415,11 +411,11 @@
                 if (type === 'wood') { mat = [new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')})]; }
                 else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctTop')}), new THREE.MeshLambertMaterial({map: genTex('planks')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')})]; }
                 else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
-                else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')})]; }
+                else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('farmlandSide')}), new THREE.MeshLambertMaterial({map: genTex('farmlandSide')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandSide')}), new THREE.MeshLambertMaterial({map: genTex('farmlandSide')})]; }
                 else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'}); }
                 drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), mat); 
             }
-            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.includes('_') || type==='stick', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
+            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe') || type==='stick', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
         }
     }
 
@@ -435,18 +431,18 @@
     const amb = new THREE.AmbientLight(0xffffff, 0.8); sc.add(amb); const sun = new THREE.DirectionalLight(0xffffff, 0.4); sun.position.set(10, 50, 10); sc.add(sun);
 
     const boxG = new THREE.BoxGeometry(1, 1, 1);
-    let bMap = new Map(), chunks = new Map(), brokenBlocks = new Set(), blockList = [];
+    let bMap = new Map(), chunks = new Map(), brokenBlocks = new Set();
     const CHUNK_SIZE = 8, RENDER_DIST = 4; 
 
-    function removeB(mesh) { if(!mesh) return; const key = `${Math.round(mesh.position.x)},${Math.round(mesh.position.y)},${Math.round(mesh.position.z)}`; bMap.delete(key); brokenBlocks.add(key); sc.remove(mesh); let idx = blockList.indexOf(mesh); if(idx > -1) blockList.splice(idx, 1); }
+    function removeB(mesh) { if(!mesh) return; const key = `${Math.round(mesh.position.x)},${Math.round(mesh.position.y)},${Math.round(mesh.position.z)}`; bMap.delete(key); brokenBlocks.add(key); sc.remove(mesh); }
     function addB(x,y,z,type){
       let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; if(bMap.has(key) || brokenBlocks.has(key)) return; let mat;
       if(type === 'wood'){ mat = [new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')})]; }
       else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctTop')}), new THREE.MeshLambertMaterial({map: genTex('planks')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')})]; }
       else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
-      else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')})]; }
+      else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('farmlandSide')}), new THREE.MeshLambertMaterial({map: genTex('farmlandSide')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandSide')}), new THREE.MeshLambertMaterial({map: genTex('farmlandSide')})]; }
       else mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'});
-      const b = new THREE.Mesh(boxG, mat); b.position.set(Math.round(x), Math.round(y), Math.round(z)); b.name = type; sc.add(b); bMap.set(key, b); blockList.push(b); return b;
+      const b = new THREE.Mesh(boxG, mat); b.position.set(Math.round(x), Math.round(y), Math.round(z)); b.name = type; sc.add(b); bMap.set(key, b); return b;
     }
 
     function updateChunks() {
@@ -463,7 +459,7 @@
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.002, 1.002, 1.002), crackMats[0]); sc.add(crackMesh); crackMesh.visible = false;
 
     let keys = {}, pVel = new THREE.Vector3(), yVel = 0, stepTimer = 0, bobTimer = 0;
-    const isSolid = (x, y, z) => { let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; return bMap.has(key) && bMap.get(key).name !== 'stick' && !bMap.get(key).name.includes('_'); };
+    const isSolid = (x, y, z) => { let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; return bMap.has(key) && bMap.get(key).name !== 'stick' && !bMap.get(key).name.endsWith('_pickaxe') && !bMap.get(key).name.endsWith('_axe') && !bMap.get(key).name.endsWith('_shovel') && !bMap.get(key).name.endsWith('_sword') && !bMap.get(key).name.endsWith('_hoe'); };
 
     function animate() {
       requestAnimationFrame(animate);
@@ -479,27 +475,9 @@
         cam.fov = THREE.MathUtils.lerp(cam.fov, isSprinting ? 85 : 75, 0.1); cam.updateProjectionMatrix();
         
         let accel = isSprinting ? 0.014 : 0.011; let friction = 0.85; pVel.x *= friction; pVel.z *= friction; 
-        
         if(gameState === "PLAYING") {
           if(keys['KeyW']) { pVel.x += dir.x * accel; pVel.z += dir.z * accel; } if(keys['KeyS']) { pVel.x -= dir.x * accel; pVel.z -= dir.z * accel; }
           if(keys['KeyA']) { pVel.x += side.x * accel; pVel.z += side.z * accel; } if(keys['KeyD']) { pVel.x -= side.x * accel; pVel.z -= side.z * accel; }
-          
-          // GRASS SPREAD TICK LOGIC
-          for(let i=0; i<10; i++) {
-              if(blockList.length === 0) break;
-              let b = blockList[Math.floor(Math.random() * blockList.length)];
-              if(b.name === 'dirt') {
-                  let aboveK = `${Math.round(b.position.x)},${Math.round(b.position.y+1)},${Math.round(b.position.z)}`;
-                  if(!bMap.has(aboveK)) {
-                      let grassCount = 0;
-                      for(let dx=-1; dx<=1; dx++){ for(let dy=-1; dy<=1; dy++){ for(let dz=-1; dz<=1; dz++){ 
-                          let nk = `${Math.round(b.position.x+dx)},${Math.round(b.position.y+dy)},${Math.round(b.position.z+dz)}`;
-                          if(bMap.has(nk) && bMap.get(nk).name === 'grass') grassCount++; 
-                      }}}
-                      if(grassCount > 0 && Math.random() < (0.05 * grassCount)) { let px=b.position.x, py=b.position.y, pz=b.position.z; removeB(b); addB(px, py, pz, 'grass'); }
-                  }
-              }
-          }
         }
 
         let px = cameraGroup.position.x, pz = cameraGroup.position.z;
@@ -531,50 +509,64 @@
           if(Date.now() - d.spawnTime > 1500 && cameraGroup.position.distanceTo(d.mesh.position) < 2.5) { d.mesh.position.lerp(cameraGroup.position, 0.25); if(cameraGroup.position.distanceTo(d.mesh.position) < 0.7) { playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); addToInventory(d.type, 1, d.damage); } }
         });
 
-        if(miningTarget && gameState === "PLAYING") {
-            let activeItem = inventory[activeSlot]; let activeType = activeItem.type; 
-            let isPick = activeType && activeType.endsWith('_pickaxe'); let isAxe = activeType && activeType.endsWith('_axe');
-            let isShovel = activeType && activeType.endsWith('_shovel'); let isSword = activeType && activeType.endsWith('_sword');
-            let isHoe = activeType && activeType.endsWith('_hoe');
-            
-            let hardness = 2.5; let canHarvest = true;
-            if (miningTarget.name === 'stone' || miningTarget.name === 'cobblestone') {
-                if (activeType === 'stone_pickaxe') { hardness = 1.0; } else if (activeType === 'wooden_pickaxe') { hardness = 1.6; } else { hardness = 10.0; canHarvest = false; }
-            } else if (miningTarget.name === 'wood' || miningTarget.name === 'planks' || miningTarget.name === 'crafting_table') { 
-                if (activeType === 'stone_axe') { hardness = 0.5; } else if (activeType === 'wooden_axe') { hardness = 0.8; } else { hardness = 2.0; }
-            } else if (miningTarget.name === 'dirt' || miningTarget.name === 'grass' || miningTarget.name === 'farmland') { 
-                if (activeType === 'stone_shovel') { hardness = 0.15; } else if (activeType === 'wooden_shovel') { hardness = 0.3; } 
-                else if (activeType === 'stone_hoe') { hardness = 0.45; } else if (activeType === 'wooden_hoe') { hardness = 0.55; } else { hardness = 0.6; }
-            } else if (miningTarget.name === 'leaves') { 
-                if (activeType === 'stone_sword' || activeType === 'wooden_sword') { hardness = 0.05; } 
-                else if (activeType === 'stone_hoe' || activeType === 'wooden_hoe') { hardness = 0.15; } else { hardness = 0.2; }
+        // DYNAMIC BLOCK SPREADING (Grass growing on dirt)
+        if (Math.random() < 0.05) {
+            let rx = Math.floor(cameraGroup.position.x + (Math.random()-0.5)*24); let ry = Math.floor(cameraGroup.position.y + (Math.random()-0.5)*10); let rz = Math.floor(cameraGroup.position.z + (Math.random()-0.5)*24);
+            let rKey = `${rx},${ry},${rz}`;
+            if (bMap.has(rKey) && bMap.get(rKey).name === 'dirt' && !bMap.has(`${rx},${ry+1},${rz}`)) {
+                let hasGrass = false;
+                for(let dx=-1;dx<=1;dx++) for(let dy=-1;dy<=1;dy++) for(let dz=-1;dz<=1;dz++) { let nKey = `${rx+dx},${ry+dy},${rz+dz}`; if(bMap.has(nKey) && bMap.get(nKey).name === 'grass') hasGrass = true; }
+                if(hasGrass) { removeB(bMap.get(rKey)); addB(rx, ry, rz, 'grass'); }
             }
+        }
 
-            miningProgress += 0.025; miningSoundTimer += 0.025;
-            if(miningSoundTimer > (hardness / 4)) { playSound('dig', miningTarget.name); miningSoundTimer = 0; }
+        // MINING FOCUS CHECK
+        if(miningTarget && gameState === "PLAYING") {
+            let viewDir = new THREE.Vector3(); cam.getWorldDirection(viewDir); viewDir.normalize();
+            const rayCheck = new THREE.Raycaster(cameraGroup.position, viewDir); let hitCheck = rayCheck.intersectObjects(Array.from(bMap.values()));
             
-            let stage = Math.floor((miningProgress / hardness) * 10);
-            if(stage >= 10) {
-                playSound('break', miningTarget.name); let name = miningTarget.name; let dropPos = miningTarget.position.clone(); removeB(miningTarget);
-                let mX = Math.round(dropPos.x), mY = Math.round(dropPos.y), mZ = Math.round(dropPos.z);
-                const adjs = [[0,-1,0],[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
-                adjs.forEach(off => { let nX = mX + off[0], nY = mY + off[1], nZ = mZ + off[2], surfaceH = Math.floor(Math.sin(nX/10)*2 + Math.cos(nZ/10)*2), k = `${nX},${nY},${nZ}`; if(nY <= surfaceH && !bMap.has(k) && !brokenBlocks.has(k)) { if(nY <= -50) addB(nX, nY, nZ, 'bedrock'); else if(nY <= surfaceH - 3) addB(nX, nY, nZ, 'stone'); else if(nY < surfaceH) addB(nX, nY, nZ, 'dirt'); } });
-
-                if (activeType && activeType.includes('_')) {
-                    let dmgToTake = 1; if (isSword && name !== 'leaves') dmgToTake = 2; 
-                    activeItem.damage = (activeItem.damage || 0) + dmgToTake;
-                    let maxD = activeType.startsWith('stone_') ? 131 : 59;
-                    if (activeItem.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
-                    updateUI();
+            if (hitCheck.length === 0 || hitCheck[0].object !== miningTarget || hitCheck[0].distance > 6) {
+                miningTarget = null; crackMesh.visible = false; 
+            } else {
+                let activeItem = inventory[activeSlot]; let activeType = activeItem.type; 
+                let isPick = activeType && activeType.endsWith('_pickaxe'); let isAxe = activeType && activeType.endsWith('_axe'); let isShovel = activeType && activeType.endsWith('_shovel'); let isSword = activeType && activeType.endsWith('_sword'); let isHoe = activeType && activeType.endsWith('_hoe');
+                
+                let hardness = 2.5; let canHarvest = true;
+                if (miningTarget.name === 'stone' || miningTarget.name === 'cobblestone') {
+                    if (activeType === 'stone_pickaxe') { hardness = 1.0; } else if (activeType === 'wooden_pickaxe') { hardness = 1.6; } else { hardness = 10.0; canHarvest = false; }
+                } else if (miningTarget.name === 'wood' || miningTarget.name === 'planks' || miningTarget.name === 'crafting_table') { 
+                    if (activeType === 'stone_axe') { hardness = 0.5; } else if (activeType === 'wooden_axe') { hardness = 0.8; } else { hardness = 2.0; }
+                } else if (miningTarget.name === 'dirt' || miningTarget.name === 'grass' || miningTarget.name === 'farmland') { 
+                    if (activeType === 'stone_shovel') { hardness = 0.15; } else if (activeType === 'wooden_shovel') { hardness = 0.3; } else if (isHoe) { hardness = 0.5; } else { hardness = 0.6; }
+                } else if (miningTarget.name === 'leaves') { 
+                    if (activeType === 'stone_sword' || activeType === 'wooden_sword') { hardness = 0.05; } else if (isHoe) { hardness = 0.1; } else { hardness = 0.2; }
                 }
 
-                if(name !== 'leaves') {
-                    let dropName = name === 'stone' ? 'cobblestone' : ((name === 'grass' || name === 'farmland') ? 'dirt' : name);
-                    if (name === 'stone' && !canHarvest) dropName = null; 
-                    if(dropName) { dropItemIntoWorld(dropName, 1, 0); drops[drops.length-1].mesh.position.copy(dropPos); drops[drops.length-1].spawnTime = Date.now() - 1500; }
-                }
-                miningTarget = null; crackMesh.visible = false;
-            } else { crackMesh.material = crackMats[Math.min(stage, 9)]; }
+                miningProgress += 0.025; miningSoundTimer += 0.025;
+                if(miningSoundTimer > (hardness / 4)) { playSound('dig', miningTarget.name); miningSoundTimer = 0; }
+                
+                let stage = Math.floor((miningProgress / hardness) * 10);
+                if(stage >= 10) {
+                    playSound('break', miningTarget.name); let name = miningTarget.name; let dropPos = miningTarget.position.clone(); removeB(miningTarget);
+                    let mX = Math.round(dropPos.x), mY = Math.round(dropPos.y), mZ = Math.round(dropPos.z);
+                    const adjs = [[0,-1,0],[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
+                    adjs.forEach(off => { let nX = mX + off[0], nY = mY + off[1], nZ = mZ + off[2], surfaceH = Math.floor(Math.sin(nX/10)*2 + Math.cos(nZ/10)*2), k = `${nX},${nY},${nZ}`; if(nY <= surfaceH && !bMap.has(k) && !brokenBlocks.has(k)) { if(nY <= -50) addB(nX, nY, nZ, 'bedrock'); else if(nY <= surfaceH - 3) addB(nX, nY, nZ, 'stone'); else if(nY < surfaceH) addB(nX, nY, nZ, 'dirt'); } });
+
+                    if (isPick || isAxe || isShovel || isSword || isHoe) {
+                        let dmgToTake = 1; if (isSword && name !== 'leaves') dmgToTake = 2; 
+                        activeItem.damage = (activeItem.damage || 0) + dmgToTake; let maxD = activeType.startsWith('stone_') ? 131 : 59;
+                        if (activeItem.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
+                        updateUI();
+                    }
+
+                    if(name !== 'leaves') {
+                        let dropName = name === 'stone' ? 'cobblestone' : ((name === 'grass' || name === 'farmland') ? 'dirt' : name);
+                        if (name === 'stone' && !canHarvest) dropName = null; 
+                        if(dropName) { dropItemIntoWorld(dropName, 1, 0); drops[drops.length-1].mesh.position.copy(dropPos); drops[drops.length-1].spawnTime = Date.now() - 1500; }
+                    }
+                    miningTarget = null; crackMesh.visible = false;
+                } else { crackMesh.material = crackMats[Math.min(stage, 9)]; }
+            }
         }
       }
       rnd.render(sc, cam);
@@ -594,37 +586,40 @@
       const ray = new THREE.Raycaster(cameraGroup.position, dir); let hits = ray.intersectObjects(Array.from(bMap.values()));
       
       if(hits.length > 0 && hits[0].distance < 6) {
-        let b = hits[0].object;
-        if(e.button === 0 && b.name !== 'bedrock') { miningTarget = b; miningProgress = 0; miningSoundTimer = 0; crackMesh.position.copy(b.position); crackMesh.visible = true; }
+        let b = hits[0].object; let item = inventory[activeSlot];
+        
+        if(e.button === 0 && b.name !== 'bedrock') { 
+            miningTarget = b; miningProgress = 0; miningSoundTimer = 0; crackMesh.position.copy(b.position); crackMesh.visible = true; 
+        }
         else if(e.button === 2) {
           if(b.name === 'crafting_table') { setMenu('CRAFTING'); return; }
-          let item = inventory[activeSlot];
           
-          // HOE TILLING LOGIC
-          if (item.type && item.type.endsWith('_hoe') && (b.name === 'dirt' || b.name === 'grass')) {
-              let pX = Math.round(b.position.x), pY = Math.round(b.position.y), pZ = Math.round(b.position.z);
-              if(!bMap.has(`${pX},${pY+1},${pZ}`)) {
-                  playSound('dig', 'dirt'); removeB(b); addB(pX, pY, pZ, 'farmland');
+          // HOE LOGIC - Tilling Dirt/Grass
+          if(item.type && item.type.endsWith('_hoe') && (b.name === 'dirt' || b.name === 'grass')) {
+              let aboveKey = `${Math.round(b.position.x)},${Math.round(b.position.y)+1},${Math.round(b.position.z)}`;
+              if(!bMap.has(aboveKey)) {
+                  let p = b.position.clone(); removeB(b); addB(p.x, p.y, p.z, 'farmland'); playSound('dig', 'dirt');
                   item.damage = (item.damage || 0) + 1; let maxD = item.type.startsWith('stone_') ? 131 : 59;
-                  if(item.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type:null, count:0, damage:0}; }
+                  if (item.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
                   updateUI(); return;
               }
           }
 
-          if(item.type && item.count > 0 && item.type !== 'stick' && !item.type.includes('_')) { 
+          if(item.type && item.count > 0 && item.type !== 'stick' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
             let p = b.position.clone().add(hits[0].face.normal); let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
-            let dx = pX - cameraGroup.position.x, dy = pY - (cameraGroup.position.y - 1.6), dz = pZ - cameraGroup.position.z;
-            let insidePlayer = (Math.abs(dx) < 0.6 && Math.abs(dz) < 0.6 && dy > -0.8 && dy < 1.8);
+            
+            // TRUE AABB JUMP-PLACING (No more 50% failure rate when pillaring)
+            let camX = cameraGroup.position.x, camY = cameraGroup.position.y, camZ = cameraGroup.position.z;
+            let pMinX = camX - 0.3, pMaxX = camX + 0.3, pMinY = camY - 1.6, pMaxY = camY + 0.2, pMinZ = camZ - 0.3, pMaxZ = camZ + 0.3;
+            let bMinX = pX - 0.5, bMaxX = pX + 0.5, bMinY = pY - 0.5, bMaxY = pY + 0.5, bMinZ = pZ - 0.5, bMaxZ = pZ + 0.5;
+            let insidePlayer = (pMinX < bMaxX && pMaxX > bMinX && pMinY < bMaxY && pMaxY > bMinY && pMinZ < bMaxZ && pMaxZ > bMinZ);
 
             if(!bMap.has(`${pX},${pY},${pZ}`) && !insidePlayer) { 
                 playSound('place', item.type); addB(pX, pY, pZ, item.type); item.count--; brokenBlocks.delete(`${pX},${pY},${pZ}`); 
                 
-                // BLOCK SUFFOCATION LOGIC (Turns Grass/Farmland back to Dirt)
-                let underKey = `${pX},${pY-1},${pZ}`;
-                if(bMap.has(underKey)) {
-                    let under = bMap.get(underKey);
-                    if(under.name === 'grass' || under.name === 'farmland') { removeB(under); addB(pX, pY-1, pZ, 'dirt'); }
-                }
+                // Suffocate Grass/Farmland underneath
+                let belowKey = `${pX},${pY-1},${pZ}`;
+                if(bMap.has(belowKey)) { let belowB = bMap.get(belowKey); if(belowB.name === 'grass' || belowB.name === 'farmland') { removeB(belowB); addB(pX, pY-1, pZ, 'dirt'); } }
                 updateUI(); 
             }
           }
