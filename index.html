@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.22 - The Woodsman Update</title>
+  <title>ORANGECRAFT Alpha 1.23 - The Combat & Physics Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -118,9 +118,7 @@
             let o = audioCtx.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(600, now); o.frequency.exponentialRampToValueAtTime(100, now + 0.05);
             g.gain.setValueAtTime(0.3, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.05); o.connect(g); o.start(now); o.stop(now + 0.05);
         } else if (type === 'tool_break') {
-            // Loud shatter sound for tool breaking
-            let bufferSize = audioCtx.sampleRate * 0.4; 
-            let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); let data = buffer.getChannelData(0);
+            let bufferSize = audioCtx.sampleRate * 0.4; let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); let data = buffer.getChannelData(0);
             for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
             let noise = audioCtx.createBufferSource(); noise.buffer = buffer; 
             let filter = audioCtx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 1500;
@@ -131,7 +129,7 @@
             let buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); let data = buffer.getChannelData(0);
             for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
             let noise = audioCtx.createBufferSource(); noise.buffer = buffer; 
-            noise.playbackRate.value = 0.85 + Math.random() * 0.3; // Pitch variation
+            noise.playbackRate.value = 0.85 + Math.random() * 0.3;
             let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; 
             if (blockName === 'stone' || blockName === 'cobblestone' || blockName === 'bedrock') { filter.frequency.value = 1800; filter.type = 'highpass'; } 
             else if (blockName === 'wood' || blockName === 'planks' || blockName === 'crafting_table') { filter.frequency.value = 600; } 
@@ -164,7 +162,7 @@
     const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Now with multiplayer!", "More polygons!", "Water proof!"];
 
     function getDmgLevel(type, damage) {
-        if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe'))) return 0;
+        if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe') && !type.endsWith('_shovel') && !type.endsWith('_sword'))) return 0;
         let maxD = type.startsWith('stone_') ? 131 : 59;
         if (damage > maxD * 0.75) return 2; 
         if (damage > maxD * 0.4) return 1;  
@@ -183,56 +181,28 @@
         if (type === 'stone') {
             drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e'}, 'ABACACABABAACABA'+'CABAABACABCAABAC'+'AABACABAABACABAA'+'BACABAABACABAACA'+'ACABCAABACABCAAB'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABAACA'+'ACABAACABCAABACA'+'CABAABACABAABACA'+'AABACABAABACABAA'+'BACABCAABACABAAC');
         } else if (type === 'wooden_pickaxe' || type === 'stone_pickaxe') {
-            const H = type === 'wooden_pickaxe' ? '#5c3a21' : '#4a4a4a'; // Outline
-            const h = type === 'wooden_pickaxe' ? '#9c774a' : '#828282'; // Fill
-            const S = '#5c3a21'; const s = '#8a5c34';
-            let mapArr = (
-                "____HHHHHHH_____"+
-                "__HHhhhhhhhHH___"+
-                "_HhhH_____HhhH__"+
-                "HhhH___ssS_HhhH_"+
-                "HhH___ssS___HhH_"+
-                "HH___ssS_____HH_"+
-                "____ssS_________"+
-                "___ssS__________"+
-                "__ssS___________"+
-                "_ssS____________"+
-                "ssS_____________"+
-                "sS______________"+
-                "________________"+
-                "________________"+
-                "________________"+
-                "________________"
-            ).split('');
-            // Visual Erosion
-            if (dmgLevel >= 1) { mapArr[2*16+13] = '_'; mapArr[3*16+14] = '_'; }
-            if (dmgLevel >= 2) { mapArr[4*16+14] = '_'; mapArr[5*16+14] = '_'; mapArr[2*16+2] = '_'; mapArr[3*16+1] = '_'; }
+            const H = type === 'wooden_pickaxe' ? '#5c3a21' : '#4a4a4a'; const h = type === 'wooden_pickaxe' ? '#9c774a' : '#828282'; const S = '#36200b'; const s = '#8a5c34';
+            let mapArr = ("____HHHHHHHHH___"+"___HhhhhhhhhhH__"+"___Hh_______sS__"+"___Hh______sS___"+"___Hh_____sS____"+"____H____sS_____"+"________sS______"+"_______sS_______"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"_S______________"+"________________").split('');
+            if (dmgLevel >= 1) { mapArr[2*16+14] = '_'; mapArr[3*16+13] = '_'; }
+            if (dmgLevel >= 2) { mapArr[4*16+12] = '_'; mapArr[3*16+3] = '_'; mapArr[4*16+3] = '_'; }
             drawPixelMap(ctx, {'H':H, 'h':h, 'S':S, 's':s, '_':null}, mapArr.join(''));
         } else if (type === 'wooden_axe' || type === 'stone_axe') {
-            const H = type === 'wooden_axe' ? '#5c3a21' : '#4a4a4a'; 
-            const h = type === 'wooden_axe' ? '#9c774a' : '#828282'; 
-            const S = '#5c3a21'; const s = '#8a5c34';
-            let mapArr = (
-                "__HHH___________"+
-                "_HhhhH__________"+
-                "HhhhhhH_________"+
-                "HhhhhhH_________"+
-                "HhhH_ssS________"+
-                "_HH_ssS_________"+
-                "___ssS__________"+
-                "__ssS___________"+
-                "_ssS____________"+
-                "ssS_____________"+
-                "sS______________"+
-                "________________"+
-                "________________"+
-                "________________"+
-                "________________"+
-                "________________"
-            ).split('');
-            // Visual Erosion
+            const H = type === 'wooden_axe' ? '#5c3a21' : '#4a4a4a'; const h = type === 'wooden_axe' ? '#9c774a' : '#828282'; const S = '#36200b'; const s = '#8a5c34';
+            let mapArr = ("__HHH___________"+"_HhhhH__________"+"_HhhhhH_________"+"_HhhH_sS________"+"__HH_sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"_S______________"+"________________"+"________________"+"________________"+"________________"+"________________"+"________________").split('');
             if (dmgLevel >= 1) { mapArr[2*16+1] = '_'; mapArr[3*16+1] = '_'; }
-            if (dmgLevel >= 2) { mapArr[1*16+2] = '_'; mapArr[4*16+1] = '_'; }
+            if (dmgLevel >= 2) { mapArr[1*16+2] = '_'; mapArr[4*16+2] = '_'; }
+            drawPixelMap(ctx, {'H':H, 'h':h, 'S':S, 's':s, '_':null}, mapArr.join(''));
+        } else if (type === 'wooden_shovel' || type === 'stone_shovel') {
+            const H = type === 'wooden_shovel' ? '#5c3a21' : '#4a4a4a'; const h = type === 'wooden_shovel' ? '#9c774a' : '#828282'; const S = '#36200b'; const s = '#8a5c34';
+            let mapArr = ("______HHH_______"+"_____HhhhH______"+"_____HhhhH______"+"_____HhhhH______"+"______HhH_______"+"_______sS_______"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________").split('');
+            if (dmgLevel >= 1) { mapArr[1*16+5] = '_'; mapArr[2*16+5] = '_'; }
+            if (dmgLevel >= 2) { mapArr[1*16+9] = '_'; mapArr[3*16+9] = '_'; }
+            drawPixelMap(ctx, {'H':H, 'h':h, 'S':S, 's':s, '_':null}, mapArr.join(''));
+        } else if (type === 'wooden_sword' || type === 'stone_sword') {
+            const H = type === 'wooden_sword' ? '#5c3a21' : '#4a4a4a'; const h = type === 'wooden_sword' ? '#9c774a' : '#828282'; const S = '#36200b'; const s = '#8a5c34';
+            let mapArr = ("______________H_"+"_____________HhH"+"____________HhhH"+"___________HhhH_"+"__________HhhH__"+"_________HhhH___"+"________HhhH____"+"_______HhhH_____"+"______HhhH______"+"_HH__HhhH_______"+"_HHH_HhH________"+"_HhHHH_H________"+"__Hh_sS_________"+"___H_sS_________"+"____sS__________"+"____S___________").split('');
+            if (dmgLevel >= 1) { mapArr[1*16+14] = '_'; mapArr[2*16+13] = '_'; }
+            if (dmgLevel >= 2) { mapArr[2*16+14] = '_'; mapArr[3*16+12] = '_'; }
             drawPixelMap(ctx, {'H':H, 'h':h, 'S':S, 's':s, '_':null}, mapArr.join(''));
         } else if (type === 'stick') {
             ctx.fillStyle = '#36200b'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 2, 2); } ctx.fillStyle = '#8a5c34'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 1, 1); } 
@@ -249,7 +219,7 @@
         else if (type === 'woodTop') { ctx.fillStyle = '#412e1c'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#b7935f'; ctx.fillRect(1,1,14,14); ctx.fillStyle = '#a17e4d'; ctx.fillRect(2,2,12,12); ctx.fillStyle = '#b7935f'; ctx.fillRect(3,3,10,10); ctx.fillStyle = '#a17e4d'; ctx.fillRect(5,5,6,6); ctx.fillStyle = '#b7935f'; ctx.fillRect(6,6,4,4); ctx.fillStyle = '#a17e4d'; ctx.fillRect(7,7,2,2); }
         else if (type === 'leaves') { ctx.clearRect(0,0,16,16); for(let x=0; x<16; x++) { for(let y=0; y<16; y++) { if((x+y)%2===0 || Math.random()>0.7) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); } } } }
 
-        imgDataUrls[cacheKey] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; if(type === 'leaves' || type === 'stick' || type.endsWith('_pickaxe') || type.endsWith('_axe')) t.transparent = true; texCache[cacheKey] = t; return t;
+        imgDataUrls[cacheKey] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; if(type === 'leaves' || type === 'stick' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword')) t.transparent = true; texCache[cacheKey] = t; return t;
     }
 
     const crackMats = Array(10).fill(null).map((_, i) => {
@@ -285,7 +255,7 @@
         if(type === 'crafting_table') { genTex('ctTop'); genTex('ctSide'); } else if(type === 'wood') { genTex('woodTop'); genTex('wood'); } else if(type === 'grass') { genTex('grass'); genTex('grassSide'); } else genTex(type, dmgLevel);
         
         let html = '';
-        if(type === 'stick' || type.endsWith('_pickaxe') || type.endsWith('_axe')) {
+        if(type === 'stick' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword')) {
             let cacheKey = type + '_' + dmgLevel;
             html = `<div class="item-2d" style="background-image:url(${imgDataUrls[cacheKey]})"></div>`;
         } else {
@@ -294,7 +264,7 @@
             html = `<div class="item-3d"><div class="face top" style="background-image:url(${imgDataUrls[top+'_0']})"></div><div class="face right" style="background-image:url(${imgDataUrls[side+'_0']})"></div><div class="face front" style="background-image:url(${imgDataUrls[side+'_0']})"></div></div>`;
         }
 
-        if(type.endsWith('_pickaxe') || type.endsWith('_axe')) {
+        if(type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword')) {
             let maxD = type.startsWith('stone_') ? 131 : 59;
             if (damage > 0) {
                 let pct = (maxD - damage) / maxD; let color = pct > 0.5 ? '#0f0' : (pct > 0.2 ? '#fa0' : '#f00');
@@ -305,7 +275,7 @@
     }
 
     function addToInventory(type, amount, damage=0) {
-        let maxStack = (type.endsWith('_pickaxe') || type.endsWith('_axe')) ? 1 : 64;
+        let maxStack = (type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword')) ? 1 : 64;
         for(let i=0; i<36; i++) { if(inventory[i].type === type && inventory[i].count < maxStack) { let add = Math.min(maxStack - inventory[i].count, amount); inventory[i].count += add; amount -= add; if(amount <= 0) break; } }
         if(amount > 0) { for(let i=0; i<36; i++) { if(!inventory[i].type) { inventory[i].type = type; inventory[i].count = amount; inventory[i].damage = damage; amount = 0; break; } } }
         updateUI(); return amount === 0;
@@ -331,7 +301,7 @@
     }
 
     function handleSlotAction(arr, idx, e) {
-      e.stopPropagation(); playSound('click'); let slot = arr[idx]; let maxStack = (slot.type && (slot.type.endsWith('_pickaxe') || slot.type.endsWith('_axe'))) ? 1 : 64;
+      e.stopPropagation(); playSound('click'); let slot = arr[idx]; let maxStack = (slot.type && (slot.type.endsWith('_pickaxe') || slot.type.endsWith('_axe') || slot.type.endsWith('_shovel') || slot.type.endsWith('_sword'))) ? 1 : 64;
       if (e.button === 0 && e.ctrlKey) {
           if (dragItem) {
               if (!slot.type || slot.type === dragItem.item.type) {
@@ -374,19 +344,24 @@
       else if (tot3 === 2 && ((c3[0]==='planks'&&c3[3]==='planks')||(c3[1]==='planks'&&c3[4]==='planks')||(c3[2]==='planks'&&c3[5]==='planks')||(c3[3]==='planks'&&c3[6]==='planks')||(c3[4]==='planks'&&c3[7]==='planks')||(c3[5]==='planks'&&c3[8]==='planks'))) { updateSlotDOM(out3, {type:'stick', count:4}); out3.onclick = () => processCraft(crafting3x3, 'stick', 4); }
       else if (tot3 === 4) { let hasCT = false, p = 'planks'; if (c3[0]===p&&c3[1]===p&&c3[3]===p&&c3[4]===p) hasCT = true; if (c3[1]===p&&c3[2]===p&&c3[4]===p&&c3[5]===p) hasCT = true; if (c3[3]===p&&c3[4]===p&&c3[6]===p&&c3[7]===p) hasCT = true; if (c3[4]===p&&c3[5]===p&&c3[7]===p&&c3[8]===p) hasCT = true; if (hasCT) { updateSlotDOM(out3, {type:'crafting_table', count:1}); out3.onclick = () => processCraft(crafting3x3, 'crafting_table', 1); } }
       
-      let isWoodPick = c3[0]==='planks' && c3[1]==='planks' && c3[2]==='planks' && c3[4]==='stick' && c3[7]==='stick' && !c3[3] && !c3[5] && !c3[6] && !c3[8];
-      let isStonePick = c3[0]==='cobblestone' && c3[1]==='cobblestone' && c3[2]==='cobblestone' && c3[4]==='stick' && c3[7]==='stick' && !c3[3] && !c3[5] && !c3[6] && !c3[8];
-      
       let p='planks', c='cobblestone', s='stick';
-      let isWoodAxeL = c3[0]===p && c3[1]===p && c3[3]===p && c3[4]===s && c3[7]===s && !c3[2] && !c3[5] && !c3[6] && !c3[8];
-      let isWoodAxeR = c3[1]===p && c3[2]===p && c3[5]===p && c3[4]===s && c3[7]===s && !c3[0] && !c3[3] && !c3[6] && !c3[8];
-      let isStoneAxeL = c3[0]===c && c3[1]===c && c3[3]===c && c3[4]===s && c3[7]===s && !c3[2] && !c3[5] && !c3[6] && !c3[8];
-      let isStoneAxeR = c3[1]===c && c3[2]===c && c3[5]===c && c3[4]===s && c3[7]===s && !c3[0] && !c3[3] && !c3[6] && !c3[8];
+      let isWoodPick = c3[0]===p && c3[1]===p && c3[2]===p && c3[4]===s && c3[7]===s && !c3[3] && !c3[5] && !c3[6] && !c3[8];
+      let isStonePick = c3[0]===c && c3[1]===c && c3[2]===c && c3[4]===s && c3[7]===s && !c3[3] && !c3[5] && !c3[6] && !c3[8];
+      
+      let isWoodAxe = (c3[0]===p && c3[1]===p && c3[3]===p && c3[4]===s && c3[7]===s && !c3[2] && !c3[5] && !c3[6] && !c3[8]) || (c3[1]===p && c3[2]===p && c3[4]===p && c3[5]===s && c3[8]===s && !c3[0] && !c3[3] && !c3[6] && !c3[7]) || (c3[0]===p && c3[1]===p && c3[4]===p && c3[3]===s && c3[6]===s && !c3[2] && !c3[5] && !c3[7] && !c3[8]) || (c3[1]===p && c3[2]===p && c3[5]===p && c3[4]===s && c3[7]===s && !c3[0] && !c3[3] && !c3[6] && !c3[8]);
+      let isStoneAxe = (c3[0]===c && c3[1]===c && c3[3]===c && c3[4]===s && c3[7]===s && !c3[2] && !c3[5] && !c3[6] && !c3[8]) || (c3[1]===c && c3[2]===c && c3[4]===c && c3[5]===s && c3[8]===s && !c3[0] && !c3[3] && !c3[6] && !c3[7]) || (c3[0]===c && c3[1]===c && c3[4]===c && c3[3]===s && c3[6]===s && !c3[2] && !c3[5] && !c3[7] && !c3[8]) || (c3[1]===c && c3[2]===c && c3[5]===c && c3[4]===s && c3[7]===s && !c3[0] && !c3[3] && !c3[6] && !c3[8]);
+
+      let checkShovel = (mat) => { for(let i=0; i<3; i++) { if(c3[i]===mat && c3[i+3]===s && c3[i+6]===s) { let empty=true; for(let j=0; j<9; j++) if(j!==i && j!==i+3 && j!==i+6 && c3[j]!==null) empty=false; if(empty) return true; } } return false; }
+      let checkSword = (mat) => { for(let i=0; i<3; i++) { if(c3[i]===mat && c3[i+3]===mat && c3[i+6]===s) { let empty=true; for(let j=0; j<9; j++) if(j!==i && j!==i+3 && j!==i+6 && c3[j]!==null) empty=false; if(empty) return true; } } return false; }
 
       if(isWoodPick) { updateSlotDOM(out3, {type:'wooden_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_pickaxe', 1); }
       else if(isStonePick) { updateSlotDOM(out3, {type:'stone_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_pickaxe', 1); }
-      else if(isWoodAxeL || isWoodAxeR) { updateSlotDOM(out3, {type:'wooden_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_axe', 1); }
-      else if(isStoneAxeL || isStoneAxeR) { updateSlotDOM(out3, {type:'stone_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_axe', 1); }
+      else if(isWoodAxe) { updateSlotDOM(out3, {type:'wooden_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_axe', 1); }
+      else if(isStoneAxe) { updateSlotDOM(out3, {type:'stone_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_axe', 1); }
+      else if(checkShovel(p)) { updateSlotDOM(out3, {type:'wooden_shovel', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_shovel', 1); }
+      else if(checkShovel(c)) { updateSlotDOM(out3, {type:'stone_shovel', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_shovel', 1); }
+      else if(checkSword(p)) { updateSlotDOM(out3, {type:'wooden_sword', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_sword', 1); }
+      else if(checkSword(c)) { updateSlotDOM(out3, {type:'stone_sword', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_sword', 1); }
     }
 
     function processCraft(arr, resultType, amount) { playSound('click'); arr.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount, 0); }
@@ -411,13 +386,11 @@
             let dir = new THREE.Vector3(); cam.getWorldDirection(dir); let dropPos = cameraGroup.position.clone().addScaledVector(dir, 1.2); dropPos.y += 0.2; 
             let drop, mat;
             
-            if (type === 'stick' || type.endsWith('_pickaxe') || type.endsWith('_axe')) { 
+            if (type === 'stick' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword')) { 
                 let group = new THREE.Group();
                 let tex = genTex(type, dmgLevel);
                 let matFront = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide});
                 let pGeo = new THREE.PlaneGeometry(0.5, 0.5);
-                
-                // Stack transparent planes to create solid thickness without an ugly frame
                 for(let i=0; i<5; i++) {
                     let mesh = new THREE.Mesh(pGeo, matFront);
                     mesh.position.z = (i - 2.0) * 0.015;
@@ -432,7 +405,7 @@
                 else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'}); }
                 drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), mat); 
             }
-            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type==='stick', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
+            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type==='stick', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
         }
     }
 
@@ -475,7 +448,7 @@
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.002, 1.002, 1.002), crackMats[0]); sc.add(crackMesh); crackMesh.visible = false;
 
     let keys = {}, pVel = new THREE.Vector3(), yVel = 0, stepTimer = 0, bobTimer = 0;
-    const isSolid = (x, y, z) => { let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; return bMap.has(key) && bMap.get(key).name !== 'stick' && !bMap.get(key).name.endsWith('_pickaxe') && !bMap.get(key).name.endsWith('_axe'); };
+    const isSolid = (x, y, z) => { let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; return bMap.has(key) && bMap.get(key).name !== 'stick' && !bMap.get(key).name.endsWith('_pickaxe') && !bMap.get(key).name.endsWith('_axe') && !bMap.get(key).name.endsWith('_shovel') && !bMap.get(key).name.endsWith('_sword'); };
 
     function animate() {
       requestAnimationFrame(animate);
@@ -490,29 +463,36 @@
         let isSprinting = (keys['ShiftLeft'] || keys['ShiftRight'] || keys['ControlLeft'] || keys['ControlRight']) && keys['KeyW'];
         cam.fov = THREE.MathUtils.lerp(cam.fov, isSprinting ? 85 : 75, 0.1); cam.updateProjectionMatrix();
         
-        let accel = isSprinting ? 0.05 : 0.03; let friction = 0.70; pVel.x *= friction; pVel.z *= friction; 
+        // Accurate Vanilla Walk/Sprint Physics (4.3 m/s Walk, 5.6 m/s Sprint)
+        let accel = isSprinting ? 0.014 : 0.011; 
+        let friction = 0.85; 
+        pVel.x *= friction; pVel.z *= friction; 
+        
         if(gameState === "PLAYING") {
           if(keys['KeyW']) { pVel.x += dir.x * accel; pVel.z += dir.z * accel; } if(keys['KeyS']) { pVel.x -= dir.x * accel; pVel.z -= dir.z * accel; }
           if(keys['KeyA']) { pVel.x += side.x * accel; pVel.z += side.z * accel; } if(keys['KeyD']) { pVel.x -= side.x * accel; pVel.z -= side.z * accel; }
         }
 
         let px = cameraGroup.position.x, pz = cameraGroup.position.z;
-        let footY = Math.round(cameraGroup.position.y - 1.5), headY = Math.round(cameraGroup.position.y - 0.5); let margin = 0.4; // Increased margin slightly to prevent wall clipping
+        let footY = Math.round(cameraGroup.position.y - 1.5), headY = Math.round(cameraGroup.position.y - 0.5); 
+        let margin = 0.4; // Slightly thicker bounding box to prevent glitching out of walls
         if(!isSolid(px + pVel.x + Math.sign(pVel.x)*margin, footY, pz) && !isSolid(px + pVel.x + Math.sign(pVel.x)*margin, headY, pz)) cameraGroup.position.x += pVel.x; else pVel.x = 0;
         if(!isSolid(px, footY, pz + pVel.z + Math.sign(pVel.z)*margin) && !isSolid(px, headY, pz + pVel.z + Math.sign(pVel.z)*margin)) cameraGroup.position.z += pVel.z; else pVel.z = 0;
 
-        yVel -= 0.015; let nextY = cameraGroup.position.y + yVel;
+        // Accurate 1.25 Block Vanilla Jump Height
+        yVel -= 0.01; let nextY = cameraGroup.position.y + yVel;
         if(yVel <= 0 && isSolid(cameraGroup.position.x, Math.round(nextY - 1.6), cameraGroup.position.z)) { 
             yVel = 0; cameraGroup.position.y = Math.round(nextY - 1.6) + 2.1; 
-            if(keys['Space'] && gameState === "PLAYING") yVel = 0.22; 
+            // NO JUMP COOLDOWN (Auto-hop if holding space)
+            if(keys['Space'] && gameState === "PLAYING") yVel = 0.16; 
         } else if (yVel > 0 && isSolid(cameraGroup.position.x, Math.round(nextY), cameraGroup.position.z)) {
-            yVel = 0; cameraGroup.position.y = Math.round(nextY) - 0.75; // Pushed down to completely prevent ceiling clipping
+            yVel = 0; cameraGroup.position.y = Math.round(nextY) - 0.75; // Fix head clipping through ceiling
         } else { cameraGroup.position.y = nextY; }
 
         if(isSolid(cameraGroup.position.x, Math.round(cameraGroup.position.y - 1.6), cameraGroup.position.z) && isMoving && gameState === "PLAYING") {
             let speed = Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z); stepTimer += speed; bobTimer += speed * (isSprinting ? 1.5 : 1.0);
             cam.position.y = Math.sin(bobTimer * 10) * 0.1; 
-            if(stepTimer > (isSprinting ? 0.9 : 0.6)) { 
+            if(stepTimer > (isSprinting ? 0.7 : 0.5)) { 
                 let bKey = `${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`; playSound('step', bMap.has(bKey) ? bMap.get(bKey).name : 'grass'); stepTimer = 0; 
             }
         } else { stepTimer = 0; cam.position.y = THREE.MathUtils.lerp(cam.position.y, 0, 0.1); }
@@ -525,19 +505,24 @@
           if(Date.now() - d.spawnTime > 1500 && cameraGroup.position.distanceTo(d.mesh.position) < 2.5) { d.mesh.position.lerp(cameraGroup.position, 0.25); if(cameraGroup.position.distanceTo(d.mesh.position) < 0.7) { playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); addToInventory(d.type, 1, d.damage); } }
         });
 
-        // MINING LOGIC WITH AXES & PICKAXES
+        // FULL TOOL COMBAT & MINING LOGIC
         if(miningTarget && gameState === "PLAYING") {
             let activeItem = inventory[activeSlot]; let activeType = activeItem.type; 
-            let isPick = activeType === 'wooden_pickaxe' || activeType === 'stone_pickaxe';
-            let isAxe = activeType === 'wooden_axe' || activeType === 'stone_axe';
+            let isPick = activeType && activeType.endsWith('_pickaxe');
+            let isAxe = activeType && activeType.endsWith('_axe');
+            let isShovel = activeType && activeType.endsWith('_shovel');
+            let isSword = activeType && activeType.endsWith('_sword');
             
             let hardness = 2.5; let canHarvest = true;
             if (miningTarget.name === 'stone' || miningTarget.name === 'cobblestone') {
                 if (activeType === 'stone_pickaxe') { hardness = 1.0; } else if (activeType === 'wooden_pickaxe') { hardness = 1.6; } else { hardness = 10.0; canHarvest = false; }
             } else if (miningTarget.name === 'wood' || miningTarget.name === 'planks' || miningTarget.name === 'crafting_table') { 
                 if (activeType === 'stone_axe') { hardness = 0.5; } else if (activeType === 'wooden_axe') { hardness = 0.8; } else { hardness = 2.0; }
-            } else if (miningTarget.name === 'dirt' || miningTarget.name === 'grass') { hardness = 0.6; }
-            else if (miningTarget.name === 'leaves') { hardness = 0.2; }
+            } else if (miningTarget.name === 'dirt' || miningTarget.name === 'grass') { 
+                if (activeType === 'stone_shovel') { hardness = 0.15; } else if (activeType === 'wooden_shovel') { hardness = 0.3; } else { hardness = 0.6; }
+            } else if (miningTarget.name === 'leaves') { 
+                if (activeType === 'stone_sword' || activeType === 'wooden_sword') { hardness = 0.05; } else { hardness = 0.2; }
+            }
 
             miningProgress += 0.025; miningSoundTimer += 0.025;
             if(miningSoundTimer > (hardness / 4)) { playSound('dig', miningTarget.name); miningSoundTimer = 0; }
@@ -549,8 +534,10 @@
                 const adjs = [[0,-1,0],[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
                 adjs.forEach(off => { let nX = mX + off[0], nY = mY + off[1], nZ = mZ + off[2], surfaceH = Math.floor(Math.sin(nX/10)*2 + Math.cos(nZ/10)*2), k = `${nX},${nY},${nZ}`; if(nY <= surfaceH && !bMap.has(k) && !brokenBlocks.has(k)) { if(nY <= -50) addB(nX, nY, nZ, 'bedrock'); else if(nY <= surfaceH - 3) addB(nX, nY, nZ, 'stone'); else if(nY < surfaceH) addB(nX, nY, nZ, 'dirt'); } });
 
-                if (isPick || isAxe) {
-                    activeItem.damage = (activeItem.damage || 0) + 1;
+                if (isPick || isAxe || isShovel || isSword) {
+                    let dmgToTake = 1;
+                    if (isSword && name !== 'leaves') dmgToTake = 2; // Swords take double damage on regular blocks
+                    activeItem.damage = (activeItem.damage || 0) + dmgToTake;
                     let maxD = activeType.startsWith('stone_') ? 131 : 59;
                     if (activeItem.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
                     updateUI();
@@ -587,7 +574,7 @@
         else if(e.button === 2) {
           if(b.name === 'crafting_table') { setMenu('CRAFTING'); return; }
           let item = inventory[activeSlot];
-          if(item.type && item.count > 0 && item.type !== 'stick' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe')) { 
+          if(item.type && item.count > 0 && item.type !== 'stick' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword')) { 
             let p = b.position.clone().add(hits[0].face.normal); let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
             let dx = pX - cameraGroup.position.x, dy = pY - (cameraGroup.position.y - 1.6), dz = pZ - cameraGroup.position.z;
             let insidePlayer = (Math.abs(dx) < 0.6 && Math.abs(dz) < 0.6 && dy > -0.8 && dy < 1.8);
