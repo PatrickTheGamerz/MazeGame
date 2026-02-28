@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.30 - The Performance & Loading Update</title>
+  <title>ORANGECRAFT Alpha 1.31 - The Optimization & Loading Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -30,7 +30,7 @@
     #tooltip { position:fixed; background:rgba(16,0,16,0.95); border:2px solid #3b00a5; color:#fff; padding:4px 8px; pointer-events:none; display:none; z-index:9999; font-family:'Courier New', monospace; font-weight:bold; text-shadow:2px 2px #000; box-shadow: 4px 4px 0 rgba(0,0,0,0.5); }
 
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
-    .dirt-bg { background-color: #5c3a21; background-size: 64px; image-rendering: pixelated; box-shadow: inset 0 0 200px rgba(0,0,0,0.9); }
+    .dirt-bg { background-color: #5c3a21; box-shadow: inset 0 0 200px rgba(0,0,0,0.9); }
     
     .title{font-size:5rem;color:#FFA500;text-shadow:6px 6px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
     .splash{position:absolute;top:65px;right:-90px;color:#ffff00;font-size:1.6rem;font-family: 'Arial Black', sans-serif; font-weight:bold; animation:pulse 0.4s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px 0 #3f3f00; pointer-events:none; white-space:nowrap;}
@@ -64,9 +64,9 @@
   </div>
 
   <div id="loading-screen" class="menu-overlay dirt-bg" style="z-index: 9999;">
-    <div class="title" style="font-size: 2.5rem; margin-bottom: 40px; color:#fff; text-shadow:4px 4px 0 #000; font-family:sans-serif;">Building terrain...</div>
-    <div style="width: 400px; height: 16px; border: 4px solid #111; background: #333; padding: 2px;">
-        <div id="loading-bar-fill" style="width: 0%; height: 100%; background: #74BC39;"></div>
+    <div class="title" style="font-size: 2.5rem; margin-bottom: 40px; color:#fff; text-shadow:4px 4px 0 #000; font-family:sans-serif;">Generating World...</div>
+    <div style="width: 400px; height: 24px; border: 4px solid #111; background: #333; padding: 2px;">
+        <div id="loading-bar-fill" style="width: 0%; height: 100%; background: #74BC39; transition: width 0.1s;"></div>
     </div>
   </div>
 
@@ -190,7 +190,7 @@
 
     // --- 2. TEXTURES & ASSETS ---
     const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Now with multiplayer!", "More polygons!", "Water proof!", "Caves and Coal!"];
+    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Now with multiplayer!", "More polygons!", "Water proof!", "60 FPS!"];
 
     function getDmgLevel(type, damage) {
         if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe') && !type.endsWith('_shovel') && !type.endsWith('_sword') && !type.endsWith('_hoe'))) return 0;
@@ -474,25 +474,19 @@
     function startGame() { 
         initAudio(); 
         
-        // Ensure dirt texture exists for loading background
-        genTex('dirt'); 
-        
         document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
         let ls = document.getElementById('loading-screen');
         ls.style.display = 'flex';
-        if(imgDataUrls['dirt_0']) {
-            ls.style.backgroundImage = `url(${imgDataUrls['dirt_0']})`;
-        }
         
         gameState = "LOADING";
         initialLoadQueue = [];
         
+        // Massive Render Distance (Performance Boosted!)
         for(let x = -RENDER_DIST; x <= RENDER_DIST; x++) { 
             for(let z = -RENDER_DIST; z <= RENDER_DIST; z++) { 
                 initialLoadQueue.push({x, z}); 
             } 
         }
-        // Sort from center outwards
         initialLoadQueue.sort((a,b) => (a.x*a.x + a.z*a.z) - (b.x*b.x + b.z*b.z));
         initialLoadTotal = initialLoadQueue.length;
         
@@ -500,24 +494,31 @@
     }
     
     function processLoad() {
-        if(initialLoadQueue.length > 0) {
+        let start = performance.now();
+        while(initialLoadQueue.length > 0 && performance.now() - start < 15) { // 15ms batch
             let c = initialLoadQueue.shift();
             let cKey = `${c.x},${c.z}`;
             if(!chunks.has(cKey)) {
-                generateChunk(c.x, c.z);
+                generateChunkVolume(c.x, c.z);
+                updateChunkRender(c.x, c.z);
                 chunks.set(cKey, true);
             }
-            let pct = ((initialLoadTotal - initialLoadQueue.length) / initialLoadTotal) * 100;
-            document.getElementById('loading-bar-fill').style.width = pct + '%';
-            
-            // Yield frame to update UI
+        }
+        
+        let pct = ((initialLoadTotal - initialLoadQueue.length) / initialLoadTotal) * 100;
+        document.getElementById('loading-bar-fill').style.width = pct + '%';
+        
+        if(initialLoadQueue.length > 0) {
             requestAnimationFrame(processLoad);
         } else {
-            playMusic(); 
-            let spawnY = getSurfaceH(0, 0) + 2;
-            cameraGroup.position.set(0, spawnY, 0); 
-            targetRotation.copy(cam.rotation); 
-            setMenu('PLAYING');
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                playMusic(); 
+                let spawnY = getSurfaceH(0, 0) + 2;
+                cameraGroup.position.set(0, spawnY, 0); 
+                targetRotation.copy(cam.rotation); 
+                setMenu('PLAYING');
+            }, 300);
         }
     }
     
@@ -535,7 +536,6 @@
     }
     document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU'); });
 
-    // PURE VOXEL 2D DROPS
     function dropItemIntoWorld(type, amount = 1, damage = 0) {
         let dmgLevel = getDmgLevel(type, damage);
         for(let j=0; j<amount; j++) {
@@ -563,7 +563,7 @@
         }
     }
 
-    // --- 4. 3D ENGINE, FOG, & COLLISION ---
+    // --- 4. 3D VOXEL ENGINE & LIGHTING ---
     const sc = new THREE.Scene(); const skyColor = 0x88BBEB; sc.background = new THREE.Color(skyColor); sc.fog = new THREE.Fog(skyColor, 4, 18);
 
     const cameraGroup = new THREE.Group(); sc.add(cameraGroup);
@@ -572,168 +572,236 @@
     let targetRotation = new THREE.Euler(0, 0, 0, "YXZ"); cam.rotation.order = "YXZ";
 
     const rnd = new THREE.WebGLRenderer({antialias:false}); rnd.setSize(window.innerWidth, window.innerHeight); document.body.appendChild(rnd.domElement);
-    const amb = new THREE.AmbientLight(0xffffff, 0.85); sc.add(amb); 
+    const amb = new THREE.AmbientLight(0xffffff, 0.9); sc.add(amb); 
     const sun = new THREE.DirectionalLight(0xffffff, 0.3); sun.position.set(20, 100, 20); sc.add(sun);
 
     const boxG = new THREE.BoxGeometry(1, 1, 1);
     const torchG = new THREE.BoxGeometry(0.15, 0.6, 0.15);
-    let bMap = new Map(), bKeysArray = [], chunks = new Map(), brokenBlocks = new Set();
-    const CHUNK_SIZE = 8, RENDER_DIST = 4; 
-
-    function removeB(mesh) { 
-        if(!mesh) return; const key = `${Math.round(mesh.position.x)},${Math.round(mesh.position.y)},${Math.round(mesh.position.z)}`; 
-        if (mesh.name === 'furnace') {
-            let fd = furnaces.get(key);
-            if(fd) {
-                if(fd.slots[0].count > 0) dropItemIntoWorld(fd.slots[0].type, fd.slots[0].count, fd.slots[0].damage);
-                if(fd.slots[1].count > 0) dropItemIntoWorld(fd.slots[1].type, fd.slots[1].count, fd.slots[1].damage);
-                if(fd.slots[2].count > 0) dropItemIntoWorld(fd.slots[2].type, fd.slots[2].count, fd.slots[2].damage);
-                if(fd.light) sc.remove(fd.light);
-                furnaces.delete(key);
-            }
-        }
-        if (mesh.name === 'torch' && mesh.userData.light) { sc.remove(mesh.userData.light); }
-        bMap.delete(key); 
-        let idx = bKeysArray.indexOf(key); if(idx > -1) bKeysArray.splice(idx, 1);
-        brokenBlocks.add(key); sc.remove(mesh); 
-    }
     
-    function addB(x,y,z,type, faceNormal = null){
-      let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; if(bMap.has(key) || brokenBlocks.has(key)) return; let mat, b;
-      
-      if(type === 'wood'){ mat = [new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')})]; }
-      else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctTop')}), new THREE.MeshLambertMaterial({map: genTex('planks')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')})]; }
-      else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
-      else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')})]; }
-      else if (type === 'furnace') { 
-          let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
-          let mSide = new THREE.MeshLambertMaterial({map: genTex('furnaceSide')}), mTop = new THREE.MeshLambertMaterial({map: genTex('furnaceTop')}), mFront = new THREE.MeshLambertMaterial({map: genTex('furnaceFront')});
-          mat = [mSide, mSide, mTop, mTop, mSide, mSide];
-          let fIdx = 4;
-          if(Math.abs(dir.x) > Math.abs(dir.z)) { if(dir.x > 0) fIdx = 1; else fIdx = 0; } else { if(dir.z > 0) fIdx = 5; else fIdx = 4; }
-          mat[fIdx] = mFront;
-          furnaces.set(key, {slots: [{type:null, count:0, damage:0}, {type:null, count:0, damage:0}, {type:null, count:0, damage:0}], burnTime: 0, maxBurnTime: 0, cookTime: 0, maxCookTime: 100, frontIdx: fIdx, lit: false, light: null});
-      }
-      else mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'||type==='torch', alphaTest: 0.5});
+    // NEW OPTIMIZED ENGINE DATA
+    const voxels = new Map();
+    const instancedMeshes = {};
+    const MAX_INSTANCES = 60000;
+    const blockIndices = new Map();
+    const regularMeshes = new Map();
+    const chunks = new Map();
+    const CHUNK_SIZE = 8, RENDER_DIST = 6; 
 
-      if (type === 'torch') {
-          b = new THREE.Mesh(torchG, mat);
-          let tX = Math.round(x), tY = Math.round(y), tZ = Math.round(z);
-          if(faceNormal) {
-              if (faceNormal.x > 0.5) { tX -= 0.35; b.rotation.z = -0.3; } else if (faceNormal.x < -0.5) { tX += 0.35; b.rotation.z = 0.3; }
-              else if (faceNormal.z > 0.5) { tZ -= 0.35; b.rotation.x = 0.3; } else if (faceNormal.z < -0.5) { tZ += 0.35; b.rotation.x = -0.3; }
-              else { tY -= 0.2; }
-          } else { tY -= 0.2; }
-          b.position.set(tX, tY, tZ);
-          
-          let tLight = new THREE.PointLight(0xffcd88, 1.2, 12); tLight.position.set(tX, tY, tZ);
-          sc.add(tLight); b.userData.light = tLight;
-      } else {
-          b = new THREE.Mesh(boxG, mat); b.position.set(Math.round(x), Math.round(y), Math.round(z));
-      }
-      
-      b.name = type; sc.add(b); 
-      bMap.set(key, b); bKeysArray.push(key);
-      return b;
-    }
+    // Initialize Instanced Pools
+    const instancedTypes = ['stone', 'dirt', 'grass', 'bedrock', 'coal_ore', 'cobblestone', 'coal_block'];
+    instancedTypes.forEach(t => {
+        let mat;
+        if (t === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
+        else { mat = new THREE.MeshLambertMaterial({map: genTex(t)}); }
+        let im = new THREE.InstancedMesh(boxG, mat, MAX_INSTANCES);
+        im.count = 0; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        sc.add(im); instancedMeshes[t] = im;
+    });
 
     function getSurfaceH(x, z) { return Math.floor(Math.sin(x/10)*2 + Math.cos(z/10)*2); }
     function isCaveNoise(x, y, z) { return (Math.sin(x*0.2 + y*0.1) + Math.cos(y*0.2 + z*0.1) + Math.sin(x*0.1 - z*0.2)) > 1.3 && y < getSurfaceH(x, z) - 2; }
+    function isSolidVoxel(x, y, z) { return voxels.has(`${x},${y},${z}`) && voxels.get(`${x},${y},${z}`) !== 'torch'; }
 
-    function updateChunks() {
-        let pX = Math.floor(cameraGroup.position.x / CHUNK_SIZE), pZ = Math.floor(cameraGroup.position.z / CHUNK_SIZE);
-        for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) { 
-            for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) { 
-                let cKey = `${x},${z}`; 
-                if(!chunks.has(cKey)) { 
-                    gameplayChunkQueue.push({x, z}); 
-                    chunks.set(cKey, true); // mark to prevent duplicate queuing
-                } 
-            } 
-        }
-    }
-    
-    function generateChunk(cx, cz) {
+    function generateChunkVolume(cx, cz) {
         for(let x = 0; x < CHUNK_SIZE; x++) { 
             for(let z = 0; z < CHUNK_SIZE; z++) {
                 let absX = cx * CHUNK_SIZE + x, absZ = cz * CHUNK_SIZE + z; 
                 let h = getSurfaceH(absX, absZ);
-                addB(absX, h, absZ, 'grass');
+                voxels.set(`${absX},${h},${absZ}`, 'grass');
                 
-                // Optimized Hidden-Face Culling Generator
                 for(let y=h-1; y>=-45; y--) {
-                    let isCave = isCaveNoise(absX, y, absZ);
-                    if (!isCave) {
-                        let exposed = (y >= h-3);
-                        if (!exposed) {
-                            if (isCaveNoise(absX+1,y,absZ) || isCaveNoise(absX-1,y,absZ) || 
-                                isCaveNoise(absX,y+1,absZ) || isCaveNoise(absX,y-1,absZ) || 
-                                isCaveNoise(absX,y,absZ+1) || isCaveNoise(absX,y,absZ-1)) {
-                                exposed = true;
-                            }
-                        }
-                        if(exposed) {
+                    if (!isCaveNoise(absX, y, absZ)) {
+                        if (y >= h-3) voxels.set(`${absX},${y},${absZ}`, 'dirt');
+                        else {
                             let isCoal = (Math.sin(absX*0.6) + Math.cos(y*0.6) + Math.sin(absZ*0.6)) > 2.2;
-                            if (isCoal && y < h - 4 && y > -35) addB(absX, y, absZ, 'coal_ore');
-                            else if (y >= h-3) addB(absX, y, absZ, 'dirt');
-                            else addB(absX, y, absZ, 'stone');
+                            if (isCoal && y < h - 4 && y > -35) voxels.set(`${absX},${y},${absZ}`, 'coal_ore');
+                            else voxels.set(`${absX},${y},${absZ}`, 'stone');
                         }
                     }
                 }
-                addB(absX, -46, absZ, 'bedrock');
+                voxels.set(`${absX},-46,${absZ}`, 'bedrock');
                 
                 if(Math.random() < 0.005) { 
-                    for(let t=1; t<=4; t++) addB(absX, h+t, absZ, 'wood'); 
+                    for(let t=1; t<=4; t++) voxels.set(`${absX},${h+t},${absZ}`, 'wood'); 
                     for(let ly=3; ly<=4; ly++) { 
                         for(let lx=-2; lx<=2; lx++) { 
                             for(let lz=-2; lz<=2; lz++) { 
                                 if(lx===0 && lz===0 && ly<=4) continue; 
                                 if(Math.abs(lx)===2 && Math.abs(lz)===2) continue; 
-                                addB(absX+lx, h+ly, absZ+lz, 'leaves'); 
+                                voxels.set(`${absX+lx},${h+ly},${absZ+lz}`, 'leaves'); 
                             }
                         }
                     } 
                     for(let lx=-1; lx<=1; lx++) { 
                         for(let lz=-1; lz<=1; lz++) { 
                             if(Math.abs(lx)===1 && Math.abs(lz)===1) continue; 
-                            addB(absX+lx, h+5, absZ+lz, 'leaves'); 
+                            voxels.set(`${absX+lx},${h+5},${absZ+lz}`, 'leaves'); 
                         }
                     } 
                 }
             }
         }
     }
-    
+
+    function updateChunkRender(cx, cz) {
+        for(let x=0; x<CHUNK_SIZE; x++){
+            for(let z=0; z<CHUNK_SIZE; z++){
+                let absX = cx*CHUNK_SIZE + x, absZ = cz*CHUNK_SIZE + z;
+                for(let y=getSurfaceH(absX, absZ)+6; y>=-46; y--) {
+                    if(voxels.has(`${absX},${y},${absZ}`)) updateBlockRender(absX, y, absZ);
+                }
+            }
+        }
+    }
+
+    function updateBlockRender(x, y, z) {
+        let key = `${x},${y},${z}`;
+        if(!voxels.has(key)) return;
+        let t = voxels.get(key);
+
+        let exposed = false;
+        if(y >= getSurfaceH(x,z)-1) exposed = true;
+        else {
+            exposed = !isSolidVoxel(x+1,y,z) || !isSolidVoxel(x-1,y,z) || !isSolidVoxel(x,y+1,z) || !isSolidVoxel(x,y-1,z) || !isSolidVoxel(x,y,z+1) || !isSolidVoxel(x,y,z-1);
+        }
+
+        if(instancedTypes.includes(t)) {
+            if(exposed && !blockIndices.has(key)) {
+                let im = instancedMeshes[t]; let idx = im.count;
+                let mat = new THREE.Matrix4().setPosition(x,y,z); im.setMatrixAt(idx, mat);
+                
+                let isSkyExposed = true;
+                for(let cy=y+1; cy<=getSurfaceH(x,z)+1; cy++) { if(isSolidVoxel(x,cy,z)) { isSkyExposed = false; break; } }
+                let ll = isSkyExposed ? 1.0 : 0.35;
+                im.setColorAt(idx, new THREE.Color(ll, ll, ll));
+                
+                im.instanceMatrix.needsUpdate = true; if(im.instanceColor) im.instanceColor.needsUpdate = true;
+                blockIndices.set(key, {type: t, index: idx}); im.count++;
+            } else if (!exposed && blockIndices.has(key)) {
+                removeInstancedMesh(x,y,z);
+            }
+        } else {
+            // Regular Meshes
+            if(exposed && !regularMeshes.has(key)) {
+                addRegularMesh(x,y,z,t);
+            } else if (!exposed && regularMeshes.has(key)) {
+                let m = regularMeshes.get(key); if(m.userData.light) sc.remove(m.userData.light); sc.remove(m); regularMeshes.delete(key);
+            }
+        }
+    }
+
+    function removeInstancedMesh(x, y, z) {
+        let key = `${x},${y},${z}`;
+        if(!blockIndices.has(key)) return;
+        let info = blockIndices.get(key); let im = instancedMeshes[info.type];
+        
+        let lastIdx = im.count - 1;
+        if(info.index !== lastIdx) {
+            let lastMat = new THREE.Matrix4(); im.getMatrixAt(lastIdx, lastMat);
+            let lastColor = new THREE.Color(); im.getColorAt(lastIdx, lastColor);
+            
+            im.setMatrixAt(info.index, lastMat); im.setColorAt(info.index, lastColor);
+            
+            let lastPos = new THREE.Vector3().setFromMatrixPosition(lastMat);
+            let lastKey = `${Math.round(lastPos.x)},${Math.round(lastPos.y)},${Math.round(lastPos.z)}`;
+            blockIndices.set(lastKey, {type: info.type, index: info.index});
+        }
+        im.count--; im.instanceMatrix.needsUpdate = true; if(im.instanceColor) im.instanceColor.needsUpdate = true;
+        blockIndices.delete(key);
+    }
+
+    function addRegularMesh(x, y, z, type, faceNormal = null) {
+        let key = `${x},${y},${z}`; let mat, b;
+        let isSkyExposed = true; for(let cy=y+1; cy<=getSurfaceH(x,z)+1; cy++) { if(isSolidVoxel(x,cy,z)) { isSkyExposed = false; break; } }
+        let ll = isSkyExposed ? 1.0 : 0.35; let color = new THREE.Color(ll, ll, ll);
+
+        if(type === 'wood'){ mat = [new THREE.MeshLambertMaterial({map: genTex('wood'), color:color}), new THREE.MeshLambertMaterial({map: genTex('wood'), color:color}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), color:color}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), color:color}), new THREE.MeshLambertMaterial({map: genTex('wood'), color:color}), new THREE.MeshLambertMaterial({map: genTex('wood'), color:color})]; }
+        else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide'), color:color}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), color:color}), new THREE.MeshLambertMaterial({map: genTex('ctTop'), color:color}), new THREE.MeshLambertMaterial({map: genTex('planks'), color:color}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), color:color}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), color:color})]; }
+        else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt'), color:color}), new THREE.MeshLambertMaterial({map: genTex('dirt'), color:color}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop'), color:color}), new THREE.MeshLambertMaterial({map: genTex('dirt'), color:color}), new THREE.MeshLambertMaterial({map: genTex('dirt'), color:color}), new THREE.MeshLambertMaterial({map: genTex('dirt'), color:color})]; }
+        else if (type === 'furnace') { 
+            let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
+            let mSide = new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), color:color}), mTop = new THREE.MeshLambertMaterial({map: genTex('furnaceTop'), color:color}), mFront = new THREE.MeshLambertMaterial({map: genTex('furnaceFront'), color:color});
+            mat = [mSide, mSide, mTop, mTop, mSide, mSide];
+            let fIdx = 4; if(Math.abs(dir.x) > Math.abs(dir.z)) { if(dir.x > 0) fIdx = 1; else fIdx = 0; } else { if(dir.z > 0) fIdx = 5; else fIdx = 4; }
+            mat[fIdx] = mFront;
+            furnaces.set(key, {slots: [{type:null, count:0, damage:0}, {type:null, count:0, damage:0}, {type:null, count:0, damage:0}], burnTime: 0, maxBurnTime: 0, cookTime: 0, maxCookTime: 100, frontIdx: fIdx, lit: false, light: null});
+        }
+        else mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'||type==='torch', alphaTest: 0.5, color:color});
+
+        if (type === 'torch') {
+            b = new THREE.Mesh(torchG, mat);
+            let tX = x, tY = y, tZ = z;
+            if(faceNormal) {
+                if (faceNormal.x > 0.5) { tX -= 0.35; b.rotation.z = -0.3; } else if (faceNormal.x < -0.5) { tX += 0.35; b.rotation.z = 0.3; }
+                else if (faceNormal.z > 0.5) { tZ -= 0.35; b.rotation.x = 0.3; } else if (faceNormal.z < -0.5) { tZ += 0.35; b.rotation.x = -0.3; }
+                else { tY -= 0.2; }
+            } else { tY -= 0.2; }
+            b.position.set(tX, tY, tZ);
+            
+            let tLight = new THREE.PointLight(0xffcd88, 1.2, 12); tLight.position.set(tX, tY, tZ);
+            sc.add(tLight); b.userData.light = tLight;
+        } else { b = new THREE.Mesh(boxG, mat); b.position.set(x, y, z); }
+        
+        b.name = type; sc.add(b); regularMeshes.set(key, b); return b;
+    }
+
+    function removeB(x, y, z) {
+        let key = `${x},${y},${z}`; if(!voxels.has(key)) return; let type = voxels.get(key);
+        
+        if (regularMeshes.has(key)) {
+            let mesh = regularMeshes.get(key);
+            if (type === 'furnace') {
+                let fd = furnaces.get(key);
+                if(fd) {
+                    if(fd.slots[0].count > 0) dropItemIntoWorld(fd.slots[0].type, fd.slots[0].count, fd.slots[0].damage);
+                    if(fd.slots[1].count > 0) dropItemIntoWorld(fd.slots[1].type, fd.slots[1].count, fd.slots[1].damage);
+                    if(fd.slots[2].count > 0) dropItemIntoWorld(fd.slots[2].type, fd.slots[2].count, fd.slots[2].damage);
+                    if(fd.light) sc.remove(fd.light); furnaces.delete(key);
+                }
+            }
+            if (type === 'torch' && mesh.userData.light) sc.remove(mesh.userData.light);
+            sc.remove(mesh); regularMeshes.delete(key);
+        } else { removeInstancedMesh(x,y,z); }
+        
+        voxels.delete(key);
+        const adjs = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+        adjs.forEach(off => updateBlockRender(x+off[0], y+off[1], z+off[2]));
+    }
+
+    function placeB(x, y, z, type, faceNormal=null) {
+        let key = `${x},${y},${z}`; voxels.set(key, type);
+        if(instancedTypes.includes(type)) { updateBlockRender(x,y,z); } else { addRegularMesh(x,y,z,type, faceNormal); }
+        const adjs = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+        adjs.forEach(off => updateBlockRender(x+off[0], y+off[1], z+off[2]));
+    }
+
+    function updateChunks() {
+        let pX = Math.floor(cameraGroup.position.x / CHUNK_SIZE), pZ = Math.floor(cameraGroup.position.z / CHUNK_SIZE);
+        for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) { 
+            for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) { 
+                let cKey = `${x},${z}`; 
+                if(!chunks.has(cKey)) { gameplayChunkQueue.push({x, z}); chunks.set(cKey, true); } 
+            } 
+        }
+    }
+
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.002, 1.002, 1.002), crackMats[0]); crackMesh.renderOrder = 1; sc.add(crackMesh); crackMesh.visible = false;
 
     let keys = {}, pVel = new THREE.Vector3(), yVel = 0, stepTimer = 0, bobTimer = 0;
-    const isSolid = (x, y, z) => { let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; let n = bMap.has(key) ? bMap.get(key).name : ''; return n && n !== 'stick' && n !== 'charcoal' && n !== 'coal' && n !== 'torch' && !n.endsWith('_pickaxe') && !n.endsWith('_axe') && !n.endsWith('_shovel') && !n.endsWith('_sword') && !n.endsWith('_hoe'); };
-
+    
     let globalTick = 0;
 
     function animate() {
       requestAnimationFrame(animate);
-      if(gameState === "LOADING") return; // Let the loading screen use all resources
+      if(gameState === "LOADING") return;
 
       cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.22; cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.22;
-
       globalTick++;
 
-      // Slowly generate queued chunks while playing (1 per frame max) to prevent stutter
       if(gameState === "PLAYING" && gameplayChunkQueue.length > 0) {
           let c = gameplayChunkQueue.shift();
-          generateChunk(c.x, c.z);
+          generateChunkVolume(c.x, c.z); updateChunkRender(c.x, c.z);
       }
-
-      // Deep Cave Darkness Engine
-      let currentSurfaceY = getSurfaceH(cameraGroup.position.x, cameraGroup.position.z);
-      let depthBelowSurface = Math.max(0, currentSurfaceY - cameraGroup.position.y);
-      let targetAmb = Math.max(0.02, 0.85 - (depthBelowSurface * 0.15));
-      amb.intensity = THREE.MathUtils.lerp(amb.intensity, targetAmb, 0.05);
-      
-      let fogHex = depthBelowSurface > 2 ? 0x050505 : skyColor;
-      sc.background.lerp(new THREE.Color(fogHex), 0.05);
-      sc.fog.color.lerp(new THREE.Color(fogHex), 0.05);
 
       if(globalTick % 2 === 0) { 
           let uiNeedsUpdate = false;
@@ -744,41 +812,28 @@
               
               if(fd.burnTime <= 0 && canSmelt && fd.slots[1].count > 0) {
                   fd.maxBurnTime = getFuelTime(fd.slots[1]);
-                  if(fd.maxBurnTime > 0) {
-                      fd.burnTime = fd.maxBurnTime;
-                      fd.slots[1].count--;
-                      if(fd.slots[1].count <= 0) fd.slots[1].type = null;
-                  }
+                  if(fd.maxBurnTime > 0) { fd.burnTime = fd.maxBurnTime; fd.slots[1].count--; if(fd.slots[1].count <= 0) fd.slots[1].type = null; }
               }
 
               if(fd.burnTime > 0 && canSmelt) {
                   fd.cookTime++;
                   if(fd.cookTime >= fd.maxCookTime) {
-                      fd.cookTime = 0;
-                      let outType = smeltingRecipes[fd.slots[0].type];
+                      fd.cookTime = 0; let outType = smeltingRecipes[fd.slots[0].type];
                       fd.slots[0].count--; if(fd.slots[0].count <= 0) fd.slots[0].type = null;
-                      if(!fd.slots[2].type) { fd.slots[2].type = outType; fd.slots[2].count = 0; }
-                      fd.slots[2].count++;
+                      if(!fd.slots[2].type) { fd.slots[2].type = outType; fd.slots[2].count = 0; } fd.slots[2].count++;
                   }
-              } else {
-                  if (fd.cookTime > 0) fd.cookTime = Math.max(0, fd.cookTime - 2);
-              }
+              } else { if (fd.cookTime > 0) fd.cookTime = Math.max(0, fd.cookTime - 2); }
 
               let litNow = fd.burnTime > 0;
               if (fd.lit !== litNow) {
-                  fd.lit = litNow;
-                  let b = bMap.get(key);
-                  if(b) b.material[fd.frontIdx] = new THREE.MeshLambertMaterial({map: genTex(litNow ? 'furnaceFrontLit' : 'furnaceFront')});
+                  fd.lit = litNow; let b = regularMeshes.get(key);
+                  if(b) b.material[fd.frontIdx].map = genTex(litNow ? 'furnaceFrontLit' : 'furnaceFront');
                   
                   if (litNow) {
                       let coords = key.split(',').map(Number);
-                      let light = new THREE.PointLight(0xffa500, 1.2, 8);
-                      light.position.set(coords[0], coords[1], coords[2]);
-                      sc.add(light);
-                      fd.light = light;
-                  } else {
-                      if (fd.light) { sc.remove(fd.light); fd.light = null; }
-                  }
+                      let light = new THREE.PointLight(0xffa500, 1.2, 8); light.position.set(coords[0], coords[1], coords[2]);
+                      sc.add(light); fd.light = light;
+                  } else { if (fd.light) { sc.remove(fd.light); fd.light = null; } }
               }
               if(gameState === "FURNACE" && activeFurnacePos === key) uiNeedsUpdate = true;
           });
@@ -786,37 +841,28 @@
       }
 
       // Block Random Ticking
+      let keysArr = Array.from(voxels.keys());
       for(let i=0; i<40; i++) {
-          if(bKeysArray.length === 0) break;
-          let rKey = bKeysArray[Math.floor(Math.random() * bKeysArray.length)];
-          let b = bMap.get(rKey);
-          if(!b) continue;
-
-          if (b.name === 'leaves') {
-              let coords = rKey.split(',').map(Number);
+          if(keysArr.length === 0) break;
+          let rKey = keysArr[Math.floor(Math.random() * keysArr.length)];
+          let type = voxels.get(rKey); let coords = rKey.split(',').map(Number);
+          
+          if (type === 'leaves') {
               let foundWood = false;
-              for(let dx=-3; dx<=3 && !foundWood; dx++) {
-                  for(let dy=-3; dy<=3 && !foundWood; dy++) {
-                      for(let dz=-3; dz<=3 && !foundWood; dz++) {
-                          let checkB = bMap.get(`${coords[0]+dx},${coords[1]+dy},${coords[2]+dz}`);
-                          if(checkB && checkB.name === 'wood') foundWood = true;
-                      }
-                  }
+              for(let dx=-3; dx<=3 && !foundWood; dx++) for(let dy=-3; dy<=3 && !foundWood; dy++) for(let dz=-3; dz<=3 && !foundWood; dz++) {
+                  if(voxels.get(`${coords[0]+dx},${coords[1]+dy},${coords[2]+dz}`) === 'wood') foundWood = true;
               }
-              if(!foundWood) { playSound('break', 'leaves'); removeB(b); }
-          } else if (b.name === 'farmland') {
-              if (Math.random() < 0.2) { 
-                  b.name = 'dirt'; b.material = new THREE.MeshLambertMaterial({map: genTex('dirt')});
-              }
-          } else if (b.name === 'dirt') {
+              if(!foundWood) { playSound('break', 'leaves'); removeB(coords[0], coords[1], coords[2]); }
+          } else if (type === 'farmland') {
+              if (Math.random() < 0.2) { removeB(coords[0],coords[1],coords[2]); placeB(coords[0],coords[1],coords[2], 'dirt'); }
+          } else if (type === 'dirt') {
               if (Math.random() < 0.05) {
-                  let coords = rKey.split(',').map(Number);
-                  if(!bMap.has(`${coords[0]},${coords[1]+1},${coords[2]}`)) {
+                  if(!isSolidVoxel(coords[0], coords[1]+1, coords[2])) {
                       let hasGrass = false;
                       for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++) for(let dz=-1; dz<=1; dz++) {
-                          let nb = bMap.get(`${coords[0]+dx},${coords[1]+dy},${coords[2]+dz}`); if(nb && nb.name === 'grass') hasGrass = true;
+                          if(voxels.get(`${coords[0]+dx},${coords[1]+dy},${coords[2]+dz}`) === 'grass') hasGrass = true;
                       }
-                      if(hasGrass) { b.name = 'grass'; b.material = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
+                      if(hasGrass) { removeB(coords[0],coords[1],coords[2]); placeB(coords[0],coords[1],coords[2], 'grass'); }
                   }
               }
           }
@@ -840,40 +886,34 @@
 
         let px = cameraGroup.position.x, pz = cameraGroup.position.z;
         let footY = Math.round(cameraGroup.position.y - 1.5), headY = Math.round(cameraGroup.position.y - 0.5); let margin = 0.4; 
-        if(!isSolid(px + pVel.x + Math.sign(pVel.x)*margin, footY, pz) && !isSolid(px + pVel.x + Math.sign(pVel.x)*margin, headY, pz)) cameraGroup.position.x += pVel.x; else pVel.x = 0;
-        if(!isSolid(px, footY, pz + pVel.z + Math.sign(pVel.z)*margin) && !isSolid(px, headY, pz + pVel.z + Math.sign(pVel.z)*margin)) cameraGroup.position.z += pVel.z; else pVel.z = 0;
+        if(!isSolidVoxel(Math.round(px + pVel.x + Math.sign(pVel.x)*margin), footY, Math.round(pz)) && !isSolidVoxel(Math.round(px + pVel.x + Math.sign(pVel.x)*margin), headY, Math.round(pz))) cameraGroup.position.x += pVel.x; else pVel.x = 0;
+        if(!isSolidVoxel(Math.round(px), footY, Math.round(pz + pVel.z + Math.sign(pVel.z)*margin)) && !isSolidVoxel(Math.round(px), headY, Math.round(pz + pVel.z + Math.sign(pVel.z)*margin))) cameraGroup.position.z += pVel.z; else pVel.z = 0;
 
         yVel -= 0.01; let nextY = cameraGroup.position.y + yVel;
-        if(yVel <= 0 && isSolid(cameraGroup.position.x, Math.round(nextY - 1.6), cameraGroup.position.z)) { 
+        if(yVel <= 0 && isSolidVoxel(Math.round(cameraGroup.position.x), Math.round(nextY - 1.6), Math.round(cameraGroup.position.z))) { 
             let landY = Math.round(nextY - 1.6);
             if (yVel < -0.1) {
                 let landKey = `${Math.round(cameraGroup.position.x)},${landY},${Math.round(cameraGroup.position.z)}`;
-                let blockUnder = bMap.get(landKey);
-                if (blockUnder && blockUnder.name === 'farmland') {
-                    if (Math.random() < 0.5) {
-                        blockUnder.name = 'dirt'; blockUnder.material = new THREE.MeshLambertMaterial({map: genTex('dirt')});
-                        playSound('dig', 'dirt');
-                    }
-                }
+                if (voxels.get(landKey) === 'farmland' && Math.random() < 0.5) { removeB(Math.round(cameraGroup.position.x), landY, Math.round(cameraGroup.position.z)); placeB(Math.round(cameraGroup.position.x), landY, Math.round(cameraGroup.position.z), 'dirt'); playSound('dig', 'dirt'); }
             }
             yVel = 0; cameraGroup.position.y = landY + 2.1; 
             if(keys['Space'] && gameState === "PLAYING") yVel = 0.16; 
-        } else if (yVel > 0 && isSolid(cameraGroup.position.x, Math.round(nextY), cameraGroup.position.z)) {
+        } else if (yVel > 0 && isSolidVoxel(Math.round(cameraGroup.position.x), Math.round(nextY), Math.round(cameraGroup.position.z))) {
             yVel = 0; cameraGroup.position.y = Math.round(nextY) - 0.75; 
         } else { cameraGroup.position.y = nextY; }
 
-        if(isSolid(cameraGroup.position.x, Math.round(cameraGroup.position.y - 1.6), cameraGroup.position.z) && isMoving && gameState === "PLAYING") {
+        if(isSolidVoxel(Math.round(cameraGroup.position.x), Math.round(cameraGroup.position.y - 1.6), Math.round(cameraGroup.position.z)) && isMoving && gameState === "PLAYING") {
             let speed = Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z); stepTimer += speed; bobTimer += speed * (isSprinting ? 1.5 : 1.0);
             cam.position.y = Math.sin(bobTimer * 10) * 0.1; 
             if(stepTimer > (isSprinting ? 0.7 : 0.5)) { 
-                let bKey = `${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`; playSound('step', bMap.has(bKey) ? bMap.get(bKey).name : 'grass'); stepTimer = 0; 
+                let bName = voxels.get(`${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`); playSound('step', bName || 'grass'); stepTimer = 0; 
             }
         } else { stepTimer = 0; cam.position.y = THREE.MathUtils.lerp(cam.position.y, 0, 0.1); }
 
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
           if(d.velDir) { d.mesh.position.x += d.velDir.x; d.mesh.position.z += d.velDir.z; d.velDir.multiplyScalar(0.9); }
-          if(isSolid(d.mesh.position.x, d.mesh.position.y - 0.2, d.mesh.position.z)) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; d.velDir.x=0; d.velDir.z=0; }
+          if(isSolidVoxel(Math.round(d.mesh.position.x), Math.floor(d.mesh.position.y - 0.2), Math.round(d.mesh.position.z))) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; d.velDir.x=0; d.velDir.z=0; }
           if(!d.is2D) { d.mesh.rotation.y += 0.03; d.mesh.rotation.x += 0.01; } else { d.mesh.rotation.y += 0.05; }
           if(Date.now() - d.spawnTime > 1500 && cameraGroup.position.distanceTo(d.mesh.position) < 2.5) { d.mesh.position.lerp(cameraGroup.position, 0.25); if(cameraGroup.position.distanceTo(d.mesh.position) < 0.7) { playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); addToInventory(d.type, 1, d.damage); } }
         });
@@ -881,47 +921,41 @@
         if(miningTarget && gameState === "PLAYING") {
             let activeItem = inventory[activeSlot]; let activeType = activeItem.type; 
             let lookDir = new THREE.Vector3(); cam.getWorldDirection(lookDir); lookDir.normalize();
-            const lookRay = new THREE.Raycaster(cameraGroup.position, lookDir); let lookHits = lookRay.intersectObjects(Array.from(bMap.values()));
-            if(lookHits.length === 0 || lookHits[0].object !== miningTarget) { miningTarget = null; crackMesh.visible = false; }
+            const lookRay = new THREE.Raycaster(cameraGroup.position, lookDir); let lookHits = lookRay.intersectObjects([...Object.values(instancedMeshes), ...Array.from(regularMeshes.values())]);
+            
+            let stillLooking = false;
+            if(lookHits.length > 0 && lookHits[0].distance < 6) {
+                let hitPos = new THREE.Vector3();
+                if(lookHits[0].object.isInstancedMesh) { let m = new THREE.Matrix4(); lookHits[0].object.getMatrixAt(lookHits[0].instanceId, m); hitPos.setFromMatrixPosition(m); }
+                else { hitPos.copy(lookHits[0].object.position); }
+                if(Math.round(hitPos.x) === miningTarget.x && Math.round(hitPos.y) === miningTarget.y && Math.round(hitPos.z) === miningTarget.z) stillLooking = true;
+            }
+
+            if(!stillLooking) { miningTarget = null; crackMesh.visible = false; }
             else {
+                let name = miningTarget.name;
                 let isPick = activeType && activeType.endsWith('_pickaxe'); let isAxe = activeType && activeType.endsWith('_axe');
                 let isShovel = activeType && activeType.endsWith('_shovel'); let isSword = activeType && activeType.endsWith('_sword'); let isHoe = activeType && activeType.endsWith('_hoe');
                 
                 let hardness = 2.5; let canHarvest = true;
-                if (miningTarget.name === 'stone' || miningTarget.name === 'cobblestone' || miningTarget.name === 'furnace' || miningTarget.name === 'coal_ore' || miningTarget.name === 'coal_block') {
+                if (name === 'stone' || name === 'cobblestone' || name === 'furnace' || name === 'coal_ore' || name === 'coal_block') {
                     if (activeType === 'stone_pickaxe') { hardness = 1.0; } else if (activeType === 'wooden_pickaxe') { hardness = 1.6; } else { hardness = 10.0; canHarvest = false; }
-                } else if (miningTarget.name === 'wood' || miningTarget.name === 'planks' || miningTarget.name === 'crafting_table') { 
+                } else if (name === 'wood' || name === 'planks' || name === 'crafting_table') { 
                     if (activeType === 'stone_axe') { hardness = 0.5; } else if (activeType === 'wooden_axe') { hardness = 0.8; } else { hardness = 2.0; }
-                } else if (miningTarget.name === 'dirt' || miningTarget.name === 'grass' || miningTarget.name === 'farmland') { 
+                } else if (name === 'dirt' || name === 'grass' || name === 'farmland') { 
                     if (activeType === 'stone_shovel') { hardness = 0.15; } else if (activeType === 'wooden_shovel') { hardness = 0.3; } else if (activeType === 'stone_hoe') { hardness = 0.5; } else if (activeType === 'wooden_hoe') { hardness = 0.55; } else { hardness = 0.6; }
-                } else if (miningTarget.name === 'leaves' || miningTarget.name === 'torch') { 
+                } else if (name === 'leaves' || name === 'torch') { 
                     if (activeType === 'stone_sword' || activeType === 'wooden_sword') { hardness = 0.05; } else if (isHoe) { hardness = 0.1; } else { hardness = 0.2; }
                 }
 
                 miningProgress += 0.025; miningSoundTimer += 0.025;
-                if(miningSoundTimer > (hardness / 4)) { playSound('dig', miningTarget.name); miningSoundTimer = 0; }
+                if(miningSoundTimer > (hardness / 4)) { playSound('dig', name); miningSoundTimer = 0; }
                 
                 let stage = Math.floor((miningProgress / hardness) * 10);
                 if(stage >= 10) {
-                    playSound('break', miningTarget.name); let name = miningTarget.name; let dropPos = miningTarget.position.clone(); removeB(miningTarget);
+                    playSound('break', name); 
+                    removeB(miningTarget.x, miningTarget.y, miningTarget.z);
                     
-                    let mX = Math.round(dropPos.x), mY = Math.round(dropPos.y), mZ = Math.round(dropPos.z);
-                    const adjs = [[0,-1,0],[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
-                    adjs.forEach(off => { 
-                        let nX = mX + off[0], nY = mY + off[1], nZ = mZ + off[2];
-                        let surfaceH = getSurfaceH(nX, nZ); 
-                        let k = `${nX},${nY},${nZ}`; 
-                        if(nY <= surfaceH && !bMap.has(k) && !brokenBlocks.has(k)) { 
-                            if(nY <= -46) addB(nX, nY, nZ, 'bedrock'); 
-                            else if(nY <= surfaceH - 3) {
-                                let isCoal = (Math.sin(nX*0.6) + Math.cos(nY*0.6) + Math.sin(nZ*0.6)) > 2.2;
-                                if(isCoal && nY > -35) addB(nX, nY, nZ, 'coal_ore');
-                                else addB(nX, nY, nZ, 'stone'); 
-                            }
-                            else if(nY < surfaceH) addB(nX, nY, nZ, 'dirt'); 
-                        } 
-                    });
-
                     if (isPick || isAxe || isShovel || isSword || isHoe) {
                         let dmgToTake = 1; if (isSword && name !== 'leaves') dmgToTake = 2; 
                         activeItem.damage = (activeItem.damage || 0) + dmgToTake;
@@ -933,7 +967,7 @@
                     if(name !== 'leaves') {
                         let dropName = name === 'stone' ? 'cobblestone' : (name === 'grass' || name === 'farmland' ? 'dirt' : (name === 'coal_ore' ? 'coal' : name));
                         if ((name === 'stone' || name === 'furnace' || name === 'coal_ore' || name === 'coal_block') && !canHarvest) dropName = null; 
-                        if(dropName) { dropItemIntoWorld(dropName, 1, 0); drops[drops.length-1].mesh.position.copy(dropPos); drops[drops.length-1].spawnTime = Date.now() - 1500; }
+                        if(dropName) { dropItemIntoWorld(dropName, 1, 0); drops[drops.length-1].mesh.position.set(miningTarget.x, miningTarget.y, miningTarget.z); drops[drops.length-1].spawnTime = Date.now() - 1500; }
                     }
                     miningTarget = null; crackMesh.visible = false;
                 } else { crackMesh.material = crackMats[Math.min(stage, 9)]; }
@@ -952,30 +986,34 @@
     document.addEventListener('keyup', e => { keys[e.code] = false; });
 
     document.addEventListener('mousedown', e => {
-      initAudio(); playMusic(); if(gameState !== "PLAYING") return;
+      initAudio(); if(!isPlayingMusic && gameState === "PLAYING") playMusic(); if(gameState !== "PLAYING") return;
       let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.normalize();
-      const ray = new THREE.Raycaster(cameraGroup.position, dir); let hits = ray.intersectObjects(Array.from(bMap.values()));
+      const ray = new THREE.Raycaster(cameraGroup.position, dir); let hits = ray.intersectObjects([...Object.values(instancedMeshes), ...Array.from(regularMeshes.values())]);
       
       if(hits.length > 0 && hits[0].distance < 6) {
-        let b = hits[0].object; let item = inventory[activeSlot];
+        let obj = hits[0].object; let item = inventory[activeSlot];
         
-        if(e.button === 2 && item.type && item.type.endsWith('_hoe') && (b.name === 'dirt' || b.name === 'grass') && hits[0].face.normal.y === 1) {
-            let topKey = `${Math.round(b.position.x)},${Math.round(b.position.y)+1},${Math.round(b.position.z)}`;
-            if(!bMap.has(topKey)) {
-                b.name = 'farmland'; b.material = [new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')})];
+        let bPos = new THREE.Vector3(); let bName = '';
+        if(obj.isInstancedMesh) { let m = new THREE.Matrix4(); obj.getMatrixAt(hits[0].instanceId, m); bPos.setFromMatrixPosition(m); bName = voxels.get(`${Math.round(bPos.x)},${Math.round(bPos.y)},${Math.round(bPos.z)}`); }
+        else { bPos.copy(obj.position); bName = voxels.get(`${Math.round(bPos.x)},${Math.round(bPos.y)},${Math.round(bPos.z)}`); }
+        
+        if(e.button === 2 && item.type && item.type.endsWith('_hoe') && (bName === 'dirt' || bName === 'grass') && hits[0].face.normal.y === 1) {
+            let topKey = `${Math.round(bPos.x)},${Math.round(bPos.y)+1},${Math.round(bPos.z)}`;
+            if(!voxels.has(topKey)) {
+                removeB(Math.round(bPos.x), Math.round(bPos.y), Math.round(bPos.z)); placeB(Math.round(bPos.x), Math.round(bPos.y), Math.round(bPos.z), 'farmland');
                 playSound('dig', 'dirt');
                 item.damage++; let maxD = item.type.startsWith('stone_') ? 131 : 59; if (item.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
                 updateUI(); return;
             }
         }
 
-        if(e.button === 0 && b.name !== 'bedrock') { miningTarget = b; miningProgress = 0; miningSoundTimer = 0; crackMesh.position.copy(b.position); crackMesh.visible = true; }
+        if(e.button === 0 && bName !== 'bedrock') { miningTarget = {x: Math.round(bPos.x), y: Math.round(bPos.y), z: Math.round(bPos.z), name: bName}; miningProgress = 0; miningSoundTimer = 0; crackMesh.position.copy(bPos); crackMesh.visible = true; }
         else if(e.button === 2) {
-          if(b.name === 'crafting_table') { setMenu('CRAFTING'); return; }
-          if(b.name === 'furnace') { activeFurnacePos = `${Math.round(b.position.x)},${Math.round(b.position.y)},${Math.round(b.position.z)}`; setMenu('FURNACE'); return; }
+          if(bName === 'crafting_table') { setMenu('CRAFTING'); return; }
+          if(bName === 'furnace') { activeFurnacePos = `${Math.round(bPos.x)},${Math.round(bPos.y)},${Math.round(bPos.z)}`; setMenu('FURNACE'); return; }
           
           if(item.type && item.count > 0 && item.type !== 'stick' && item.type !== 'charcoal' && item.type !== 'coal' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
-            let p = b.position.clone().add(hits[0].face.normal); let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
+            let p = bPos.clone().add(hits[0].face.normal); let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
             let dx = pX - cameraGroup.position.x, dy = pY - (cameraGroup.position.y - 1.6), dz = pZ - cameraGroup.position.z;
             
             let playerYMin = cameraGroup.position.y - 1.6; let playerYMax = cameraGroup.position.y - 0.1;
@@ -983,9 +1021,9 @@
             let overlapY = playerYMin < blockYMax && playerYMax > blockYMin;
             let insidePlayer = (Math.abs(dx) < 0.35 && Math.abs(dz) < 0.35 && overlapY);
 
-            if(!bMap.has(`${pX},${pY},${pZ}`) && (!insidePlayer || item.type === 'torch')) { 
-                playSound('place', item.type); addB(pX, pY, pZ, item.type, hits[0].face.normal); item.count--; brokenBlocks.delete(`${pX},${pY},${pZ}`); 
-                let underKey = `${pX},${pY-1},${pZ}`; if(bMap.has(underKey)) { let underBlock = bMap.get(underKey); if(underBlock.name === 'grass' || underBlock.name === 'farmland') { underBlock.name = 'dirt'; underBlock.material = new THREE.MeshLambertMaterial({map: genTex('dirt')}); } }
+            if(!voxels.has(`${pX},${pY},${pZ}`) && (!insidePlayer || item.type === 'torch')) { 
+                playSound('place', item.type); placeB(pX, pY, pZ, item.type, hits[0].face.normal); item.count--; 
+                let underKey = `${pX},${pY-1},${pZ}`; if(voxels.get(underKey) === 'grass' || voxels.get(underKey) === 'farmland') { removeB(pX, pY-1, pZ); placeB(pX, pY-1, pZ, 'dirt'); }
                 updateUI(); 
             }
           }
@@ -995,8 +1033,7 @@
     document.addEventListener('mouseup', () => { miningTarget = null; crackMesh.visible = false; });
 
     document.getElementById('splash-text').innerText = authenticSplashes[Math.floor(Math.random() * authenticSplashes.length)];
-    updateUI(); 
-    animate();
+    updateUI(); animate();
   </script>
 </body>
 </html>
