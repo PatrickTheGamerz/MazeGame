@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.29 - The Caves & Coal Update</title>
+  <title>ORANGECRAFT Alpha 1.30 - The Performance & Loading Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -30,6 +30,8 @@
     #tooltip { position:fixed; background:rgba(16,0,16,0.95); border:2px solid #3b00a5; color:#fff; padding:4px 8px; pointer-events:none; display:none; z-index:9999; font-family:'Courier New', monospace; font-weight:bold; text-shadow:2px 2px #000; box-shadow: 4px 4px 0 rgba(0,0,0,0.5); }
 
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
+    .dirt-bg { background-color: #5c3a21; background-size: 64px; image-rendering: pixelated; box-shadow: inset 0 0 200px rgba(0,0,0,0.9); }
+    
     .title{font-size:5rem;color:#FFA500;text-shadow:6px 6px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
     .splash{position:absolute;top:65px;right:-90px;color:#ffff00;font-size:1.6rem;font-family: 'Arial Black', sans-serif; font-weight:bold; animation:pulse 0.4s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px 0 #3f3f00; pointer-events:none; white-space:nowrap;}
     @keyframes pulse{from{transform:rotate(-20deg) scale(0.95)}to{transform:rotate(-20deg) scale(1.05)}}
@@ -59,6 +61,13 @@
     <div class="title">ORANGECRAFT<div class="splash" id="splash-text"></div></div>
     <div class="btn" onclick="playSound('click'); startGame()">Singleplayer</div>
     <div class="btn" onclick="playSound('click'); location.reload()">Reset World</div>
+  </div>
+
+  <div id="loading-screen" class="menu-overlay dirt-bg" style="z-index: 9999;">
+    <div class="title" style="font-size: 2.5rem; margin-bottom: 40px; color:#fff; text-shadow:4px 4px 0 #000; font-family:sans-serif;">Building terrain...</div>
+    <div style="width: 400px; height: 16px; border: 4px solid #111; background: #333; padding: 2px;">
+        <div id="loading-bar-fill" style="width: 0%; height: 100%; background: #74BC39;"></div>
+    </div>
   </div>
 
   <div id="pause-menu" class="menu-overlay">
@@ -280,6 +289,11 @@
     let activeSlot = 0, dragItem = null, gameState = "MAIN_MENU", drops = [];
     let miningTarget = null, miningProgress = 0, miningSoundTimer = 0;
     
+    // Chunk Pre-loading State
+    let initialLoadQueue = [];
+    let initialLoadTotal = 0;
+    let gameplayChunkQueue = [];
+    
     function formatName(str) { return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '); }
     document.addEventListener('mousemove', (e) => {
         let tt = document.getElementById('tooltip');
@@ -457,17 +471,67 @@
 
     function processCraft(arr, resultType, amount) { playSound('click'); arr.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount, 0); }
 
-    function startGame() { initAudio(); playMusic(); cameraGroup.position.set(0, 15, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING'); }
+    function startGame() { 
+        initAudio(); 
+        
+        // Ensure dirt texture exists for loading background
+        genTex('dirt'); 
+        
+        document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
+        let ls = document.getElementById('loading-screen');
+        ls.style.display = 'flex';
+        if(imgDataUrls['dirt_0']) {
+            ls.style.backgroundImage = `url(${imgDataUrls['dirt_0']})`;
+        }
+        
+        gameState = "LOADING";
+        initialLoadQueue = [];
+        
+        for(let x = -RENDER_DIST; x <= RENDER_DIST; x++) { 
+            for(let z = -RENDER_DIST; z <= RENDER_DIST; z++) { 
+                initialLoadQueue.push({x, z}); 
+            } 
+        }
+        // Sort from center outwards
+        initialLoadQueue.sort((a,b) => (a.x*a.x + a.z*a.z) - (b.x*b.x + b.z*b.z));
+        initialLoadTotal = initialLoadQueue.length;
+        
+        processLoad();
+    }
+    
+    function processLoad() {
+        if(initialLoadQueue.length > 0) {
+            let c = initialLoadQueue.shift();
+            let cKey = `${c.x},${c.z}`;
+            if(!chunks.has(cKey)) {
+                generateChunk(c.x, c.z);
+                chunks.set(cKey, true);
+            }
+            let pct = ((initialLoadTotal - initialLoadQueue.length) / initialLoadTotal) * 100;
+            document.getElementById('loading-bar-fill').style.width = pct + '%';
+            
+            // Yield frame to update UI
+            requestAnimationFrame(processLoad);
+        } else {
+            playMusic(); 
+            let spawnY = getSurfaceH(0, 0) + 2;
+            cameraGroup.position.set(0, spawnY, 0); 
+            targetRotation.copy(cam.rotation); 
+            setMenu('PLAYING');
+        }
+    }
     
     function setMenu(s) {
       if(gameState === "INV" || gameState === "CRAFTING") { let arr = gameState === "INV" ? crafting2x2 : crafting3x3; arr.forEach(c => { if(c.count > 0) { dropItemIntoWorld(c.type, c.count, c.damage); c.count = 0; c.type = null; c.damage = 0; } }); }
       if(gameState === "FURNACE") { activeFurnacePos = null; }
-      gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
-      document.getElementById('hud').style.display = (s === "PLAYING" || s === "INV" || s === "CRAFTING" || s === "FURNACE") ? 'flex' : 'none';
-      document.getElementById('crosshair').style.display = s === "PLAYING" ? 'block' : 'none';
-      if(s === "PLAYING") document.body.requestPointerLock();
-      else { document.exitPointerLock(); if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex'; else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex'; else if(s === "CRAFTING") document.getElementById('crafting-table-screen').style.display = 'flex'; else if (s === "FURNACE") document.getElementById('furnace-screen').style.display = 'flex'; else if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex'; }
-      updateUI();
+      if(s !== "LOADING") {
+          gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
+          document.getElementById('hud').style.display = (s === "PLAYING" || s === "INV" || s === "CRAFTING" || s === "FURNACE") ? 'flex' : 'none';
+          document.getElementById('crosshair').style.display = s === "PLAYING" ? 'block' : 'none';
+          if(s === "PLAYING") document.body.requestPointerLock();
+          else { document.exitPointerLock(); if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex'; else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex'; else if(s === "CRAFTING") document.getElementById('crafting-table-screen').style.display = 'flex'; else if (s === "FURNACE") document.getElementById('furnace-screen').style.display = 'flex'; else if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex'; }
+          updateUI();
+      }
     }
     document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU'); });
 
@@ -573,27 +637,71 @@
       return b;
     }
 
+    function getSurfaceH(x, z) { return Math.floor(Math.sin(x/10)*2 + Math.cos(z/10)*2); }
+    function isCaveNoise(x, y, z) { return (Math.sin(x*0.2 + y*0.1) + Math.cos(y*0.2 + z*0.1) + Math.sin(x*0.1 - z*0.2)) > 1.3 && y < getSurfaceH(x, z) - 2; }
+
     function updateChunks() {
         let pX = Math.floor(cameraGroup.position.x / CHUNK_SIZE), pZ = Math.floor(cameraGroup.position.z / CHUNK_SIZE);
-        for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) { for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) { let cKey = `${x},${z}`; if(!chunks.has(cKey)) { generateChunk(x, z); chunks.set(cKey, true); } } }
+        for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) { 
+            for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) { 
+                let cKey = `${x},${z}`; 
+                if(!chunks.has(cKey)) { 
+                    gameplayChunkQueue.push({x, z}); 
+                    chunks.set(cKey, true); // mark to prevent duplicate queuing
+                } 
+            } 
+        }
     }
+    
     function generateChunk(cx, cz) {
-        for(let x = 0; x < CHUNK_SIZE; x++) { for(let z = 0; z < CHUNK_SIZE; z++) {
-            let absX = cx * CHUNK_SIZE + x, absZ = cz * CHUNK_SIZE + z; let h = Math.floor(Math.sin(absX/10)*2 + Math.cos(absZ/10)*2); addB(absX, h, absZ, 'grass');
-            for(let y=h-1; y>=-45; y--) {
-                let isCave = (Math.sin(absX*0.2 + y*0.1) + Math.cos(y*0.2 + absZ*0.1) + Math.sin(absX*0.1 - absZ*0.2)) > 1.3 && y < h - 2;
-                if (!isCave) {
-                    if (y >= h-3) addB(absX, y, absZ, 'dirt');
-                    else {
-                        let isCoal = (Math.sin(absX*0.6) + Math.cos(y*0.6) + Math.sin(absZ*0.6)) > 2.2;
-                        if (isCoal && y < h - 4 && y > -35) addB(absX, y, absZ, 'coal_ore');
-                        else addB(absX, y, absZ, 'stone');
+        for(let x = 0; x < CHUNK_SIZE; x++) { 
+            for(let z = 0; z < CHUNK_SIZE; z++) {
+                let absX = cx * CHUNK_SIZE + x, absZ = cz * CHUNK_SIZE + z; 
+                let h = getSurfaceH(absX, absZ);
+                addB(absX, h, absZ, 'grass');
+                
+                // Optimized Hidden-Face Culling Generator
+                for(let y=h-1; y>=-45; y--) {
+                    let isCave = isCaveNoise(absX, y, absZ);
+                    if (!isCave) {
+                        let exposed = (y >= h-3);
+                        if (!exposed) {
+                            if (isCaveNoise(absX+1,y,absZ) || isCaveNoise(absX-1,y,absZ) || 
+                                isCaveNoise(absX,y+1,absZ) || isCaveNoise(absX,y-1,absZ) || 
+                                isCaveNoise(absX,y,absZ+1) || isCaveNoise(absX,y,absZ-1)) {
+                                exposed = true;
+                            }
+                        }
+                        if(exposed) {
+                            let isCoal = (Math.sin(absX*0.6) + Math.cos(y*0.6) + Math.sin(absZ*0.6)) > 2.2;
+                            if (isCoal && y < h - 4 && y > -35) addB(absX, y, absZ, 'coal_ore');
+                            else if (y >= h-3) addB(absX, y, absZ, 'dirt');
+                            else addB(absX, y, absZ, 'stone');
+                        }
                     }
                 }
+                addB(absX, -46, absZ, 'bedrock');
+                
+                if(Math.random() < 0.005) { 
+                    for(let t=1; t<=4; t++) addB(absX, h+t, absZ, 'wood'); 
+                    for(let ly=3; ly<=4; ly++) { 
+                        for(let lx=-2; lx<=2; lx++) { 
+                            for(let lz=-2; lz<=2; lz++) { 
+                                if(lx===0 && lz===0 && ly<=4) continue; 
+                                if(Math.abs(lx)===2 && Math.abs(lz)===2) continue; 
+                                addB(absX+lx, h+ly, absZ+lz, 'leaves'); 
+                            }
+                        }
+                    } 
+                    for(let lx=-1; lx<=1; lx++) { 
+                        for(let lz=-1; lz<=1; lz++) { 
+                            if(Math.abs(lx)===1 && Math.abs(lz)===1) continue; 
+                            addB(absX+lx, h+5, absZ+lz, 'leaves'); 
+                        }
+                    } 
+                }
             }
-            addB(absX, -46, absZ, 'bedrock'); addB(absX, -47, absZ, 'bedrock');
-            if(Math.random() < 0.005) { for(let t=1; t<=4; t++) addB(absX, h+t, absZ, 'wood'); for(let ly=3; ly<=4; ly++) { for(let lx=-2; lx<=2; lx++) { for(let lz=-2; lz<=2; lz++) { if(lx===0 && lz===0 && ly<=4) continue; if(Math.abs(lx)===2 && Math.abs(lz)===2) continue; addB(absX+lx, h+ly, absZ+lz, 'leaves'); }}} for(let lx=-1; lx<=1; lx++) { for(let lz=-1; lz<=1; lz++) { if(Math.abs(lx)===1 && Math.abs(lz)===1) continue; addB(absX+lx, h+5, absZ+lz, 'leaves'); }} }
-        }}
+        }
     }
     
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.002, 1.002, 1.002), crackMats[0]); crackMesh.renderOrder = 1; sc.add(crackMesh); crackMesh.visible = false;
@@ -605,12 +713,20 @@
 
     function animate() {
       requestAnimationFrame(animate);
+      if(gameState === "LOADING") return; // Let the loading screen use all resources
+
       cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.22; cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.22;
 
       globalTick++;
 
+      // Slowly generate queued chunks while playing (1 per frame max) to prevent stutter
+      if(gameState === "PLAYING" && gameplayChunkQueue.length > 0) {
+          let c = gameplayChunkQueue.shift();
+          generateChunk(c.x, c.z);
+      }
+
       // Deep Cave Darkness Engine
-      let currentSurfaceY = Math.floor(Math.sin(cameraGroup.position.x/10)*2 + Math.cos(cameraGroup.position.z/10)*2);
+      let currentSurfaceY = getSurfaceH(cameraGroup.position.x, cameraGroup.position.z);
       let depthBelowSurface = Math.max(0, currentSurfaceY - cameraGroup.position.y);
       let targetAmb = Math.max(0.02, 0.85 - (depthBelowSurface * 0.15));
       amb.intensity = THREE.MathUtils.lerp(amb.intensity, targetAmb, 0.05);
@@ -734,7 +850,7 @@
                 let landKey = `${Math.round(cameraGroup.position.x)},${landY},${Math.round(cameraGroup.position.z)}`;
                 let blockUnder = bMap.get(landKey);
                 if (blockUnder && blockUnder.name === 'farmland') {
-                    if (Math.random() < 0.5) { // 50% chance to break upon trampling
+                    if (Math.random() < 0.5) {
                         blockUnder.name = 'dirt'; blockUnder.material = new THREE.MeshLambertMaterial({map: genTex('dirt')});
                         playSound('dig', 'dirt');
                     }
@@ -789,6 +905,23 @@
                 if(stage >= 10) {
                     playSound('break', miningTarget.name); let name = miningTarget.name; let dropPos = miningTarget.position.clone(); removeB(miningTarget);
                     
+                    let mX = Math.round(dropPos.x), mY = Math.round(dropPos.y), mZ = Math.round(dropPos.z);
+                    const adjs = [[0,-1,0],[0,1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
+                    adjs.forEach(off => { 
+                        let nX = mX + off[0], nY = mY + off[1], nZ = mZ + off[2];
+                        let surfaceH = getSurfaceH(nX, nZ); 
+                        let k = `${nX},${nY},${nZ}`; 
+                        if(nY <= surfaceH && !bMap.has(k) && !brokenBlocks.has(k)) { 
+                            if(nY <= -46) addB(nX, nY, nZ, 'bedrock'); 
+                            else if(nY <= surfaceH - 3) {
+                                let isCoal = (Math.sin(nX*0.6) + Math.cos(nY*0.6) + Math.sin(nZ*0.6)) > 2.2;
+                                if(isCoal && nY > -35) addB(nX, nY, nZ, 'coal_ore');
+                                else addB(nX, nY, nZ, 'stone'); 
+                            }
+                            else if(nY < surfaceH) addB(nX, nY, nZ, 'dirt'); 
+                        } 
+                    });
+
                     if (isPick || isAxe || isShovel || isSword || isHoe) {
                         let dmgToTake = 1; if (isSword && name !== 'leaves') dmgToTake = 2; 
                         activeItem.damage = (activeItem.damage || 0) + dmgToTake;
@@ -862,7 +995,8 @@
     document.addEventListener('mouseup', () => { miningTarget = null; crackMesh.visible = false; });
 
     document.getElementById('splash-text').innerText = authenticSplashes[Math.floor(Math.random() * authenticSplashes.length)];
-    updateUI(); animate();
+    updateUI(); 
+    animate();
   </script>
 </body>
 </html>
