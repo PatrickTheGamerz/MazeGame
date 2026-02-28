@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.25 - The Industrial Update</title>
+  <title>ORANGECRAFT Alpha 1.26 - The Life & Decay Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -254,11 +254,12 @@
         texCache[cacheKey] = t; return t;
     }
 
+    // Depth sorting fix applied here! depthWrite: false prevents clipping through transparent leaves.
     const crackMats = Array(10).fill(null).map((_, i) => {
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.fillStyle = "rgba(0,0,0,0.85)";
         const stages = [ [], [[7,7],[8,7],[7,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13],[1,1],[14,14],[1,7],[14,8],[7,1],[8,14]], [[7,7],[8,7],[7,8],[8,8],[6,7],[9,8],[6,6],[9,9],[7,6],[8,9],[5,5],[10,10],[5,7],[10,8],[4,4],[11,11],[4,7],[11,8],[7,4],[8,11],[3,3],[12,12],[3,7],[12,8],[7,3],[8,12],[5,3],[10,12],[2,2],[13,13],[2,7],[13,8],[7,2],[8,13],[4,2],[11,13],[1,1],[14,14],[1,7],[14,8],[7,1],[8,14],[0,0],[15,15],[0,7],[15,8],[7,0],[8,15],[2,0],[13,15]] ];
         stages[i].forEach(px => ctx.fillRect(px[0], px[1], 1, 1));
-        const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; return new THREE.MeshBasicMaterial({ map: t, transparent: true, polygonOffset: true, polygonOffsetFactor: -1 });
+        const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; return new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 });
     });
 
     // --- 3. UI, INVENTORY, & LOGIC ---
@@ -266,8 +267,8 @@
     let crafting2x2 = Array(4).fill(null).map(() => ({type: null, count: 0, damage: 0}));
     let crafting3x3 = Array(9).fill(null).map(() => ({type: null, count: 0, damage: 0}));
     
-    // Furnace Tile Entity Data
-    let furnaces = new Map(); // Key: "x,y,z", Value: {input, fuel, output, burnTime, maxBurnTime, cookTime, maxCookTime}
+    // Completely rebuilt Furnace Tile Entity Data to fix item deletion
+    let furnaces = new Map(); // Key: "x,y,z", Value: {slots: [input, fuel, output], burnTime, maxBurnTime, cookTime, maxCookTime}
     let activeFurnacePos = null; 
 
     let activeSlot = 0, dragItem = null, gameState = "MAIN_MENU", drops = [];
@@ -347,15 +348,15 @@
       if(gameState === "FURNACE" && activeFurnacePos) {
           let fd = furnaces.get(activeFurnacePos);
           if(fd) {
-              if(fd.input.count <= 0) fd.input.type = null;
-              if(fd.fuel.count <= 0) fd.fuel.type = null;
-              if(fd.output.count <= 0) fd.output.type = null;
+              if(fd.slots[0].count <= 0) fd.slots[0].type = null;
+              if(fd.slots[1].count <= 0) fd.slots[1].type = null;
+              if(fd.slots[2].count <= 0) fd.slots[2].type = null;
               
-              let fIn = document.getElementById('f-input'); updateSlotDOM(fIn, fd.input); fIn.onmousedown = (e) => handleSlotAction([fd.input], 0, e);
-              let fFuel = document.getElementById('f-fuel'); updateSlotDOM(fFuel, fd.fuel); fFuel.onmousedown = (e) => handleSlotAction([fd.fuel], 0, e, true); // True flag = is fuel slot
-              let fOut = document.getElementById('f-output'); updateSlotDOM(fOut, fd.output); fOut.onmousedown = (e) => { 
+              let fIn = document.getElementById('f-input'); updateSlotDOM(fIn, fd.slots[0]); fIn.onmousedown = (e) => handleSlotAction(fd.slots, 0, e);
+              let fFuel = document.getElementById('f-fuel'); updateSlotDOM(fFuel, fd.slots[1]); fFuel.onmousedown = (e) => handleSlotAction(fd.slots, 1, e, true); 
+              let fOut = document.getElementById('f-output'); updateSlotDOM(fOut, fd.slots[2]); fOut.onmousedown = (e) => { 
                   // Output is TAKE ONLY
-                  if(fd.output.type && !dragItem) { playSound('click'); dragItem = {item: {...fd.output}, source: null, idx: -1}; fd.output.type = null; fd.output.count = 0; document.getElementById('drag-icon').style.display = 'block'; document.getElementById('drag-icon').innerHTML = getIconHTML(dragItem.item.type, dragItem.item.damage); updateUI(); }
+                  if(fd.slots[2].type && !dragItem) { playSound('click'); dragItem = {item: {...fd.slots[2]}, source: null, idx: -1}; fd.slots[2].type = null; fd.slots[2].count = 0; document.getElementById('drag-icon').style.display = 'block'; document.getElementById('drag-icon').innerHTML = getIconHTML(dragItem.item.type, dragItem.item.damage); updateUI(); }
               };
               
               document.getElementById('f-fire-bar').style.height = fd.maxBurnTime > 0 ? `${(fd.burnTime / fd.maxBurnTime) * 100}%` : '0%';
@@ -501,9 +502,9 @@
         if (mesh.name === 'furnace') {
             let fd = furnaces.get(key);
             if(fd) {
-                if(fd.input.count > 0) dropItemIntoWorld(fd.input.type, fd.input.count, fd.input.damage);
-                if(fd.fuel.count > 0) dropItemIntoWorld(fd.fuel.type, fd.fuel.count, fd.fuel.damage);
-                if(fd.output.count > 0) dropItemIntoWorld(fd.output.type, fd.output.count, fd.output.damage);
+                if(fd.slots[0].count > 0) dropItemIntoWorld(fd.slots[0].type, fd.slots[0].count, fd.slots[0].damage);
+                if(fd.slots[1].count > 0) dropItemIntoWorld(fd.slots[1].type, fd.slots[1].count, fd.slots[1].damage);
+                if(fd.slots[2].count > 0) dropItemIntoWorld(fd.slots[2].type, fd.slots[2].count, fd.slots[2].damage);
                 furnaces.delete(key);
             }
         }
@@ -517,12 +518,12 @@
       else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
       else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')})]; }
       else if (type === 'furnace') { 
-          // Orient furnace facing the player
           let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
           let mSide = new THREE.MeshLambertMaterial({map: genTex('furnaceSide')}), mTop = new THREE.MeshLambertMaterial({map: genTex('furnaceTop')}), mFront = new THREE.MeshLambertMaterial({map: genTex('furnaceFront')});
           mat = [mSide, mSide, mTop, mTop, mSide, mSide];
           if(Math.abs(dir.x) > Math.abs(dir.z)) { if(dir.x > 0) mat[1] = mFront; else mat[0] = mFront; } else { if(dir.z > 0) mat[5] = mFront; else mat[4] = mFront; }
-          furnaces.set(key, {input: {type:null, count:0}, fuel: {type:null, count:0}, output: {type:null, count:0}, burnTime: 0, maxBurnTime: 0, cookTime: 0, maxCookTime: 100});
+          // Fixed structure mapping slots straight to an array
+          furnaces.set(key, {slots: [{type:null, count:0}, {type:null, count:0}, {type:null, count:0}], burnTime: 0, maxBurnTime: 0, cookTime: 0, maxCookTime: 100});
       }
       else mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'});
       const b = new THREE.Mesh(boxG, mat); b.position.set(Math.round(x), Math.round(y), Math.round(z)); b.name = type; sc.add(b); bMap.set(key, b); return b;
@@ -539,7 +540,11 @@
             if(Math.random() < 0.005) { for(let t=1; t<=4; t++) addB(absX, h+t, absZ, 'wood'); for(let ly=3; ly<=4; ly++) { for(let lx=-2; lx<=2; lx++) { for(let lz=-2; lz<=2; lz++) { if(lx===0 && lz===0 && ly<=4) continue; if(Math.abs(lx)===2 && Math.abs(lz)===2) continue; addB(absX+lx, h+ly, absZ+lz, 'leaves'); }}} for(let lx=-1; lx<=1; lx++) { for(let lz=-1; lz<=1; lz++) { if(Math.abs(lx)===1 && Math.abs(lz)===1) continue; addB(absX+lx, h+5, absZ+lz, 'leaves'); }} }
         }}
     }
-    const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.002, 1.002, 1.002), crackMats[0]); sc.add(crackMesh); crackMesh.visible = false;
+
+    // Force crack mesh to render OVER transparent objects (fixes disappearing leaves)
+    const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.002, 1.002, 1.002), crackMats[0]); 
+    crackMesh.renderOrder = 999;
+    sc.add(crackMesh); crackMesh.visible = false;
 
     let keys = {}, pVel = new THREE.Vector3(), yVel = 0, stepTimer = 0, bobTimer = 0;
     const isSolid = (x, y, z) => { let key = `${Math.round(x)},${Math.round(y)},${Math.round(z)}`; let n = bMap.has(key) ? bMap.get(key).name : ''; return n && n !== 'stick' && n !== 'charcoal' && !n.endsWith('_pickaxe') && !n.endsWith('_axe') && !n.endsWith('_shovel') && !n.endsWith('_sword') && !n.endsWith('_hoe'); };
@@ -553,20 +558,20 @@
       globalTick++;
 
       // Furnace Ticking
-      if(globalTick % 2 === 0) { // Update at half speed for smoothness
+      if(globalTick % 2 === 0) { 
           let uiNeedsUpdate = false;
           furnaces.forEach((fd, key) => {
               let isLit = fd.burnTime > 0;
-              let canSmelt = fd.input.count > 0 && smeltingRecipes[fd.input.type] && (!fd.output.type || (fd.output.type === smeltingRecipes[fd.input.type] && fd.output.count < 64));
+              let canSmelt = fd.slots[0].count > 0 && smeltingRecipes[fd.slots[0].type] && (!fd.slots[2].type || (fd.slots[2].type === smeltingRecipes[fd.slots[0].type] && fd.slots[2].count < 64));
               
               if(fd.burnTime > 0) { fd.burnTime--; }
               
-              if(fd.burnTime <= 0 && canSmelt && fd.fuel.count > 0) {
-                  fd.maxBurnTime = fuelValues[fd.fuel.type] || 0;
+              if(fd.burnTime <= 0 && canSmelt && fd.slots[1].count > 0) {
+                  fd.maxBurnTime = fuelValues[fd.slots[1].type] || 0;
                   if(fd.maxBurnTime > 0) {
                       fd.burnTime = fd.maxBurnTime;
-                      fd.fuel.count--;
-                      if(fd.fuel.count <= 0) fd.fuel.type = null;
+                      fd.slots[1].count--;
+                      if(fd.slots[1].count <= 0) fd.slots[1].type = null;
                   }
               }
 
@@ -574,9 +579,9 @@
                   fd.cookTime++;
                   if(fd.cookTime >= fd.maxCookTime) {
                       fd.cookTime = 0;
-                      fd.input.count--; if(fd.input.count <= 0) fd.input.type = null;
-                      if(!fd.output.type) { fd.output.type = smeltingRecipes[fd.input.type || 'cobblestone']; fd.output.count = 0; }
-                      fd.output.count++;
+                      fd.slots[0].count--; if(fd.slots[0].count <= 0) fd.slots[0].type = null;
+                      if(!fd.slots[2].type) { fd.slots[2].type = smeltingRecipes[fd.slots[0].type || 'cobblestone']; fd.slots[2].count = 0; }
+                      fd.slots[2].count++;
                   }
               } else {
                   if (fd.cookTime > 0) fd.cookTime = Math.max(0, fd.cookTime - 2);
@@ -598,8 +603,47 @@
           if(uiNeedsUpdate) updateUI();
       }
 
+      // Random ticks for Grass Spreading & Leaf Decay
+      for(let i=0; i<5; i++) {
+          let bKeys = Array.from(bMap.keys());
+          if(bKeys.length > 0) {
+              let rKey = bKeys[Math.floor(Math.random() * bKeys.length)];
+              let b = bMap.get(rKey);
+              if(b) {
+                  let coords = rKey.split(',').map(Number);
+                  if(b.name === 'dirt') {
+                      if(!bMap.has(`${coords[0]},${coords[1]+1},${coords[2]}`)) {
+                          let hasGrass = false;
+                          for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++) for(let dz=-1; dz<=1; dz++) {
+                              let nb = bMap.get(`${coords[0]+dx},${coords[1]+dy},${coords[2]+dz}`); if(nb && nb.name === 'grass') hasGrass = true;
+                          }
+                          if(hasGrass) { b.name = 'grass'; b.material = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
+                      }
+                  } else if (b.name === 'leaves') {
+                      let hasWood = false;
+                      let rad = 3;
+                      for(let dx=-rad; dx<=rad; dx++) {
+                          for(let dy=-rad; dy<=rad; dy++) {
+                              for(let dz=-rad; dz<=rad; dz++) {
+                                  if(Math.abs(dx) + Math.abs(dy) + Math.abs(dz) <= 4) {
+                                      let nb = bMap.get(`${coords[0]+dx},${coords[1]+dy},${coords[2]+dz}`);
+                                      if(nb && nb.name === 'wood') { hasWood = true; break; }
+                                  }
+                              }
+                              if(hasWood) break;
+                          }
+                          if(hasWood) break;
+                      }
+                      if(!hasWood) {
+                          playSound('dig', 'leaves');
+                          removeB(b);
+                      }
+                  }
+              }
+          }
+      }
+
       if(gameState !== "MAIN_MENU" && gameState !== "PAUSE_MENU") {
-        updateChunks();
         let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; if (dir.lengthSq() < 0.0001) { dir.set(0, 0, -1); } dir.normalize(); 
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
         
@@ -622,14 +666,10 @@
         yVel -= 0.01; let nextY = cameraGroup.position.y + yVel;
         if(yVel <= 0 && isSolid(cameraGroup.position.x, Math.round(nextY - 1.6), cameraGroup.position.z)) { 
             let landY = Math.round(nextY - 1.6);
-            // FARMLAND TRAMPLE
             if (yVel < -0.1) {
                 let landKey = `${Math.round(cameraGroup.position.x)},${landY},${Math.round(cameraGroup.position.z)}`;
                 let blockUnder = bMap.get(landKey);
-                if (blockUnder && blockUnder.name === 'farmland') {
-                    blockUnder.name = 'dirt'; blockUnder.material = new THREE.MeshLambertMaterial({map: genTex('dirt')});
-                    playSound('dig', 'dirt');
-                }
+                if (blockUnder && blockUnder.name === 'farmland') { blockUnder.name = 'dirt'; blockUnder.material = new THREE.MeshLambertMaterial({map: genTex('dirt')}); playSound('dig', 'dirt'); }
             }
             yVel = 0; cameraGroup.position.y = landY + 2.1; 
             if(keys['Space'] && gameState === "PLAYING") yVel = 0.16; 
@@ -644,25 +684,6 @@
                 let bKey = `${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`; playSound('step', bMap.has(bKey) ? bMap.get(bKey).name : 'grass'); stepTimer = 0; 
             }
         } else { stepTimer = 0; cam.position.y = THREE.MathUtils.lerp(cam.position.y, 0, 0.1); }
-
-        // Grass Spreading
-        if(Math.random() < 0.25) {
-            let bKeys = Array.from(bMap.keys());
-            if(bKeys.length > 0) {
-                let rKey = bKeys[Math.floor(Math.random() * bKeys.length)];
-                let b = bMap.get(rKey);
-                if(b && b.name === 'dirt') {
-                    let coords = rKey.split(',').map(Number);
-                    if(!bMap.has(`${coords[0]},${coords[1]+1},${coords[2]}`)) {
-                        let hasGrass = false;
-                        for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++) for(let dz=-1; dz<=1; dz++) {
-                            let nb = bMap.get(`${coords[0]+dx},${coords[1]+dy},${coords[2]+dz}`); if(nb && nb.name === 'grass') hasGrass = true;
-                        }
-                        if(hasGrass) { b.name = 'grass'; b.material = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
-                    }
-                }
-            }
-        }
 
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
@@ -740,7 +761,6 @@
       if(hits.length > 0 && hits[0].distance < 6) {
         let b = hits[0].object; let item = inventory[activeSlot];
         
-        // HOE TILLING
         if(e.button === 2 && item.type && item.type.endsWith('_hoe') && (b.name === 'dirt' || b.name === 'grass') && hits[0].face.normal.y === 1) {
             let topKey = `${Math.round(b.position.x)},${Math.round(b.position.y)+1},${Math.round(b.position.z)}`;
             if(!bMap.has(topKey)) {
@@ -760,7 +780,6 @@
             let p = b.position.clone().add(hits[0].face.normal); let pX = Math.round(p.x), pY = Math.round(p.y), pZ = Math.round(p.z);
             let dx = pX - cameraGroup.position.x, dy = pY - (cameraGroup.position.y - 1.6), dz = pZ - cameraGroup.position.z;
             
-            // ACCURATE PILLAR JUMP BOUNDING BOX
             let playerYMin = cameraGroup.position.y - 1.6; let playerYMax = cameraGroup.position.y - 0.1;
             let blockYMin = pY - 0.5; let blockYMax = pY + 0.5;
             let overlapY = playerYMin < blockYMax && playerYMax > blockYMin;
