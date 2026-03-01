@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.32 - The Ray-Marching Update</title>
+  <title>ORANGECRAFT Alpha 1.40 - The Chunk & Lighting Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -30,7 +30,7 @@
     #tooltip { position:fixed; background:rgba(16,0,16,0.95); border:2px solid #3b00a5; color:#fff; padding:4px 8px; pointer-events:none; display:none; z-index:9999; font-family:'Courier New', monospace; font-weight:bold; text-shadow:2px 2px #000; box-shadow: 4px 4px 0 rgba(0,0,0,0.5); }
 
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
-    .dirt-bg { background-color: #5c3a21; box-shadow: inset 0 0 200px rgba(0,0,0,0.9); }
+    .dirt-bg { background-color: #5c3a21; box-shadow: inset 0 0 200px rgba(0,0,0,0.9); background-size: 64px; image-rendering: pixelated; }
     
     .title{font-size:5rem;color:#FFA500;text-shadow:6px 6px 0 #333;margin-bottom:30px;font-weight:bold;font-family: Impact;position:relative}
     .splash{position:absolute;top:65px;right:-90px;color:#ffff00;font-size:1.6rem;font-family: 'Arial Black', sans-serif; font-weight:bold; animation:pulse 0.4s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px 0 #3f3f00; pointer-events:none; white-space:nowrap;}
@@ -190,7 +190,7 @@
 
     // --- 2. TEXTURES & ASSETS ---
     const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Now with multiplayer!", "More polygons!", "Water proof!", "Zero Lag Mining!"];
+    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Let there be light!", "More polygons!", "Water proof!", "Chunk meshing!"];
 
     function getDmgLevel(type, damage) {
         if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe') && !type.endsWith('_shovel') && !type.endsWith('_sword') && !type.endsWith('_hoe'))) return 0;
@@ -212,7 +212,7 @@
         const pFurn = {'C':'#5a5a5a', 'B':'#6a6a6a', 'A':'#828282', 'D':'#4a4a4a', 'X':'#111', 'O':'#ffa500', 'Y':'#ffff00', 'W':'#ffffff'};
 
         if (type === 'stone') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e'}, 'ABACACABABAACABA'+'CABAABACABCAABAC'+'AABACABAABACABAA'+'BACABAABACABAACA'+'ACABCAABACABCAAB'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABAACA'+'ACABAACABCAABACA'+'CABAABACABAABACA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); } 
-        else if (type === 'coal_ore') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#111', 'Y':'#222'}, 'ABACACABXBAACABA'+'CABAABXCABCAABAC'+'AABAYABAABACABAA'+'BACABAABACABAACA'+'ACABCAABACXBYAAB'+'CABAABACABAABXCA'+'AABACABAABACABCA'+'BACABAABAYABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABXCAYAABACABCA'+'BXYABAABACABAACA'+'ACABAACABCAABACA'+'CABAABACABAABACA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
+        else if (type === 'coal_ore') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#111', 'x':'#333'}, 'ABACACABABAACABA'+'CABAABxCABCAABAC'+'AABAXxBAABACABAA'+'BACxXXxBACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACxBAABACABCA'+'BACABXxBACABACAB'+'ABCAAxACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACxXxCABCAxXABCA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
         else if (type === 'wooden_pickaxe' || type === 'stone_pickaxe') {
             let mapArr = ("__HHHHHHH_______"+"_HhhhhhhhH______"+"HhH__sS__HhH____"+"HH___sS___HH____"+"_____sS_________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________"+"________________"+"________________").split('');
             if (dmgLevel >= 1) { mapArr[2*16+11] = '_'; mapArr[3*16+10] = '_'; } if (dmgLevel >= 2) { mapArr[2*16+0] = '_'; mapArr[3*16+0] = '_'; mapArr[3*16+1] = '_'; }
@@ -278,21 +278,15 @@
         return new THREE.MeshBasicMaterial({ map: t, transparent: true, polygonOffset: true, polygonOffsetFactor: -1, depthWrite: false });
     });
 
+    // Generate Background Dirt
+    genTex('dirt'); document.querySelectorAll('.dirt-bg').forEach(el => el.style.backgroundImage = `url(${imgDataUrls['dirt_0']})`);
+
     // --- 3. UI, INVENTORY, & LOGIC ---
     let inventory = Array(36).fill(null).map(() => ({type: null, count: 0, damage: 0}));
     let crafting2x2 = Array(4).fill(null).map(() => ({type: null, count: 0, damage: 0}));
     let crafting3x3 = Array(9).fill(null).map(() => ({type: null, count: 0, damage: 0}));
-    
-    let furnaces = new Map(); 
-    let activeFurnacePos = null; 
-
     let activeSlot = 0, dragItem = null, gameState = "MAIN_MENU", drops = [];
     let miningTarget = null, miningProgress = 0, miningSoundTimer = 0;
-    
-    // Chunk Pre-loading State
-    let initialLoadQueue = [];
-    let initialLoadTotal = 0;
-    let gameplayChunkQueue = [];
     
     function formatName(str) { return str.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '); }
     document.addEventListener('mousemove', (e) => {
@@ -366,8 +360,8 @@
       checkRecipes();
 
       if(gameState === "FURNACE" && activeFurnacePos) {
-          let fd = furnaces.get(activeFurnacePos);
-          if(fd) {
+          let fd = dynamicBlocks.get(activeFurnacePos);
+          if(fd && fd.type === 'furnace') {
               if(fd.slots[0].count <= 0) fd.slots[0].type = null;
               if(fd.slots[1].count <= 0) fd.slots[1].type = null;
               if(fd.slots[2].count <= 0) fd.slots[2].type = null;
@@ -471,160 +465,177 @@
 
     function processCraft(arr, resultType, amount) { playSound('click'); arr.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount, 0); }
 
-    function startGame() { 
-        initAudio(); 
-        
-        document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
-        let ls = document.getElementById('loading-screen');
-        ls.style.display = 'flex';
-        
-        gameState = "LOADING";
-        initialLoadQueue = [];
-        
-        for(let x = -RENDER_DIST; x <= RENDER_DIST; x++) { 
-            for(let z = -RENDER_DIST; z <= RENDER_DIST; z++) { 
-                initialLoadQueue.push({x, z}); 
-            } 
-        }
-        initialLoadQueue.sort((a,b) => (a.x*a.x + a.z*a.z) - (b.x*b.x + b.z*b.z));
-        initialLoadTotal = initialLoadQueue.length;
-        
-        processLoad();
-    }
-    
-    function processLoad() {
-        let start = performance.now();
-        while(initialLoadQueue.length > 0 && performance.now() - start < 15) {
-            let c = initialLoadQueue.shift();
-            let cKey = `${c.x},${c.z}`;
-            if(!chunks.has(cKey)) {
-                generateChunkVolume(c.x, c.z);
-                updateChunkRender(c.x, c.z);
-                chunks.set(cKey, true);
-            }
-        }
-        
-        let pct = ((initialLoadTotal - initialLoadQueue.length) / initialLoadTotal) * 100;
-        document.getElementById('loading-bar-fill').style.width = pct + '%';
-        
-        if(initialLoadQueue.length > 0) {
-            requestAnimationFrame(processLoad);
-        } else {
-            setTimeout(() => {
-                document.getElementById('loading-screen').style.display = 'none';
-                playMusic(); 
-                let spawnY = getSurfaceH(0, 0) + 2;
-                cameraGroup.position.set(0, spawnY, 0); 
-                targetRotation.copy(cam.rotation); 
-                setMenu('PLAYING');
-            }, 300);
-        }
-    }
-    
-    function setMenu(s) {
-      if(gameState === "INV" || gameState === "CRAFTING") { let arr = gameState === "INV" ? crafting2x2 : crafting3x3; arr.forEach(c => { if(c.count > 0) { dropItemIntoWorld(c.type, c.count, c.damage); c.count = 0; c.type = null; c.damage = 0; } }); }
-      if(gameState === "FURNACE") { activeFurnacePos = null; }
-      if(s !== "LOADING") {
-          gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
-          document.getElementById('hud').style.display = (s === "PLAYING" || s === "INV" || s === "CRAFTING" || s === "FURNACE") ? 'flex' : 'none';
-          document.getElementById('crosshair').style.display = s === "PLAYING" ? 'block' : 'none';
-          if(s === "PLAYING") document.body.requestPointerLock();
-          else { document.exitPointerLock(); if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex'; else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex'; else if(s === "CRAFTING") document.getElementById('crafting-table-screen').style.display = 'flex'; else if (s === "FURNACE") document.getElementById('furnace-screen').style.display = 'flex'; else if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex'; }
-          updateUI();
-      }
-    }
-    document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU'); });
-
-    function dropItemIntoWorld(type, amount = 1, damage = 0) {
-        let dmgLevel = getDmgLevel(type, damage);
-        for(let j=0; j<amount; j++) {
-            let dir = new THREE.Vector3(); cam.getWorldDirection(dir); let dropPos = cameraGroup.position.clone().addScaledVector(dir, 1.2); dropPos.y += 0.2; 
-            let drop, mat;
-            
-            if (type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) { 
-                let group = new THREE.Group();
-                let tex = genTex(type, dmgLevel);
-                let matFront = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide});
-                let pGeo = new THREE.PlaneGeometry(0.5, 0.5);
-                for(let i=0; i<5; i++) { let mesh = new THREE.Mesh(pGeo, matFront); mesh.position.z = (i - 2.0) * 0.015; group.add(mesh); }
-                drop = group;
-            } 
-            else { 
-                if (type === 'wood') { mat = [new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')})]; }
-                else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctTop')}), new THREE.MeshLambertMaterial({map: genTex('planks')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')})]; }
-                else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
-                else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')})]; }
-                else if (type === 'furnace') { mat = [new THREE.MeshLambertMaterial({map: genTex('furnaceSide')}), new THREE.MeshLambertMaterial({map: genTex('furnaceSide')}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop')}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop')}), new THREE.MeshLambertMaterial({map: genTex('furnaceFront')}), new THREE.MeshLambertMaterial({map: genTex('furnaceSide')})]; }
-                else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'}); }
-                drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), mat); 
-            }
-            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe') || type==='stick' || type==='charcoal' || type==='coal' || type==='torch', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
-        }
-    }
-
-    // --- 4. 3D VOXEL ENGINE & LIGHTING ---
-    const sc = new THREE.Scene(); const skyColor = 0x88BBEB; sc.background = new THREE.Color(skyColor); sc.fog = new THREE.Fog(skyColor, 4, 18);
+    // --- 4. 3D VOXEL ENGINE (CHUNK MESHING) ---
+    const sc = new THREE.Scene(); const skyColor = 0x88BBEB; sc.background = new THREE.Color(skyColor); sc.fog = new THREE.Fog(skyColor, 4, 30);
 
     const cameraGroup = new THREE.Group(); sc.add(cameraGroup);
     const cam = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000); cameraGroup.add(cam); 
-
     let targetRotation = new THREE.Euler(0, 0, 0, "YXZ"); cam.rotation.order = "YXZ";
 
-    const rnd = new THREE.WebGLRenderer({antialias:false}); rnd.setSize(window.innerWidth, window.innerHeight); document.body.appendChild(rnd.domElement);
-    const amb = new THREE.AmbientLight(0xffffff, 0.9); sc.add(amb); 
-    const sun = new THREE.DirectionalLight(0xffffff, 0.3); sun.position.set(20, 100, 20); sc.add(sun);
+    const rnd = new THREE.WebGLRenderer({antialias:false}); rnd.setSize(window.innerWidth, window.innerHeight); 
+    rnd.shadowMap.enabled = true; rnd.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(rnd.domElement);
+    
+    // NEW LIGHTING
+    const amb = new THREE.AmbientLight(0xffffff, 0.6); sc.add(amb); 
+    const sun = new THREE.DirectionalLight(0xffeedd, 0.7); 
+    sun.castShadow = true; 
+    sun.shadow.camera.left = -25; sun.shadow.camera.right = 25;
+    sun.shadow.camera.top = 25; sun.shadow.camera.bottom = -25;
+    sun.shadow.camera.near = 0.1; sun.shadow.camera.far = 100;
+    sun.shadow.bias = -0.002;
+    sun.shadow.mapSize.width = 1024; sun.shadow.mapSize.height = 1024;
+    sc.add(sun); sc.add(sun.target);
 
     const boxG = new THREE.BoxGeometry(1, 1, 1);
-    const torchG = new THREE.BoxGeometry(0.15, 0.6, 0.15);
-    
-    // NEW OPTIMIZED ENGINE DATA
     const voxels = new Map();
-    const instancedMeshes = {};
-    const MAX_INSTANCES = 60000;
-    const blockIndices = new Map();
-    const regularMeshes = new Map();
+    const dynamicBlocks = new Map();
     const chunks = new Map();
-    const CHUNK_SIZE = 8, RENDER_DIST = 6; 
+    const CHUNK_SIZE = 8, RENDER_DIST = 4; 
 
-    // Custom Sub-Millisecond Ray-Marching Engine
-    function fastVoxelRaycast(origin, dir, maxDist) {
-        let pos = origin.clone();
-        let step = 0.05; 
-        let lastBx = Math.round(pos.x), lastBy = Math.round(pos.y), lastBz = Math.round(pos.z);
-        for(let d = 0; d < maxDist; d += step) {
-            pos.addScaledVector(dir, step);
-            let bx = Math.round(pos.x), by = Math.round(pos.y), bz = Math.round(pos.z);
-            let k = `${bx},${by},${bz}`;
-            if(voxels.has(k)) {
-                let nx = Math.max(-1, Math.min(1, lastBx - bx));
-                let ny = Math.max(-1, Math.min(1, lastBy - by));
-                let nz = Math.max(-1, Math.min(1, lastBz - bz));
-                if(Math.abs(nx) + Math.abs(ny) + Math.abs(nz) !== 1) {
-                    if (Math.abs(dir.x) > Math.abs(dir.y) && Math.abs(dir.x) > Math.abs(dir.z)) { nx = -Math.sign(dir.x); ny=0; nz=0; }
-                    else if (Math.abs(dir.y) > Math.abs(dir.z)) { ny = -Math.sign(dir.y); nx=0; nz=0; }
-                    else { nz = -Math.sign(dir.z); nx=0; ny=0; }
-                }
-                let normal = new THREE.Vector3(nx, ny, nz);
-                return {x: bx, y: by, z: bz, name: voxels.get(k), normal: normal};
-            }
-            lastBx = bx; lastBy = by; lastBz = bz;
-        }
-        return null;
+    // Improved Cave Generation
+    function getSurfaceH(x, z) {
+        let h = Math.sin(x*0.05)*4 + Math.cos(z*0.05)*4; 
+        h += Math.sin(x*0.1 + z*0.1)*2; 
+        return Math.floor(h);
+    }
+    function isCaveNoise(x, y, z) {
+        let n1 = Math.sin(x*0.1) + Math.cos(y*0.15) + Math.sin(z*0.1);
+        let n2 = Math.sin(x*0.05 - y*0.05) + Math.cos(z*0.05 + x*0.05);
+        return (n1*0.6 + n2*0.4) > 0.8 && y < getSurfaceH(x,z) - 2;
+    }
+    function isSolidVoxel(x, y, z) { 
+        let t = voxels.get(`${x},${y},${z}`);
+        return t && t !== 'torch'; 
     }
 
-    const instancedTypes = ['stone', 'dirt', 'grass', 'bedrock', 'coal_ore', 'cobblestone', 'coal_block'];
-    instancedTypes.forEach(t => {
-        let mat;
-        if (t === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
-        else { mat = new THREE.MeshLambertMaterial({map: genTex(t)}); }
-        let im = new THREE.InstancedMesh(boxG, mat, MAX_INSTANCES);
-        im.count = 0; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-        sc.add(im); instancedMeshes[t] = im;
-    });
+    // Advanced Chunk Mesher
+    class Chunk {
+        constructor(cx, cz) {
+            this.cx = cx; this.cz = cz;
+            this.group = new THREE.Group();
+            sc.add(this.group);
+            this.dirty = true;
+            this.meshes = {};
+        }
+        update() {
+            while(this.group.children.length > 0) {
+                let m = this.group.children[0];
+                this.group.remove(m);
+                if(m.dispose) m.dispose();
+            }
+            this.meshes = {};
+            let counts = {};
+            let blocks = [];
+            for(let x=0; x<CHUNK_SIZE; x++){
+                for(let z=0; z<CHUNK_SIZE; z++){
+                    let ax = this.cx*CHUNK_SIZE + x;
+                    let az = this.cz*CHUNK_SIZE + z;
+                    for(let y=getSurfaceH(ax,az)+5; y>=-46; y--){
+                        let t = voxels.get(`${ax},${y},${az}`);
+                        if(t && t !== 'torch' && t !== 'furnace') {
+                            let exposed = !voxels.has(`${ax+1},${y},${az}`) || !voxels.has(`${ax-1},${y},${az}`) ||
+                                          !voxels.has(`${ax},${y+1},${az}`) || !voxels.has(`${ax},${y-1},${az}`) ||
+                                          !voxels.has(`${ax},${y},${az+1}`) || !voxels.has(`${ax},${y},${az-1}`);
+                            if(exposed) {
+                                counts[t] = (counts[t] || 0) + 1;
+                                blocks.push({x: ax, y: y, z: az, t: t});
+                            }
+                        }
+                    }
+                }
+            }
+            for(let t in counts) {
+                let mat;
+                if(t === 'wood'){ mat = [new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')})]; }
+                else if (t === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctTop')}), new THREE.MeshLambertMaterial({map: genTex('planks')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')})]; }
+                else if (t === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')})]; }
+                else if (t === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
+                else { mat = new THREE.MeshLambertMaterial({map: genTex(t), transparent: t==='leaves', alphaTest: 0.5}); }
 
-    function getSurfaceH(x, z) { return Math.floor(Math.sin(x/10)*2 + Math.cos(z/10)*2); }
-    function isCaveNoise(x, y, z) { return (Math.sin(x*0.2 + y*0.1) + Math.cos(y*0.2 + z*0.1) + Math.sin(x*0.1 - z*0.2)) > 1.3 && y < getSurfaceH(x, z) - 2; }
-    function isSolidVoxel(x, y, z) { return voxels.has(`${x},${y},${z}`) && voxels.get(`${x},${y},${z}`) !== 'torch'; }
+                let im = new THREE.InstancedMesh(boxG, mat, counts[t]);
+                im.castShadow = true; im.receiveShadow = true;
+                this.group.add(im);
+                this.meshes[t] = { mesh: im, idx: 0 };
+            }
+            let dummy = new THREE.Object3D();
+            for(let b of blocks) {
+                dummy.position.set(b.x, b.y, b.z); dummy.updateMatrix();
+                let minfo = this.meshes[b.t];
+                minfo.mesh.setMatrixAt(minfo.idx, dummy.matrix);
+                minfo.idx++;
+            }
+            for(let t in this.meshes) { this.meshes[t].mesh.instanceMatrix.needsUpdate = true; }
+            this.dirty = false;
+        }
+    }
+
+    function markChunkDirty(ax, az) {
+        let cx = Math.floor(ax / CHUNK_SIZE); let cz = Math.floor(az / CHUNK_SIZE);
+        let k = `${cx},${cz}`; if(chunks.has(k)) chunks.get(k).dirty = true;
+    }
+
+    function addDynamicBlock(x, y, z, type, faceNormal=null) {
+        let key = `${x},${y},${z}`; let b;
+        if (type === 'torch') {
+            b = new THREE.Group();
+            let tex = genTex('torch');
+            let mat = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide});
+            let p1 = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.6), mat); p1.rotation.y = Math.PI/4;
+            let p2 = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.6), mat); p2.rotation.y = -Math.PI/4;
+            p1.castShadow = true; p2.castShadow = true;
+            b.add(p1); b.add(p2);
+
+            let tX = x, tY = y, tZ = z;
+            if(faceNormal) {
+                if (faceNormal.x > 0.5) { tX -= 0.35; b.rotation.z = -0.3; } else if (faceNormal.x < -0.5) { tX += 0.35; b.rotation.z = 0.3; }
+                else if (faceNormal.z > 0.5) { tZ -= 0.35; b.rotation.x = 0.3; } else if (faceNormal.z < -0.5) { tZ += 0.35; b.rotation.x = -0.3; }
+                else { tY -= 0.2; }
+            } else { tY -= 0.2; }
+            b.position.set(tX, tY, tZ);
+            
+            let tLight = new THREE.PointLight(0xffcd88, 1.2, 12); 
+            b.add(tLight); b.light = tLight;
+            b.type = 'torch';
+        } else if (type === 'furnace') {
+            let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
+            let mSide = new THREE.MeshLambertMaterial({map: genTex('furnaceSide')}), mTop = new THREE.MeshLambertMaterial({map: genTex('furnaceTop')}), mFront = new THREE.MeshLambertMaterial({map: genTex('furnaceFront')});
+            let mat = [mSide, mSide, mTop, mTop, mSide, mSide];
+            let fIdx = 4; if(Math.abs(dir.x) > Math.abs(dir.z)) { if(dir.x > 0) fIdx = 1; else fIdx = 0; } else { if(dir.z > 0) fIdx = 5; else fIdx = 4; }
+            mat[fIdx] = mFront;
+            b = new THREE.Mesh(boxG, mat); b.position.set(x, y, z);
+            b.castShadow = true; b.receiveShadow = true;
+            b.type = 'furnace'; b.slots = [{type:null, count:0, damage:0}, {type:null, count:0, damage:0}, {type:null, count:0, damage:0}];
+            b.burnTime = 0; b.maxBurnTime = 0; b.cookTime = 0; b.maxCookTime = 100; b.frontIdx = fIdx; b.lit = false; b.light = null;
+        }
+        sc.add(b); dynamicBlocks.set(key, b);
+    }
+
+    function placeB(x, y, z, type, faceNormal=null) {
+        voxels.set(`${x},${y},${z}`, type);
+        if(type === 'torch' || type === 'furnace') { addDynamicBlock(x,y,z,type, faceNormal); }
+        else {
+            markChunkDirty(x, z); markChunkDirty(x+1, z); markChunkDirty(x-1, z); markChunkDirty(x, z+1); markChunkDirty(x, z-1);
+        }
+    }
+
+    function removeB(x, y, z) {
+        let key = `${x},${y},${z}`; let type = voxels.get(key);
+        if(type === 'torch' || type === 'furnace') {
+            let b = dynamicBlocks.get(key);
+            if(b) {
+                if(type === 'furnace') {
+                    if(b.slots[0].count > 0) dropItemIntoWorld(b.slots[0].type, b.slots[0].count, b.slots[0].damage);
+                    if(b.slots[1].count > 0) dropItemIntoWorld(b.slots[1].type, b.slots[1].count, b.slots[1].damage);
+                    if(b.slots[2].count > 0) dropItemIntoWorld(b.slots[2].type, b.slots[2].count, b.slots[2].damage);
+                    if(b.light) sc.remove(b.light);
+                }
+                sc.remove(b); dynamicBlocks.delete(key);
+            }
+        }
+        voxels.delete(key);
+        markChunkDirty(x, z); markChunkDirty(x+1, z); markChunkDirty(x-1, z); markChunkDirty(x, z+1); markChunkDirty(x, z-1);
+    }
 
     function generateChunkVolume(cx, cz) {
         for(let x = 0; x < CHUNK_SIZE; x++) { 
@@ -667,152 +678,100 @@
         }
     }
 
-    function updateChunkRender(cx, cz) {
-        for(let x=0; x<CHUNK_SIZE; x++){
-            for(let z=0; z<CHUNK_SIZE; z++){
-                let absX = cx*CHUNK_SIZE + x, absZ = cz*CHUNK_SIZE + z;
-                for(let y=getSurfaceH(absX, absZ)+6; y>=-46; y--) {
-                    if(voxels.has(`${absX},${y},${absZ}`)) updateBlockRender(absX, y, absZ);
-                }
+    let initialLoadQueue = []; let initialLoadTotal = 0; let gameplayChunkQueue = [];
+
+    function startGame() { 
+        initAudio(); 
+        document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
+        document.getElementById('loading-screen').style.display = 'flex';
+        gameState = "LOADING"; initialLoadQueue = [];
+        for(let x = -RENDER_DIST; x <= RENDER_DIST; x++) { for(let z = -RENDER_DIST; z <= RENDER_DIST; z++) { initialLoadQueue.push({x, z}); } }
+        initialLoadQueue.sort((a,b) => (a.x*a.x + a.z*a.z) - (b.x*b.x + b.z*b.z));
+        initialLoadTotal = initialLoadQueue.length;
+        processLoad();
+    }
+    
+    function processLoad() {
+        let start = performance.now();
+        while(initialLoadQueue.length > 0 && performance.now() - start < 20) {
+            let c = initialLoadQueue.shift(); let cKey = `${c.x},${c.z}`;
+            if(!chunks.has(cKey)) {
+                generateChunkVolume(c.x, c.z);
+                let chunk = new Chunk(c.x, c.z); chunks.set(cKey, chunk);
             }
         }
-    }
-
-    function updateBlockRender(x, y, z) {
-        let key = `${x},${y},${z}`;
-        if(!voxels.has(key)) return;
-        let t = voxels.get(key);
-
-        let exposed = false;
-        if(y >= getSurfaceH(x,z)-1) exposed = true;
+        document.getElementById('loading-bar-fill').style.width = (((initialLoadTotal - initialLoadQueue.length) / initialLoadTotal) * 100) + '%';
+        if(initialLoadQueue.length > 0) { requestAnimationFrame(processLoad); } 
         else {
-            exposed = !isSolidVoxel(x+1,y,z) || !isSolidVoxel(x-1,y,z) || !isSolidVoxel(x,y+1,z) || !isSolidVoxel(x,y-1,z) || !isSolidVoxel(x,y,z+1) || !isSolidVoxel(x,y,z-1);
-        }
-
-        if(instancedTypes.includes(t)) {
-            if(exposed && !blockIndices.has(key)) {
-                let im = instancedMeshes[t]; let idx = im.count;
-                let mat = new THREE.Matrix4().setPosition(x,y,z); im.setMatrixAt(idx, mat);
-                
-                let isSkyExposed = true;
-                for(let cy=y+1; cy<=getSurfaceH(x,z)+1; cy++) { if(isSolidVoxel(x,cy,z)) { isSkyExposed = false; break; } }
-                let ll = isSkyExposed ? 1.0 : 0.35;
-                im.setColorAt(idx, new THREE.Color(ll, ll, ll));
-                
-                im.instanceMatrix.needsUpdate = true; if(im.instanceColor) im.instanceColor.needsUpdate = true;
-                blockIndices.set(key, {type: t, index: idx}); im.count++;
-            } else if (!exposed && blockIndices.has(key)) {
-                removeInstancedMesh(x,y,z);
-            }
-        } else {
-            if(exposed && !regularMeshes.has(key)) {
-                addRegularMesh(x,y,z,t);
-            } else if (!exposed && regularMeshes.has(key)) {
-                let m = regularMeshes.get(key); if(m.userData.light) sc.remove(m.userData.light); sc.remove(m); regularMeshes.delete(key);
-            }
+            chunks.forEach(c => c.update());
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                playMusic(); cameraGroup.position.set(0, getSurfaceH(0, 0) + 2, 0); targetRotation.copy(cam.rotation); setMenu('PLAYING');
+            }, 300);
         }
     }
 
-    function removeInstancedMesh(x, y, z) {
-        let key = `${x},${y},${z}`;
-        if(!blockIndices.has(key)) return;
-        let info = blockIndices.get(key); let im = instancedMeshes[info.type];
-        
-        let lastIdx = im.count - 1;
-        if(info.index !== lastIdx) {
-            let lastMat = new THREE.Matrix4(); im.getMatrixAt(lastIdx, lastMat);
-            let lastColor = new THREE.Color(); im.getColorAt(lastIdx, lastColor);
-            
-            im.setMatrixAt(info.index, lastMat); im.setColorAt(info.index, lastColor);
-            
-            let lastPos = new THREE.Vector3().setFromMatrixPosition(lastMat);
-            let lastKey = `${Math.round(lastPos.x)},${Math.round(lastPos.y)},${Math.round(lastPos.z)}`;
-            blockIndices.set(lastKey, {type: info.type, index: info.index});
-        }
-        im.count--; im.instanceMatrix.needsUpdate = true; if(im.instanceColor) im.instanceColor.needsUpdate = true;
-        blockIndices.delete(key);
+    function setMenu(s) {
+      if(gameState === "INV" || gameState === "CRAFTING") { let arr = gameState === "INV" ? crafting2x2 : crafting3x3; arr.forEach(c => { if(c.count > 0) { dropItemIntoWorld(c.type, c.count, c.damage); c.count = 0; c.type = null; c.damage = 0; } }); }
+      if(gameState === "FURNACE") { activeFurnacePos = null; }
+      if(s !== "LOADING") {
+          gameState = s; document.querySelectorAll('.menu-overlay').forEach(m => m.style.display = 'none');
+          document.getElementById('hud').style.display = (s === "PLAYING" || s === "INV" || s === "CRAFTING" || s === "FURNACE") ? 'flex' : 'none';
+          document.getElementById('crosshair').style.display = s === "PLAYING" ? 'block' : 'none';
+          if(s === "PLAYING") document.body.requestPointerLock();
+          else { document.exitPointerLock(); if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex'; else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex'; else if(s === "CRAFTING") document.getElementById('crafting-table-screen').style.display = 'flex'; else if (s === "FURNACE") document.getElementById('furnace-screen').style.display = 'flex'; else if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex'; }
+          updateUI();
+      }
     }
+    document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && gameState === "PLAYING") setMenu('PAUSE_MENU'); });
 
-    function addRegularMesh(x, y, z, type, faceNormal = null) {
-        let key = `${x},${y},${z}`; let mat, b;
-        let isSkyExposed = true; for(let cy=y+1; cy<=getSurfaceH(x,z)+1; cy++) { if(isSolidVoxel(x,cy,z)) { isSkyExposed = false; break; } }
-        let ll = isSkyExposed ? 1.0 : 0.35; let color = new THREE.Color(ll, ll, ll);
-
-        if(type === 'wood'){ mat = [new THREE.MeshLambertMaterial({map: genTex('wood'), color:color}), new THREE.MeshLambertMaterial({map: genTex('wood'), color:color}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), color:color}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), color:color}), new THREE.MeshLambertMaterial({map: genTex('wood'), color:color}), new THREE.MeshLambertMaterial({map: genTex('wood'), color:color})]; }
-        else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide'), color:color}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), color:color}), new THREE.MeshLambertMaterial({map: genTex('ctTop'), color:color}), new THREE.MeshLambertMaterial({map: genTex('planks'), color:color}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), color:color}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), color:color})]; }
-        else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt'), color:color}), new THREE.MeshLambertMaterial({map: genTex('dirt'), color:color}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop'), color:color}), new THREE.MeshLambertMaterial({map: genTex('dirt'), color:color}), new THREE.MeshLambertMaterial({map: genTex('dirt'), color:color}), new THREE.MeshLambertMaterial({map: genTex('dirt'), color:color})]; }
-        else if (type === 'furnace') { 
-            let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
-            let mSide = new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), color:color}), mTop = new THREE.MeshLambertMaterial({map: genTex('furnaceTop'), color:color}), mFront = new THREE.MeshLambertMaterial({map: genTex('furnaceFront'), color:color});
-            mat = [mSide, mSide, mTop, mTop, mSide, mSide];
-            let fIdx = 4; if(Math.abs(dir.x) > Math.abs(dir.z)) { if(dir.x > 0) fIdx = 1; else fIdx = 0; } else { if(dir.z > 0) fIdx = 5; else fIdx = 4; }
-            mat[fIdx] = mFront;
-            furnaces.set(key, {slots: [{type:null, count:0, damage:0}, {type:null, count:0, damage:0}, {type:null, count:0, damage:0}], burnTime: 0, maxBurnTime: 0, cookTime: 0, maxCookTime: 100, frontIdx: fIdx, lit: false, light: null});
-        }
-        else mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'||type==='torch', alphaTest: 0.5, color:color});
-
-        if (type === 'torch') {
-            b = new THREE.Mesh(torchG, mat);
-            let tX = x, tY = y, tZ = z;
-            if(faceNormal) {
-                if (faceNormal.x > 0.5) { tX -= 0.35; b.rotation.z = -0.3; } else if (faceNormal.x < -0.5) { tX += 0.35; b.rotation.z = 0.3; }
-                else if (faceNormal.z > 0.5) { tZ -= 0.35; b.rotation.x = 0.3; } else if (faceNormal.z < -0.5) { tZ += 0.35; b.rotation.x = -0.3; }
-                else { tY -= 0.2; }
-            } else { tY -= 0.2; }
-            b.position.set(tX, tY, tZ);
-            
-            let tLight = new THREE.PointLight(0xffcd88, 1.2, 12); tLight.position.set(tX, tY, tZ);
-            sc.add(tLight); b.userData.light = tLight;
-        } else { b = new THREE.Mesh(boxG, mat); b.position.set(x, y, z); }
-        
-        b.name = type; sc.add(b); regularMeshes.set(key, b); return b;
-    }
-
-    function removeB(x, y, z) {
-        let key = `${x},${y},${z}`; if(!voxels.has(key)) return; let type = voxels.get(key);
-        
-        if (regularMeshes.has(key)) {
-            let mesh = regularMeshes.get(key);
-            if (type === 'furnace') {
-                let fd = furnaces.get(key);
-                if(fd) {
-                    if(fd.slots[0].count > 0) dropItemIntoWorld(fd.slots[0].type, fd.slots[0].count, fd.slots[0].damage);
-                    if(fd.slots[1].count > 0) dropItemIntoWorld(fd.slots[1].type, fd.slots[1].count, fd.slots[1].damage);
-                    if(fd.slots[2].count > 0) dropItemIntoWorld(fd.slots[2].type, fd.slots[2].count, fd.slots[2].damage);
-                    if(fd.light) sc.remove(fd.light); furnaces.delete(key);
+    function fastVoxelRaycast(origin, dir, maxDist) {
+        let pos = origin.clone(); let step = 0.05; 
+        let lastBx = Math.round(pos.x), lastBy = Math.round(pos.y), lastBz = Math.round(pos.z);
+        for(let d = 0; d < maxDist; d += step) {
+            pos.addScaledVector(dir, step);
+            let bx = Math.round(pos.x), by = Math.round(pos.y), bz = Math.round(pos.z); let k = `${bx},${by},${bz}`;
+            if(voxels.has(k)) {
+                let nx = Math.max(-1, Math.min(1, lastBx - bx)), ny = Math.max(-1, Math.min(1, lastBy - by)), nz = Math.max(-1, Math.min(1, lastBz - bz));
+                if(Math.abs(nx) + Math.abs(ny) + Math.abs(nz) !== 1) {
+                    if (Math.abs(dir.x) > Math.abs(dir.y) && Math.abs(dir.x) > Math.abs(dir.z)) { nx = -Math.sign(dir.x); ny=0; nz=0; } else if (Math.abs(dir.y) > Math.abs(dir.z)) { ny = -Math.sign(dir.y); nx=0; nz=0; } else { nz = -Math.sign(dir.z); nx=0; ny=0; }
                 }
+                return {x: bx, y: by, z: bz, name: voxels.get(k), normal: new THREE.Vector3(nx, ny, nz)};
             }
-            if (type === 'torch' && mesh.userData.light) sc.remove(mesh.userData.light);
-            sc.remove(mesh); regularMeshes.delete(key);
-        } else { removeInstancedMesh(x,y,z); }
-        
-        voxels.delete(key);
-        const adjs = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
-        adjs.forEach(off => updateBlockRender(x+off[0], y+off[1], z+off[2]));
+            lastBx = bx; lastBy = by; lastBz = bz;
+        } return null;
     }
 
-    function placeB(x, y, z, type, faceNormal=null) {
-        let key = `${x},${y},${z}`; voxels.set(key, type);
-        if(instancedTypes.includes(type)) { updateBlockRender(x,y,z); } else { addRegularMesh(x,y,z,type, faceNormal); }
-        const adjs = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
-        adjs.forEach(off => updateBlockRender(x+off[0], y+off[1], z+off[2]));
-    }
-
-    function updateChunks() {
-        let pX = Math.floor(cameraGroup.position.x / CHUNK_SIZE), pZ = Math.floor(cameraGroup.position.z / CHUNK_SIZE);
-        for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) { 
-            for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) { 
-                let cKey = `${x},${z}`; 
-                if(!chunks.has(cKey)) { gameplayChunkQueue.push({x, z}); chunks.set(cKey, true); } 
+    function dropItemIntoWorld(type, amount = 1, damage = 0) {
+        let dmgLevel = getDmgLevel(type, damage);
+        for(let j=0; j<amount; j++) {
+            let dir = new THREE.Vector3(); cam.getWorldDirection(dir); let dropPos = cameraGroup.position.clone().addScaledVector(dir, 1.2); dropPos.y += 0.2; 
+            let drop, mat;
+            
+            if (type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) { 
+                let group = new THREE.Group();
+                let tex = genTex(type, dmgLevel);
+                let matFront = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide});
+                let pGeo = new THREE.PlaneGeometry(0.5, 0.5);
+                for(let i=0; i<5; i++) { let mesh = new THREE.Mesh(pGeo, matFront); mesh.position.z = (i - 2.0) * 0.015; mesh.castShadow = true; group.add(mesh); }
+                drop = group;
             } 
+            else { 
+                if (type === 'wood') { mat = [new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')})]; }
+                else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctTop')}), new THREE.MeshLambertMaterial({map: genTex('planks')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')})]; }
+                else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
+                else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')})]; }
+                else if (type === 'furnace') { mat = [new THREE.MeshLambertMaterial({map: genTex('furnaceSide')}), new THREE.MeshLambertMaterial({map: genTex('furnaceSide')}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop')}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop')}), new THREE.MeshLambertMaterial({map: genTex('furnaceFront')}), new THREE.MeshLambertMaterial({map: genTex('furnaceSide')})]; }
+                else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'}); }
+                drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), mat); drop.castShadow = true;
+            }
+            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe') || type==='stick' || type==='charcoal' || type==='coal' || type==='torch', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
         }
     }
 
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.002, 1.002, 1.002), crackMats[0]); crackMesh.renderOrder = 1; sc.add(crackMesh); crackMesh.visible = false;
 
-    let keys = {}, pVel = new THREE.Vector3(), yVel = 0, stepTimer = 0, bobTimer = 0;
-    
-    let globalTick = 0;
+    let keys = {}, pVel = new THREE.Vector3(), yVel = 0, stepTimer = 0, bobTimer = 0, globalTick = 0;
 
     function animate() {
       requestAnimationFrame(animate);
@@ -821,60 +780,48 @@
       cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.22; cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.22;
       globalTick++;
 
+      // Follow player with Sun Target for Dynamic Shadows
+      sun.position.set(cameraGroup.position.x + 20, 100, cameraGroup.position.z + 20);
+      sun.target.position.copy(cameraGroup.position);
+      sun.target.updateMatrixWorld();
+
       if(gameState === "PLAYING" && gameplayChunkQueue.length > 0) {
           let c = gameplayChunkQueue.shift();
-          generateChunkVolume(c.x, c.z); updateChunkRender(c.x, c.z);
+          generateChunkVolume(c.x, c.z); let chunk = new Chunk(c.x, c.z); chunk.update(); chunks.set(`${c.x},${c.z}`, chunk);
+      }
+
+      // Update dirty chunks
+      let dirtyUpdateCount = 0;
+      for (let [k, c] of chunks.entries()) {
+          if (c.dirty && dirtyUpdateCount < 1) { c.update(); dirtyUpdateCount++; }
       }
 
       if(globalTick % 2 === 0) { 
           let uiNeedsUpdate = false;
-          furnaces.forEach((fd, key) => {
+          dynamicBlocks.forEach((fd, key) => {
+            if(fd.type === 'furnace') {
               let canSmelt = fd.slots[0].count > 0 && smeltingRecipes[fd.slots[0].type] && (!fd.slots[2].type || (fd.slots[2].type === smeltingRecipes[fd.slots[0].type] && fd.slots[2].count < 64));
-              
               if(fd.burnTime > 0) { fd.burnTime--; }
-              
-              if(fd.burnTime <= 0 && canSmelt && fd.slots[1].count > 0) {
-                  fd.maxBurnTime = getFuelTime(fd.slots[1]);
-                  if(fd.maxBurnTime > 0) { fd.burnTime = fd.maxBurnTime; fd.slots[1].count--; if(fd.slots[1].count <= 0) fd.slots[1].type = null; }
-              }
-
-              if(fd.burnTime > 0 && canSmelt) {
-                  fd.cookTime++;
-                  if(fd.cookTime >= fd.maxCookTime) {
-                      fd.cookTime = 0; let outType = smeltingRecipes[fd.slots[0].type];
-                      fd.slots[0].count--; if(fd.slots[0].count <= 0) fd.slots[0].type = null;
-                      if(!fd.slots[2].type) { fd.slots[2].type = outType; fd.slots[2].count = 0; } fd.slots[2].count++;
-                  }
-              } else { if (fd.cookTime > 0) fd.cookTime = Math.max(0, fd.cookTime - 2); }
-
+              if(fd.burnTime <= 0 && canSmelt && fd.slots[1].count > 0) { fd.maxBurnTime = getFuelTime(fd.slots[1]); if(fd.maxBurnTime > 0) { fd.burnTime = fd.maxBurnTime; fd.slots[1].count--; if(fd.slots[1].count <= 0) fd.slots[1].type = null; } }
+              if(fd.burnTime > 0 && canSmelt) { fd.cookTime++; if(fd.cookTime >= fd.maxCookTime) { fd.cookTime = 0; let outType = smeltingRecipes[fd.slots[0].type]; fd.slots[0].count--; if(fd.slots[0].count <= 0) fd.slots[0].type = null; if(!fd.slots[2].type) { fd.slots[2].type = outType; fd.slots[2].count = 0; } fd.slots[2].count++; } } else { if (fd.cookTime > 0) fd.cookTime = Math.max(0, fd.cookTime - 2); }
               let litNow = fd.burnTime > 0;
               if (fd.lit !== litNow) {
-                  fd.lit = litNow; let b = regularMeshes.get(key);
-                  if(b) b.material[fd.frontIdx].map = genTex(litNow ? 'furnaceFrontLit' : 'furnaceFront');
-                  
-                  if (litNow) {
-                      let coords = key.split(',').map(Number);
-                      let light = new THREE.PointLight(0xffa500, 1.2, 8); light.position.set(coords[0], coords[1], coords[2]);
-                      sc.add(light); fd.light = light;
-                  } else { if (fd.light) { sc.remove(fd.light); fd.light = null; } }
+                  fd.lit = litNow; fd.material[fd.frontIdx].map = genTex(litNow ? 'furnaceFrontLit' : 'furnaceFront'); fd.material[fd.frontIdx].needsUpdate = true;
+                  if (litNow) { let coords = key.split(',').map(Number); let light = new THREE.PointLight(0xffa500, 1.2, 8); light.position.set(coords[0], coords[1], coords[2]); sc.add(light); fd.light = light; } else { if (fd.light) { sc.remove(fd.light); fd.light = null; } }
               }
               if(gameState === "FURNACE" && activeFurnacePos === key) uiNeedsUpdate = true;
+            }
           });
           if(uiNeedsUpdate) updateUI();
       }
 
-      // Block Random Ticking
       let keysArr = Array.from(voxels.keys());
       for(let i=0; i<40; i++) {
           if(keysArr.length === 0) break;
-          let rKey = keysArr[Math.floor(Math.random() * keysArr.length)];
-          let type = voxels.get(rKey); let coords = rKey.split(',').map(Number);
-          
+          let rKey = keysArr[Math.floor(Math.random() * keysArr.length)]; let type = voxels.get(rKey); let coords = rKey.split(',').map(Number);
           if (type === 'leaves') {
               let foundWood = false;
-              for(let dx=-3; dx<=3 && !foundWood; dx++) for(let dy=-3; dy<=3 && !foundWood; dy++) for(let dz=-3; dz<=3 && !foundWood; dz++) {
-                  if(voxels.get(`${coords[0]+dx},${coords[1]+dy},${coords[2]+dz}`) === 'wood') foundWood = true;
-              }
+              for(let dx=-3; dx<=3 && !foundWood; dx++) for(let dy=-3; dy<=3 && !foundWood; dy++) for(let dz=-3; dz<=3 && !foundWood; dz++) { if(voxels.get(`${coords[0]+dx},${coords[1]+dy},${coords[2]+dz}`) === 'wood') foundWood = true; }
               if(!foundWood) { playSound('break', 'leaves'); removeB(coords[0], coords[1], coords[2]); }
           } else if (type === 'farmland') {
               if (Math.random() < 0.2) { removeB(coords[0],coords[1],coords[2]); placeB(coords[0],coords[1],coords[2], 'dirt'); }
@@ -882,9 +829,7 @@
               if (Math.random() < 0.05) {
                   if(!isSolidVoxel(coords[0], coords[1]+1, coords[2])) {
                       let hasGrass = false;
-                      for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++) for(let dz=-1; dz<=1; dz++) {
-                          if(voxels.get(`${coords[0]+dx},${coords[1]+dy},${coords[2]+dz}`) === 'grass') hasGrass = true;
-                      }
+                      for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++) for(let dz=-1; dz<=1; dz++) { if(voxels.get(`${coords[0]+dx},${coords[1]+dy},${coords[2]+dz}`) === 'grass') hasGrass = true; }
                       if(hasGrass) { removeB(coords[0],coords[1],coords[2]); placeB(coords[0],coords[1],coords[2], 'grass'); }
                   }
               }
@@ -892,14 +837,13 @@
       }
 
       if(gameState !== "MAIN_MENU" && gameState !== "PAUSE_MENU") {
-        updateChunks();
+        let pX = Math.floor(cameraGroup.position.x / CHUNK_SIZE), pZ = Math.floor(cameraGroup.position.z / CHUNK_SIZE);
+        for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) { for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) { let cKey = `${x},${z}`; if(!chunks.has(cKey)) { gameplayChunkQueue.push({x, z}); chunks.set(cKey, true); } } }
+
         let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.y = 0; if (dir.lengthSq() < 0.0001) { dir.set(0, 0, -1); } dir.normalize(); 
         let side = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
-        
-        let isMoving = (keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']);
-        let isSprinting = (keys['ShiftLeft'] || keys['ShiftRight'] || keys['ControlLeft'] || keys['ControlRight']) && keys['KeyW'];
+        let isMoving = (keys['KeyW']||keys['KeyS']||keys['KeyA']||keys['KeyD']); let isSprinting = (keys['ShiftLeft'] || keys['ShiftRight'] || keys['ControlLeft'] || keys['ControlRight']) && keys['KeyW'];
         cam.fov = THREE.MathUtils.lerp(cam.fov, isSprinting ? 85 : 75, 0.1); cam.updateProjectionMatrix();
-        
         let accel = isSprinting ? 0.014 : 0.011; let friction = 0.85; pVel.x *= friction; pVel.z *= friction; 
         
         if(gameState === "PLAYING") {
@@ -915,10 +859,7 @@
         yVel -= 0.01; let nextY = cameraGroup.position.y + yVel;
         if(yVel <= 0 && isSolidVoxel(Math.round(cameraGroup.position.x), Math.round(nextY - 1.6), Math.round(cameraGroup.position.z))) { 
             let landY = Math.round(nextY - 1.6);
-            if (yVel < -0.1) {
-                let landKey = `${Math.round(cameraGroup.position.x)},${landY},${Math.round(cameraGroup.position.z)}`;
-                if (voxels.get(landKey) === 'farmland' && Math.random() < 0.5) { removeB(Math.round(cameraGroup.position.x), landY, Math.round(cameraGroup.position.z)); placeB(Math.round(cameraGroup.position.x), landY, Math.round(cameraGroup.position.z), 'dirt'); playSound('dig', 'dirt'); }
-            }
+            if (yVel < -0.1) { let landKey = `${Math.round(cameraGroup.position.x)},${landY},${Math.round(cameraGroup.position.z)}`; if (voxels.get(landKey) === 'farmland' && Math.random() < 0.5) { removeB(Math.round(cameraGroup.position.x), landY, Math.round(cameraGroup.position.z)); placeB(Math.round(cameraGroup.position.x), landY, Math.round(cameraGroup.position.z), 'dirt'); playSound('dig', 'dirt'); } }
             yVel = 0; cameraGroup.position.y = landY + 2.1; 
             if(keys['Space'] && gameState === "PLAYING") yVel = 0.16; 
         } else if (yVel > 0 && isSolidVoxel(Math.round(cameraGroup.position.x), Math.round(nextY), Math.round(cameraGroup.position.z))) {
@@ -928,9 +869,7 @@
         if(isSolidVoxel(Math.round(cameraGroup.position.x), Math.round(cameraGroup.position.y - 1.6), Math.round(cameraGroup.position.z)) && isMoving && gameState === "PLAYING") {
             let speed = Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z); stepTimer += speed; bobTimer += speed * (isSprinting ? 1.5 : 1.0);
             cam.position.y = Math.sin(bobTimer * 10) * 0.1; 
-            if(stepTimer > (isSprinting ? 0.7 : 0.5)) { 
-                let bName = voxels.get(`${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`); playSound('step', bName || 'grass'); stepTimer = 0; 
-            }
+            if(stepTimer > (isSprinting ? 0.7 : 0.5)) { let bName = voxels.get(`${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`); playSound('step', bName || 'grass'); stepTimer = 0; }
         } else { stepTimer = 0; cam.position.y = THREE.MathUtils.lerp(cam.position.y, 0, 0.1); }
 
         drops.forEach((d, i) => {
@@ -944,8 +883,6 @@
         if(miningTarget && gameState === "PLAYING") {
             let activeItem = inventory[activeSlot]; let activeType = activeItem.type; 
             let lookDir = new THREE.Vector3(); cam.getWorldDirection(lookDir); lookDir.normalize();
-            
-            // Replaced physics raycaster with zero-lag math raycaster!
             let hit = fastVoxelRaycast(cameraGroup.position, lookDir, 6);
             
             if(!hit || hit.x !== miningTarget.x || hit.y !== miningTarget.y || hit.z !== miningTarget.z) { 
@@ -1006,28 +943,21 @@
     document.addEventListener('mousedown', e => {
       initAudio(); if(!isPlayingMusic && gameState === "PLAYING") playMusic(); if(gameState !== "PLAYING") return;
       let dir = new THREE.Vector3(); cam.getWorldDirection(dir); dir.normalize();
-      
-      // Zero-lag ray marching here too!
       let hit = fastVoxelRaycast(cameraGroup.position, dir, 6);
       
       if(hit) {
         let item = inventory[activeSlot];
-        
         if(e.button === 2 && item.type && item.type.endsWith('_hoe') && (hit.name === 'dirt' || hit.name === 'grass') && hit.normal.y === 1) {
             let topKey = `${hit.x},${hit.y+1},${hit.z}`;
             if(!voxels.has(topKey)) {
-                removeB(hit.x, hit.y, hit.z); placeB(hit.x, hit.y, hit.z, 'farmland');
-                playSound('dig', 'dirt');
+                removeB(hit.x, hit.y, hit.z); placeB(hit.x, hit.y, hit.z, 'farmland'); playSound('dig', 'dirt');
                 item.damage++; let maxD = item.type.startsWith('stone_') ? 131 : 59; if (item.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
                 updateUI(); return;
             }
         }
 
         if(e.button === 0 && hit.name !== 'bedrock') { 
-            miningTarget = {x: hit.x, y: hit.y, z: hit.z, name: hit.name}; 
-            miningProgress = 0; miningSoundTimer = 0; 
-            crackMesh.position.set(hit.x, hit.y, hit.z); 
-            crackMesh.visible = true; 
+            miningTarget = {x: hit.x, y: hit.y, z: hit.z, name: hit.name}; miningProgress = 0; miningSoundTimer = 0; crackMesh.position.set(hit.x, hit.y, hit.z); crackMesh.visible = true; 
         }
         else if(e.button === 2) {
           if(hit.name === 'crafting_table') { setMenu('CRAFTING'); return; }
@@ -1036,10 +966,7 @@
           if(item.type && item.count > 0 && item.type !== 'stick' && item.type !== 'charcoal' && item.type !== 'coal' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
             let pX = hit.x + hit.normal.x, pY = hit.y + hit.normal.y, pZ = hit.z + hit.normal.z;
             let dx = pX - cameraGroup.position.x, dy = pY - (cameraGroup.position.y - 1.6), dz = pZ - cameraGroup.position.z;
-            
-            let playerYMin = cameraGroup.position.y - 1.6; let playerYMax = cameraGroup.position.y - 0.1;
-            let blockYMin = pY - 0.5; let blockYMax = pY + 0.5;
-            let overlapY = playerYMin < blockYMax && playerYMax > blockYMin;
+            let overlapY = (cameraGroup.position.y - 1.6) < (pY + 0.5) && (cameraGroup.position.y - 0.1) > (pY - 0.5);
             let insidePlayer = (Math.abs(dx) < 0.35 && Math.abs(dz) < 0.35 && overlapY);
 
             if(!voxels.has(`${pX},${pY},${pZ}`) && (!insidePlayer || item.type === 'torch')) { 
