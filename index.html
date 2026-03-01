@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT 1.02.1</title>
+  <title>ORANGECRAFT 1.01.2</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -32,9 +32,9 @@
     .menu-overlay{position:absolute;width:100%;height:100%;display:none;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.85);z-index:200}
     .dirt-bg { background-color: #5c3a21; box-shadow: inset 0 0 200px rgba(0,0,0,0.9); background-size: 64px; image-rendering: pixelated; }
     
-    .title{font-size:5rem;color:#FFA500;text-shadow:6px 6px 0 #333;margin-bottom:10px;font-weight:bold;font-family: Impact;position:relative;text-align:center;line-height:0.9;}
-    .version{font-size:2.5rem;color:#ddd;text-shadow:4px 4px 0 #333;margin-bottom:40px;font-family:'Courier New', monospace;font-weight:bold;}
-    .splash{position:absolute;top:50px;right:-110px;color:#ffff00;font-size:1.6rem;font-family: 'Arial Black', sans-serif; font-weight:bold; animation:pulse 0.4s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px 0 #3f3f00; pointer-events:none; white-space:nowrap;}
+    .title-container { position:relative; display:inline-block; margin-bottom:40px; }
+    .title{font-size:5rem;color:#FFA500;text-shadow:6px 6px 0 #333;margin-bottom:0;font-weight:bold;font-family: Impact;}
+    .splash{position:absolute;bottom:-15px;right:-40px;color:#ffff00;font-size:1.6rem;font-family: 'Arial Black', sans-serif; font-weight:bold; animation:pulse 0.4s infinite alternate;transform:rotate(-20deg); text-shadow: 2px 2px 0 #3f3f00; pointer-events:none; white-space:nowrap; transform-origin: center;}
     @keyframes pulse{from{transform:rotate(-20deg) scale(0.95)}to{transform:rotate(-20deg) scale(1.05)}}
     
     .btn{width:320px;padding:12px;margin:6px;background:#555;border:4px solid #000;border-top-color:#888;border-left-color:#888;color:#fff;cursor:pointer;text-align:center;font-size:1.2rem}
@@ -59,8 +59,10 @@
   <div id="hud"><div id="hotbar-display"></div></div>
 
   <div id="main-menu" class="menu-overlay" style="display:flex">
-    <div class="title">ORANGECRAFT<div class="splash" id="splash-text"></div></div>
-    <div class="version">1.02.1</div>
+    <div class="title-container">
+        <div class="title">ORANGECRAFT</div>
+        <div class="splash" id="splash-text"></div>
+    </div>
     <div class="btn" onclick="playSound('click'); startGame()">Singleplayer</div>
     <div class="btn" onclick="playSound('click'); location.reload()">Reset World</div>
   </div>
@@ -192,7 +194,7 @@
 
     // --- 2. TEXTURES & ASSETS ---
     const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = ["Version 1.02.1 is here!", "Real Tunnel Generation!", "Accurate Tool Speeds!", "Added Raw Iron!", "Proper cave lighting!", "Don't dig straight down!"];
+    const authenticSplashes = ["Version 1.01.2!", "Raw Iron added!", "Precise Mining Speeds!", "Tunnels and Rooms!", "Items don't get stuck!"];
 
     function getDmgLevel(type, damage) {
         if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe') && !type.endsWith('_shovel') && !type.endsWith('_sword') && !type.endsWith('_hoe'))) return 0;
@@ -238,10 +240,10 @@
             let mapArr = ("____HHHHH_______"+"___HhhhhhH______"+"___HhH__HhH_____"+"___HH____sS_____"+"_________sS_____"+"________sS______"+"_______sS_______"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________").split('');
             if (dmgLevel >= 1) { mapArr[1*16+9] = '_'; mapArr[2*16+9] = '_'; } if (dmgLevel >= 2) { mapArr[1*16+3] = '_'; mapArr[3*16+3] = '_'; }
             drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : pStone), mapArr.join(''));
-        } else if (type === 'raw_iron') {
-            drawPixelMap(ctx, {'A':'#000','B':'#d8af93','C':'#eac9b6','D':'#b88d6d','_':null}, '________________'+'______BB________'+'____BDCCB_______'+'___BCCCCB_______'+'___BDCCCB_______'+'____BBBCCB______'+'_____BDCCB______'+'_____BCCCB______'+'____BCCCCDB_____'+'___BCCCCCB______'+'___BCCCCDB______'+'____BBBBB_______'+'________________'+'________________'+'________________'+'________________');
         } else if (type === 'iron_ingot') {
             drawPixelMap(ctx, {'A':'#000','B':'#555','C':'#fff','D':'#ccc','_':null}, '________________'+'________________'+'________________'+'________________'+'_____BCCCCCB____'+'____BCDDDDDCB___'+'___BCDDDDDDDCB__'+'___BCCCCCCCCCB__'+'____BBBBBBBBB___'+'________________'+'________________'+'________________'+'________________'+'________________'+'________________'+'________________');
+        } else if (type === 'raw_iron') {
+            drawPixelMap(ctx, {'A':'#000','B':'#d8af93','C':'#eac9b6','D':'#686868','_':null}, '________________'+'_____BCCB_______'+'____CDBBDC______'+'___CDBDDBBC_____'+'__CDBBDDDABC____'+'__CBBDDDABBC____'+'___CBBABBABC____'+'____CBBABBC_____'+'_____BCCCB______'+'________________'+'________________'+'________________'+'________________'+'________________'+'________________'+'________________');
         } else if (type === 'coal') {
             drawPixelMap(ctx, {'A':'#000','B':'#111','C':'#222','D':'#333','_':null}, '________________'+'________________'+'______BCC_______'+'_____CDABC______'+'____CCABABC_____'+'___BCBABABBC____'+'___CCAAABABC____'+'____CBABABBC____'+'_____BCAACC_____'+'______BCCC______'+'________________'+'________________'+'________________'+'________________'+'________________'+'________________');
         } else if (type === 'charcoal') {
@@ -275,7 +277,7 @@
         else if (type === 'leaves') { ctx.clearRect(0,0,16,16); for(let x=0; x<16; x++) { for(let y=0; y<16; y++) { if((x+y)%2===0 || Math.random()>0.7) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); } } } }
 
         imgDataUrls[cacheKey] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; 
-        if(type === 'leaves' || type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'raw_iron' || type === 'iron_ingot' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) t.transparent = true; 
+        if(type === 'leaves' || type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'raw_iron' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) t.transparent = true; 
         texCache[cacheKey] = t; return t;
     }
 
@@ -315,7 +317,7 @@
         if(type === 'crafting_table') { genTex('ctTop'); genTex('ctSide'); } else if(type === 'wood') { genTex('woodTop'); genTex('wood'); } else if(type === 'grass') { genTex('grass'); genTex('grassSide'); } else if (type === 'farmland') { genTex('farmlandTop'); genTex('dirt'); } else if (type === 'furnace') { genTex('furnaceTop'); genTex('furnaceSide'); genTex('furnaceFront'); } else genTex(type, dmgLevel);
         
         let html = '';
-        if(type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'raw_iron' || type === 'iron_ingot' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
+        if(type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'raw_iron' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
             let cacheKey = type + '_' + dmgLevel;
             html = `<div class="item-2d" style="background-image:url(${imgDataUrls[cacheKey]})"></div>`;
         } else {
@@ -386,7 +388,6 @@
       }
     }
 
-    // RAW IRON SMELTING ADDED
     const smeltingRecipes = {'cobblestone': 'stone', 'wood': 'charcoal', 'coal_ore': 'coal', 'raw_iron': 'iron_ingot'};
 
     function getFuelTime(item) {
@@ -492,7 +493,6 @@
     rnd.shadowMap.enabled = true; rnd.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(rnd.domElement);
     
-    // REMOVED EMISSIVE HACK, FIXED AMBIENT LIGHTING
     const amb = new THREE.AmbientLight(0xffffff, 0.45); sc.add(amb); 
     const sun = new THREE.DirectionalLight(0xffeedd, 0.9); 
     sun.castShadow = true; 
@@ -516,13 +516,16 @@
         return Math.floor(h);
     }
     
-    // SPAGHETTI CAVE TUNNELS (Adjusted Noise)
+    // REDESIGNED CAVE NOISE (Tunnels & Rooms)
     function isCaveNoise(x, y, z) {
-        let n1 = Math.sin(x*0.12) + Math.cos(y*0.1) + Math.sin(z*0.12);
-        let n2 = Math.cos(x*0.15 - y*0.1) + Math.sin(z*0.15 + x*0.05);
+        let n1 = Math.sin(x*0.1) + Math.cos(y*0.1) + Math.sin(z*0.1);
+        let n2 = Math.cos(x*0.13 - y*0.11) + Math.sin(z*0.13 + x*0.05);
+        let n3 = Math.sin(x*0.07) * Math.cos(y*0.07) * Math.sin(z*0.07);
+        
         let val = Math.abs(n1 + n2);
-        // Tighter tunnels with occasional larger rooms
-        return val < 0.15 && y < getSurfaceH(x,z) - 3; 
+        let isTunnel = val < 0.25; 
+        let isRoom = n3 > 0.12 && val < 0.8;
+        return (isTunnel || isRoom) && y < getSurfaceH(x,z) - 3; 
     }
     function isSolidVoxel(x, y, z) { 
         let t = voxels.get(`${x},${y},${z}`);
@@ -567,11 +570,12 @@
             }
             for(let t in counts) {
                 let mat;
-                if(t === 'wood'){ mat = [new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')})]; }
-                else if (t === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctTop')}), new THREE.MeshLambertMaterial({map: genTex('planks')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')})]; }
-                else if (t === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')})]; }
-                else if (t === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
-                else { mat = new THREE.MeshLambertMaterial({map: genTex(t), transparent: t==='leaves', alphaTest: 0.5}); }
+                let em = { emissive: 0x050505 }; 
+                if(t === 'wood'){ mat = [new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em})]; }
+                else if (t === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('planks'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em})]; }
+                else if (t === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em})]; }
+                else if (t === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grass'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em})]; }
+                else { mat = new THREE.MeshLambertMaterial({map: genTex(t), transparent: t==='leaves', alphaTest: 0.5, ...em}); }
 
                 let im = new THREE.InstancedMesh(boxG, mat, counts[t]);
                 im.castShadow = true; im.receiveShadow = true;
@@ -596,10 +600,11 @@
 
     function addDynamicBlock(x, y, z, type, faceNormal=null) {
         let key = `${x},${y},${z}`; let b;
+        let em = { emissive: 0x050505 };
         if (type === 'torch') {
             b = new THREE.Group();
             let tex = genTex('torch');
-            let mat = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide});
+            let mat = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, emissive: 0x222222});
             let p1 = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.6), mat); p1.rotation.y = Math.PI/4;
             let p2 = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.6), mat); p2.rotation.y = -Math.PI/4;
             p1.castShadow = true; p2.castShadow = true;
@@ -616,13 +621,12 @@
             } else { tY -= 0.2; }
             b.position.set(tX, tY, tZ);
             
-            // STRONG TORCH LIGHT
-            let tLight = new THREE.PointLight(0xffcd88, 1.8, 16, 1.2); 
+            let tLight = new THREE.PointLight(0xffcd88, 2.5, 20, 1.2); 
             b.add(tLight); b.light = tLight;
             b.type = 'torch';
         } else if (type === 'furnace') {
             let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
-            let mSide = new THREE.MeshLambertMaterial({map: genTex('furnaceSide')}), mTop = new THREE.MeshLambertMaterial({map: genTex('furnaceTop')}), mFront = new THREE.MeshLambertMaterial({map: genTex('furnaceFront')});
+            let mSide = new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), ...em}), mTop = new THREE.MeshLambertMaterial({map: genTex('furnaceTop'), ...em}), mFront = new THREE.MeshLambertMaterial({map: genTex('furnaceFront'), ...em});
             let mat = [mSide, mSide, mTop, mTop, mSide, mSide];
             let fIdx = 4; if(Math.abs(dir.x) > Math.abs(dir.z)) { if(dir.x > 0) fIdx = 1; else fIdx = 0; } else { if(dir.z > 0) fIdx = 5; else fIdx = 4; }
             mat[fIdx] = mFront;
@@ -681,7 +685,7 @@
                 if (!voxels.has(`${absX},-46,${absZ}`)) voxels.set(`${absX},-46,${absZ}`, 'bedrock');
                 
                 if(Math.random() < 0.005) { 
-                    voxels.set(`${absX},${h},${absZ}`, 'dirt');
+                    voxels.set(`${absX},${h},${absZ}`, 'dirt'); 
                     for(let t=1; t<=4; t++) voxels.set(`${absX},${h+t},${absZ}`, 'wood'); 
                     for(let ly=3; ly<=4; ly++) { 
                         for(let lx=-2; lx<=2; lx++) { 
@@ -702,21 +706,21 @@
             }
         }
         
-        // EXTREMELY RARE ORE GENERATION
-        for(let i=0; i<4; i++) {
+        // Much Rarer Ore Generation
+        for(let i=0; i<8; i++) {
             let ox = cx * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oz = cz * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
-            let oy = Math.floor(Math.random() * 40) - 35;
-            for(let v=0; v<3; v++) {
+            let oy = Math.floor(Math.random() * 40) - 35; 
+            for(let v=0; v<4; v++) {
                 if (voxels.get(`${ox},${oy},${oz}`) === 'stone') voxels.set(`${ox},${oy},${oz}`, 'coal_ore');
                 ox += Math.floor(Math.random()*3)-1; oy += Math.floor(Math.random()*3)-1; oz += Math.floor(Math.random()*3)-1;
             }
         }
-        for(let i=0; i<2; i++) {
+        for(let i=0; i<5; i++) {
             let ox = cx * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oz = cz * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oy = Math.floor(Math.random() * 35) - 45; 
-            for(let v=0; v<2; v++) {
+            for(let v=0; v<3; v++) {
                 if (voxels.get(`${ox},${oy},${oz}`) === 'stone') voxels.set(`${ox},${oy},${oz}`, 'iron_ore');
                 ox += Math.floor(Math.random()*3)-1; oy += Math.floor(Math.random()*3)-1; oz += Math.floor(Math.random()*3)-1;
             }
@@ -788,28 +792,28 @@
     function dropItemIntoWorld(type, amount = 1, damage = 0) {
         let dmgLevel = getDmgLevel(type, damage);
         for(let j=0; j<amount; j++) {
-            // FIX: Spawn dead center of where the camera is looking
-            let dropPos = cameraGroup.position.clone(); dropPos.y += 0.2; 
+            let dir = new THREE.Vector3(); cam.getWorldDirection(dir); let dropPos = cameraGroup.position.clone().addScaledVector(dir, 1.2); dropPos.y += 0.2; 
             let drop, mat;
+            let em = { emissive: 0x050505 };
             
-            if (type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'raw_iron' || type === 'iron_ingot' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) { 
+            if (type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'raw_iron' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) { 
                 let group = new THREE.Group();
                 let tex = genTex(type, dmgLevel);
-                let matFront = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide});
+                let matFront = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, ...em});
                 let pGeo = new THREE.PlaneGeometry(0.5, 0.5);
                 for(let i=0; i<5; i++) { let mesh = new THREE.Mesh(pGeo, matFront); mesh.position.z = (i - 2.0) * 0.015; mesh.castShadow = true; group.add(mesh); }
                 drop = group;
             } 
             else { 
-                if (type === 'wood') { mat = [new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('woodTop')}), new THREE.MeshLambertMaterial({map: genTex('wood')}), new THREE.MeshLambertMaterial({map: genTex('wood')})]; }
-                else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctTop')}), new THREE.MeshLambertMaterial({map: genTex('planks')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')}), new THREE.MeshLambertMaterial({map: genTex('ctSide')})]; }
-                else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grass')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')}), new THREE.MeshLambertMaterial({map: genTex('grassSide')})]; }
-                else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')}), new THREE.MeshLambertMaterial({map: genTex('dirt')})]; }
-                else if (type === 'furnace') { mat = [new THREE.MeshLambertMaterial({map: genTex('furnaceSide')}), new THREE.MeshLambertMaterial({map: genTex('furnaceSide')}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop')}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop')}), new THREE.MeshLambertMaterial({map: genTex('furnaceFront')}), new THREE.MeshLambertMaterial({map: genTex('furnaceSide')})]; }
-                else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'}); }
+                if (type === 'wood') { mat = [new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em})]; }
+                else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('planks'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em})]; }
+                else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grass'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em})]; }
+                else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em})]; }
+                else if (type === 'furnace') { mat = [new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceFront'), ...em}), new MeshLambertMaterial({map: genTex('furnaceSide'), ...em})]; }
+                else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves', ...em}); }
                 drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), mat); drop.castShadow = true;
             }
-            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe') || type==='stick' || type==='charcoal' || type==='coal' || type === 'raw_iron' || type==='iron_ingot' || type==='torch', velDir: new THREE.Vector3(0,0,0), spawnTime: Date.now()});
+            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe') || type==='stick' || type==='charcoal' || type==='coal' || type==='iron_ingot' || type==='raw_iron' || type==='torch', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
         }
     }
 
@@ -830,32 +834,25 @@
       sun.target.position.set(camIntX, 0, camIntZ);
       sun.target.updateMatrixWorld();
       
-      // FIXED ENCLOSURE DETECTION (Checks all the way to surface)
+      // FIX: PERFECT EYE ADJUSTMENT
       let pX = Math.floor(cameraGroup.position.x);
       let pZ = Math.floor(cameraGroup.position.z);
       let pY = Math.floor(cameraGroup.position.y);
       let sY = getSurfaceH(pX, pZ);
       
-      let isEnclosed = true;
-      for(let dx = -1; dx <= 1; dx++) {
-          for(let dz = -1; dz <= 1; dz++) {
-              let hitSky = true;
-              let searchMax = Math.max(pY + 15, sY + 2); // FIX: Must search up to surface
-              for(let cy = pY; cy <= searchMax; cy++) {
-                  let t = voxels.get(`${pX+dx},${cy},${pZ+dz}`);
-                  if(t && t !== 'torch' && t !== 'leaves') { hitSky = false; break; }
-              }
-              if (hitSky) { isEnclosed = false; break; }
-          }
-          if (!isEnclosed) break;
+      let isEnclosed = false;
+      // Raycast all the way UP to the surface to check if underground
+      for(let cy = pY; cy <= sY + 1; cy++) {
+          let t = voxels.get(`${pX},${cy},${pZ}`);
+          if(t && t !== 'torch' && t !== 'leaves') { isEnclosed = true; break; }
       }
       
       let targetAmbient = 0.45;
       let targetFogColor = new THREE.Color(skyColor);
       let depth = (sY - pY);
       
-      if (isEnclosed && depth >= -2) {
-          let darkness = Math.max(0.02, 0.20 - (depth * 0.015)); 
+      if (isEnclosed && depth >= 0) {
+          let darkness = Math.max(0.04, 0.25 - (depth * 0.015)); 
           targetAmbient = darkness;
           targetFogColor.setHex(0x050505);
       }
@@ -985,49 +982,45 @@
             } else {
                 let name = miningTarget.name;
                 
-                // EXACT MINECRAFT MINING LOGIC
+                // ACCURATE MINING SPEEDS & TOOL TIERS
                 let baseHardness = 1.0; let isCorrectTool = false; let toolSpeed = 1.0; let canHarvest = false;
                 let activeSafeType = activeType || '';
                 
+                let toolClass = 'hand';
+                if (activeSafeType.endsWith('_pickaxe')) toolClass = 'pickaxe';
+                if (activeSafeType.endsWith('_axe')) toolClass = 'axe';
+                if (activeSafeType.endsWith('_shovel')) toolClass = 'shovel';
+                if (activeSafeType.endsWith('_sword')) toolClass = 'sword';
+
                 if (activeSafeType.startsWith('wooden_')) toolSpeed = 2.0;
                 if (activeSafeType.startsWith('stone_')) toolSpeed = 4.0;
                 if (activeSafeType.startsWith('iron_')) toolSpeed = 6.0;
 
                 if (['stone', 'cobblestone', 'furnace'].includes(name)) {
-                    baseHardness = 1.5; if (activeSafeType.endsWith('_pickaxe')) isCorrectTool = true; canHarvest = isCorrectTool;
-                } else if (['coal_ore', 'iron_ore'].includes(name)) {
-                    baseHardness = 3.0; 
-                    if (activeSafeType.endsWith('_pickaxe')) {
-                        isCorrectTool = true;
-                        if (name === 'iron_ore' && activeSafeType === 'wooden_pickaxe') canHarvest = false;
-                        else canHarvest = true;
-                    }
+                    baseHardness = 1.5; if (toolClass === 'pickaxe') isCorrectTool = true; canHarvest = isCorrectTool;
+                } else if (['coal_ore'].includes(name)) {
+                    baseHardness = 3.0; if (toolClass === 'pickaxe') isCorrectTool = true; canHarvest = isCorrectTool;
+                } else if (['iron_ore'].includes(name)) {
+                    baseHardness = 3.0; if (toolClass === 'pickaxe') { isCorrectTool = true; canHarvest = activeSafeType !== 'wooden_pickaxe'; }
                 } else if (['coal_block', 'iron_block'].includes(name)) {
-                    baseHardness = 5.0; 
-                    if (activeSafeType.endsWith('_pickaxe')) {
-                        isCorrectTool = true;
-                        if (activeSafeType === 'wooden_pickaxe') canHarvest = false;
-                        else canHarvest = true;
-                    }
-                } else if (['dirt'].includes(name)) {
-                    baseHardness = 0.5; if (activeSafeType.endsWith('_shovel')) isCorrectTool = true; canHarvest = true;
-                } else if (['grass', 'farmland'].includes(name)) {
-                    baseHardness = 0.6; if (activeSafeType.endsWith('_shovel')) isCorrectTool = true; canHarvest = true;
+                    baseHardness = 5.0; if (toolClass === 'pickaxe') { isCorrectTool = true; canHarvest = activeSafeType !== 'wooden_pickaxe'; }
+                } else if (['dirt', 'grass', 'farmland'].includes(name)) {
+                    baseHardness = 0.5; if (toolClass === 'shovel') isCorrectTool = true; canHarvest = true;
                 } else if (['wood', 'planks', 'crafting_table'].includes(name)) {
-                    baseHardness = 2.0; if (activeSafeType.endsWith('_axe')) isCorrectTool = true; canHarvest = true;
+                    baseHardness = 2.0; if (toolClass === 'axe') isCorrectTool = true; canHarvest = true;
                 } else if (['leaves'].includes(name)) {
-                    baseHardness = 0.2; if (activeSafeType.endsWith('_hoe') || activeSafeType.endsWith('_sword')) isCorrectTool = true; canHarvest = true;
-                    if (activeSafeType.endsWith('_sword')) toolSpeed = 1.5; 
+                    baseHardness = 0.2; if (toolClass === 'hoe' || toolClass === 'sword') isCorrectTool = true; canHarvest = true;
+                    if (toolClass === 'sword') toolSpeed = 1.5; 
                 } else if (['torch'].includes(name)) {
                     baseHardness = 0.0; canHarvest = true; isCorrectTool = true;
                 } else if (name === 'bedrock') {
                     baseHardness = 9999; canHarvest = false;
                 }
 
-                // 60FPS TIME-TO-MINE MATH
+                // SECONDS TO BREAK FORMULA (1.5x for correct tool, 5.0x for wrong tool)
                 let timeToMine = isCorrectTool ? ((baseHardness * 1.5) / toolSpeed) : (baseHardness * 5.0);
                 if (baseHardness === 0.0) timeToMine = 0.05;
-                let damagePerTick = 1.0 / (timeToMine * 60.0);
+                let damagePerTick = 1.0 / (timeToMine * 60.0); // Converted to frames
 
                 miningProgress += damagePerTick; miningSoundTimer += damagePerTick;
                 
@@ -1038,8 +1031,8 @@
                     playSound('break', name); 
                     removeB(miningTarget.x, miningTarget.y, miningTarget.z);
                     
-                    if (activeSafeType.endsWith('_pickaxe') || activeSafeType.endsWith('_axe') || activeSafeType.endsWith('_shovel') || activeSafeType.endsWith('_sword') || activeSafeType.endsWith('_hoe')) {
-                        let dmgToTake = 1; if (activeSafeType.endsWith('_sword') && name !== 'leaves') dmgToTake = 2; 
+                    if (['pickaxe', 'axe', 'shovel', 'sword', 'hoe'].includes(toolClass) && activeSafeType !== '') {
+                        let dmgToTake = 1; if (toolClass === 'sword' && name !== 'leaves') dmgToTake = 2; 
                         activeItem.damage = (activeItem.damage || 0) + dmgToTake;
                         let maxD = activeSafeType.startsWith('iron_') ? 250 : (activeSafeType.startsWith('stone_') ? 131 : 59);
                         if (activeItem.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
@@ -1050,10 +1043,13 @@
                         let dropName = name === 'stone' ? 'cobblestone' : (name === 'grass' || name === 'farmland' ? 'dirt' : (name === 'coal_ore' ? 'coal' : (name === 'iron_ore' ? 'raw_iron' : name)));
                         if (!canHarvest) dropName = null; 
                         if(dropName) { 
+                            // FIX: Drop item in exact block center and pop towards player
                             dropItemIntoWorld(dropName, 1, 0); 
-                            // FIX: Drop spawns dead center with 0 velocity
-                            drops[drops.length-1].mesh.position.set(miningTarget.x, miningTarget.y, miningTarget.z); 
-                            drops[drops.length-1].spawnTime = Date.now() - 1500; 
+                            let dObj = drops[drops.length-1];
+                            dObj.mesh.position.set(miningTarget.x, miningTarget.y, miningTarget.z); 
+                            dObj.velDir = new THREE.Vector3().subVectors(cameraGroup.position, dObj.mesh.position).normalize().multiplyScalar(0.1);
+                            dObj.velY = 0.1;
+                            dObj.spawnTime = Date.now() - 1500; 
                         }
                     }
                     miningTarget = null; crackMesh.visible = false;
@@ -1096,7 +1092,7 @@
           if(hit.name === 'furnace') { activeFurnacePos = `${hit.x},${hit.y},${hit.z}`; setMenu('FURNACE'); return; }
           if(item.type === 'torch' && hit.normal.y === -1) return; // No ceiling torches
           
-          if(item.type && item.count > 0 && item.type !== 'stick' && item.type !== 'charcoal' && item.type !== 'coal' && item.type !== 'raw_iron' && item.type !== 'iron_ingot' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
+          if(item.type && item.count > 0 && item.type !== 'stick' && item.type !== 'charcoal' && item.type !== 'coal' && item.type !== 'iron_ingot' && item.type !== 'raw_iron' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
             let pX = hit.x + hit.normal.x, pY = hit.y + hit.normal.y, pZ = hit.z + hit.normal.z;
             let dx = pX - cameraGroup.position.x, dy = pY - (cameraGroup.position.y - 1.6), dz = pZ - cameraGroup.position.z;
             let overlapY = (cameraGroup.position.y - 1.6) < (pY + 0.5) && (cameraGroup.position.y - 0.1) > (pY - 0.5);
