@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.80 - Tunnels, Tiers & Darkness</title>
+  <title>ORANGECRAFT Alpha 1.90 - The True Darkness Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -190,7 +190,7 @@
 
     // --- 2. TEXTURES & ASSETS ---
     const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Now with Cave Tunnels!", "Accurate Hardness!", "Water proof!", "Don't dig straight down!"];
+    const authenticSplashes = ["Dynamic Eye Adjustment!", "Perfectly lit caves!", "Ores everywhere!", "No more floating torches!", "Water proof!", "Don't dig straight down!"];
 
     function getDmgLevel(type, damage) {
         if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe') && !type.endsWith('_shovel') && !type.endsWith('_sword') && !type.endsWith('_hoe'))) return 0;
@@ -476,7 +476,7 @@
 
     function processCraft(arr, resultType, amount) { playSound('click'); arr.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount, 0); }
 
-    // --- 4. 3D VOXEL ENGINE (TRUE SHADOWS) ---
+    // --- 4. 3D VOXEL ENGINE (TRUE SHADOWS & EYE ADJUSTMENT) ---
     const sc = new THREE.Scene(); const skyColor = 0x88BBEB; sc.background = new THREE.Color(skyColor); sc.fog = new THREE.Fog(skyColor, 4, 30);
 
     const cameraGroup = new THREE.Group(); sc.add(cameraGroup);
@@ -487,8 +487,8 @@
     rnd.shadowMap.enabled = true; rnd.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(rnd.domElement);
     
-    // VIRTUALLY ZERO AMBIENT LIGHT (Pitch Black Caves)
-    const amb = new THREE.AmbientLight(0xffffff, 0.02); sc.add(amb); 
+    // Ambient starts bright for the surface (so shadows aren't pitch black)
+    const amb = new THREE.AmbientLight(0xffffff, 0.45); sc.add(amb); 
     const sun = new THREE.DirectionalLight(0xffeedd, 0.9); 
     sun.castShadow = true; 
     sun.shadow.camera.left = -60; sun.shadow.camera.right = 60;
@@ -601,14 +601,18 @@
 
             let tX = x, tY = y, tZ = z;
             if(faceNormal) {
-                if (faceNormal.x > 0.5) { tX -= 0.35; b.rotation.z = -0.3; } else if (faceNormal.x < -0.5) { tX += 0.35; b.rotation.z = 0.3; }
-                else if (faceNormal.z > 0.5) { tZ -= 0.35; b.rotation.x = 0.3; } else if (faceNormal.z < -0.5) { tZ += 0.35; b.rotation.x = -0.3; }
+                // Perfect wall attachment math
+                let nx = Math.round(faceNormal.x); let nz = Math.round(faceNormal.z);
+                if (nx > 0) { tX -= 0.35; b.rotation.z = -0.3; } 
+                else if (nx < 0) { tX += 0.35; b.rotation.z = 0.3; }
+                else if (nz > 0) { tZ -= 0.35; b.rotation.x = 0.3; } 
+                else if (nz < 0) { tZ += 0.35; b.rotation.x = -0.3; }
                 else { tY -= 0.2; }
             } else { tY -= 0.2; }
             b.position.set(tX, tY, tZ);
             
             // STRONG TORCH LIGHT
-            let tLight = new THREE.PointLight(0xffcd88, 1.5, 15, 1); 
+            let tLight = new THREE.PointLight(0xffcd88, 2.0, 15, 1); 
             b.add(tLight); b.light = tLight;
             b.type = 'torch';
         } else if (type === 'furnace') {
@@ -628,9 +632,7 @@
     function placeB(x, y, z, type, faceNormal=null) {
         voxels.set(`${x},${y},${z}`, type);
         if(type === 'torch' || type === 'furnace') { addDynamicBlock(x,y,z,type, faceNormal); }
-        else {
-            markChunkDirty(x, z); markChunkDirty(x+1, z); markChunkDirty(x-1, z); markChunkDirty(x, z+1); markChunkDirty(x, z-1);
-        }
+        else { markChunkDirty(x, z); markChunkDirty(x+1, z); markChunkDirty(x-1, z); markChunkDirty(x, z+1); markChunkDirty(x, z-1); }
     }
 
     function removeB(x, y, z) {
@@ -649,6 +651,14 @@
         }
         voxels.delete(key);
         markChunkDirty(x, z); markChunkDirty(x+1, z); markChunkDirty(x-1, z); markChunkDirty(x, z+1); markChunkDirty(x, z-1);
+        
+        // Break torch resting on top of this broken block
+        let topKey = `${x},${y+1},${z}`;
+        if(voxels.get(topKey) === 'torch') {
+            removeB(x, y+1, z);
+            dropItemIntoWorld('torch', 1, 0);
+            drops[drops.length-1].mesh.position.set(x, y+1, z);
+        }
     }
 
     function generateChunkVolume(cx, cz) {
@@ -691,7 +701,8 @@
             }
         }
         
-        for(let i=0; i<15; i++) {
+        // Massive increase to Ore Generation
+        for(let i=0; i<30; i++) {
             let ox = cx * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oz = cz * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oy = Math.floor(Math.random() * 40) - 35; // y between -35 and +5
@@ -700,7 +711,7 @@
                 ox += Math.floor(Math.random()*3)-1; oy += Math.floor(Math.random()*3)-1; oz += Math.floor(Math.random()*3)-1;
             }
         }
-        for(let i=0; i<8; i++) {
+        for(let i=0; i<18; i++) {
             let ox = cx * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oz = cz * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oy = Math.floor(Math.random() * 35) - 45; // y between -45 and -10
@@ -728,10 +739,7 @@
         let start = performance.now();
         while(initialLoadQueue.length > 0 && performance.now() - start < 20) {
             let c = initialLoadQueue.shift(); let cKey = `${c.x},${c.z}`;
-            if(!chunks.has(cKey)) {
-                generateChunkVolume(c.x, c.z);
-                let chunk = new Chunk(c.x, c.z); chunks.set(cKey, chunk);
-            }
+            if(!chunks.has(cKey)) { generateChunkVolume(c.x, c.z); let chunk = new Chunk(c.x, c.z); chunks.set(cKey, chunk); }
         }
         document.getElementById('loading-bar-fill').style.width = (((initialLoadTotal - initialLoadQueue.length) / initialLoadTotal) * 100) + '%';
         if(initialLoadQueue.length > 0) { requestAnimationFrame(processLoad); } 
@@ -765,9 +773,7 @@
             pos.addScaledVector(dir, step);
             let bx = Math.round(pos.x), by = Math.round(pos.y), bz = Math.round(pos.z); let k = `${bx},${by},${bz}`;
             if(voxels.has(k)) {
-                if(voxels.get(k) === 'torch') {
-                    if (Math.abs(pos.x - bx) > 0.25 || Math.abs(pos.z - bz) > 0.25) continue;
-                }
+                if(voxels.get(k) === 'torch') { if (Math.abs(pos.x - bx) > 0.25 || Math.abs(pos.z - bz) > 0.25) continue; }
                 let nx = Math.max(-1, Math.min(1, lastBx - bx)), ny = Math.max(-1, Math.min(1, lastBy - by)), nz = Math.max(-1, Math.min(1, lastBz - bz));
                 if(Math.abs(nx) + Math.abs(ny) + Math.abs(nz) !== 1) {
                     if (Math.abs(dir.x) > Math.abs(dir.y) && Math.abs(dir.x) > Math.abs(dir.z)) { nx = -Math.sign(dir.x); ny=0; nz=0; } else if (Math.abs(dir.y) > Math.abs(dir.z)) { ny = -Math.sign(dir.y); nx=0; nz=0; } else { nz = -Math.sign(dir.z); nx=0; ny=0; }
@@ -821,6 +827,30 @@
       sun.position.set(camIntX + 30, 100, camIntZ + 30);
       sun.target.position.set(camIntX, 0, camIntZ);
       sun.target.updateMatrixWorld();
+      
+      // Dynamic Eye Adjustment Script (The True Darkness fix)
+      let pX = Math.floor(cameraGroup.position.x);
+      let pZ = Math.floor(cameraGroup.position.z);
+      let sY = getSurfaceH(pX, pZ);
+      let inCave = false;
+      let pY = Math.floor(cameraGroup.position.y);
+      for(let cy = pY; cy <= sY + 2; cy++) {
+          let t = voxels.get(`${pX},${cy},${pZ}`);
+          if(t && t !== 'torch' && t !== 'leaves') { inCave = true; break; }
+      }
+      
+      let targetAmbient = 0.45;
+      let targetFogColor = new THREE.Color(skyColor);
+      
+      if (inCave) {
+          let depth = (sY - pY);
+          let darkness = Math.max(0.02, 0.2 - (depth * 0.015)); 
+          targetAmbient = darkness;
+          targetFogColor.setHex(0x050505);
+      }
+      amb.intensity = THREE.MathUtils.lerp(amb.intensity, targetAmbient, 0.05);
+      sc.fog.color.lerp(targetFogColor, 0.05);
+      sc.background.lerp(targetFogColor, 0.05);
 
       if(gameState === "PLAYING" && gameplayChunkQueue.length > 0) {
           let c = gameplayChunkQueue.shift();
@@ -1005,7 +1035,6 @@
                         if (!canHarvest) dropName = null; 
                         if(dropName) { 
                             dropItemIntoWorld(dropName, 1, 0); 
-                            // THE STUCK ITEM FIX
                             let pushDir = new THREE.Vector3().subVectors(cameraGroup.position, new THREE.Vector3(miningTarget.x, miningTarget.y, miningTarget.z)).normalize().multiplyScalar(0.4);
                             drops[drops.length-1].mesh.position.set(miningTarget.x + pushDir.x, miningTarget.y + pushDir.y + 0.5, miningTarget.z + pushDir.z); 
                             drops[drops.length-1].spawnTime = Date.now() - 1500; 
@@ -1049,6 +1078,7 @@
         else if(e.button === 2) {
           if(hit.name === 'crafting_table') { setMenu('CRAFTING'); return; }
           if(hit.name === 'furnace') { activeFurnacePos = `${hit.x},${hit.y},${hit.z}`; setMenu('FURNACE'); return; }
+          if(item.type === 'torch' && hit.normal.y === -1) return; // FIX: No ceiling torches
           
           if(item.type && item.count > 0 && item.type !== 'stick' && item.type !== 'charcoal' && item.type !== 'coal' && item.type !== 'iron_ingot' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
             let pX = hit.x + hit.normal.x, pY = hit.y + hit.normal.y, pZ = hit.z + hit.normal.z;
