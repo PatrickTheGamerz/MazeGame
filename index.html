@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.50 - Infinite Map & Deep Caves Update</title>
+  <title>ORANGECRAFT Alpha 1.60 - The Iron & Darkness Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -162,7 +162,7 @@
             let noise = audioCtx.createBufferSource(); noise.buffer = buffer; 
             noise.playbackRate.value = 0.85 + Math.random() * 0.3;
             let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; 
-            if (blockName === 'stone' || blockName === 'cobblestone' || blockName === 'bedrock' || blockName === 'furnace' || blockName === 'coal_ore' || blockName === 'coal_block') { filter.frequency.value = 1800; filter.type = 'highpass'; } 
+            if (blockName === 'stone' || blockName === 'cobblestone' || blockName === 'bedrock' || blockName === 'furnace' || blockName === 'coal_ore' || blockName === 'coal_block' || blockName === 'iron_ore' || blockName === 'iron_block') { filter.frequency.value = 1800; filter.type = 'highpass'; } 
             else if (blockName === 'wood' || blockName === 'planks' || blockName === 'crafting_table' || blockName === 'torch') { filter.frequency.value = 600; } 
             else if (blockName === 'leaves') { filter.frequency.value = 2500; filter.type = 'bandpass'; } 
             else { filter.frequency.value = 350; } 
@@ -190,11 +190,11 @@
 
     // --- 2. TEXTURES & ASSETS ---
     const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Smooth as butter!", "More polygons!", "Water proof!", "Infinite generation!"];
+    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Now with Iron!", "Pitch black caves!", "Water proof!", "Don't dig straight down!"];
 
     function getDmgLevel(type, damage) {
         if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe') && !type.endsWith('_shovel') && !type.endsWith('_sword') && !type.endsWith('_hoe'))) return 0;
-        let maxD = type.startsWith('stone_') ? 131 : 59;
+        let maxD = type.startsWith('iron_') ? 250 : (type.startsWith('stone_') ? 131 : 59);
         if (damage > maxD * 0.75) return 2; if (damage > maxD * 0.4) return 1; return 0;
     }
 
@@ -209,30 +209,35 @@
 
         const pWood = {'H':'#5c3a21', 'h':'#9c774a', 'S':'#36200b', 's':'#8a5c34', '_':null};
         const pStone = {'H':'#4a4a4a', 'h':'#828282', 'S':'#36200b', 's':'#8a5c34', '_':null};
+        const pIron = {'H':'#d8d8d8', 'h':'#f5f5f5', 'S':'#36200b', 's':'#8a5c34', '_':null};
         const pFurn = {'C':'#5a5a5a', 'B':'#6a6a6a', 'A':'#828282', 'D':'#4a4a4a', 'X':'#111', 'O':'#ffa500', 'Y':'#ffff00', 'W':'#ffffff'};
 
         if (type === 'stone') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e'}, 'ABACACABABAACABA'+'CABAABACABCAABAC'+'AABACABAABACABAA'+'BACABAABACABAACA'+'ACABCAABACABCAAB'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABAACA'+'ACABAACABCAABACA'+'CABAABACABAABACA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); } 
         else if (type === 'coal_ore') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#111', 'x':'#333'}, 'ABACACABABAACABA'+'CABAABxCABCAABAC'+'AABAXxBAABACABAA'+'BACxXXxBACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACxBAABACABCA'+'BACABXxBACABACAB'+'ABCAAxACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACxXxCABCAxXABCA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
-        else if (type === 'wooden_pickaxe' || type === 'stone_pickaxe') {
+        else if (type === 'iron_ore') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#eac9b6', 'x':'#d8af93'}, 'ABACACABABAACABA'+'CABAABXCABCAABAC'+'AABACxBAABACABAA'+'BACABAABACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABXxBACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACABAACABCAABACA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
+        else if (type === 'iron_block') { drawPixelMap(ctx, {'A':'#ffffff','B':'#e5e5e5','C':'#d8d8d8','D':'#cccccc'}, 'BBBBBBBBBBBBBBBB'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BCCCCCCCCCCCCCCD'+'CDDDDDDDDDDDDDDD'); }
+        else if (type.endsWith('_pickaxe')) {
             let mapArr = ("__HHHHHHH_______"+"_HhhhhhhhH______"+"HhH__sS__HhH____"+"HH___sS___HH____"+"_____sS_________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________"+"________________"+"________________").split('');
             if (dmgLevel >= 1) { mapArr[2*16+11] = '_'; mapArr[3*16+10] = '_'; } if (dmgLevel >= 2) { mapArr[2*16+0] = '_'; mapArr[3*16+0] = '_'; mapArr[3*16+1] = '_'; }
-            drawPixelMap(ctx, type.startsWith('wood') ? pWood : pStone, mapArr.join(''));
-        } else if (type === 'wooden_axe' || type === 'stone_axe') {
+            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : pStone), mapArr.join(''));
+        } else if (type.endsWith('_axe')) {
             let mapArr = ("__HHHH__________"+"_HhhhhH_________"+"_HhhhhH_________"+"_HhhH_sS________"+"__HH__sS________"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________"+"________________").split('');
             if (dmgLevel >= 1) { mapArr[2*16+6] = '_'; mapArr[3*16+5] = '_'; } if (dmgLevel >= 2) { mapArr[1*16+1] = '_'; mapArr[4*16+2] = '_'; }
-            drawPixelMap(ctx, type.startsWith('wood') ? pWood : pStone, mapArr.join(''));
-        } else if (type === 'wooden_shovel' || type === 'stone_shovel') {
+            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : pStone), mapArr.join(''));
+        } else if (type.endsWith('_shovel')) {
             let mapArr = ("_______HHH______"+"______HhhhH_____"+"______HhhhH_____"+"_______HhH______"+"________sS______"+"_______sS_______"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________").split('');
             if (dmgLevel >= 1) { mapArr[1*16+6] = '_'; mapArr[2*16+6] = '_'; } if (dmgLevel >= 2) { mapArr[1*16+10] = '_'; mapArr[3*16+9] = '_'; }
-            drawPixelMap(ctx, type.startsWith('wood') ? pWood : pStone, mapArr.join(''));
-        } else if (type === 'wooden_sword' || type === 'stone_sword') {
+            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : pStone), mapArr.join(''));
+        } else if (type.endsWith('_sword')) {
             let mapArr = ("______________H_"+"_____________HhH"+"____________HhhH"+"___________HhhH_"+"__________HhhH__"+"_________HhhH___"+"________HhhH____"+"_______HhhH_____"+"__HH__HhhH______"+"_HhhH_HhH_______"+"HhHhhHH_H_______"+"HhhHh_sS________"+"_HH__sS_________"+"____sS__________"+"___sS___________"+"___S____________").split('');
             if (dmgLevel >= 1) { mapArr[1*16+14] = '_'; mapArr[2*16+13] = '_'; } if (dmgLevel >= 2) { mapArr[3*16+12] = '_'; mapArr[4*16+11] = '_'; }
-            drawPixelMap(ctx, type.startsWith('wood') ? pWood : pStone, mapArr.join(''));
-        } else if (type === 'wooden_hoe' || type === 'stone_hoe') {
+            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : pStone), mapArr.join(''));
+        } else if (type.endsWith('_hoe')) {
             let mapArr = ("____HHHHH_______"+"___HhhhhhH______"+"___HhH__HhH_____"+"___HH____sS_____"+"_________sS_____"+"________sS______"+"_______sS_______"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________").split('');
             if (dmgLevel >= 1) { mapArr[1*16+9] = '_'; mapArr[2*16+9] = '_'; } if (dmgLevel >= 2) { mapArr[1*16+3] = '_'; mapArr[3*16+3] = '_'; }
-            drawPixelMap(ctx, type.startsWith('wood') ? pWood : pStone, mapArr.join(''));
+            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : pStone), mapArr.join(''));
+        } else if (type === 'iron_ingot') {
+            drawPixelMap(ctx, {'A':'#000','B':'#555','C':'#fff','D':'#ccc','_':null}, '________________'+'________________'+'________________'+'________________'+'_____BCCCCCB____'+'____BCDDDDDCB___'+'___BCDDDDDDDCB__'+'___BCCCCCCCCCB__'+'____BBBBBBBBB___'+'________________'+'________________'+'________________'+'________________'+'________________'+'________________'+'________________');
         } else if (type === 'coal') {
             drawPixelMap(ctx, {'A':'#000','B':'#111','C':'#222','D':'#333','_':null}, '________________'+'________________'+'______BCC_______'+'_____CDABC______'+'____CCABABC_____'+'___BCBABABBC____'+'___CCAAABABC____'+'____CBABABBC____'+'_____BCAACC_____'+'______BCCC______'+'________________'+'________________'+'________________'+'________________'+'________________'+'________________');
         } else if (type === 'charcoal') {
@@ -266,7 +271,7 @@
         else if (type === 'leaves') { ctx.clearRect(0,0,16,16); for(let x=0; x<16; x++) { for(let y=0; y<16; y++) { if((x+y)%2===0 || Math.random()>0.7) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); } } } }
 
         imgDataUrls[cacheKey] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; 
-        if(type === 'leaves' || type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) t.transparent = true; 
+        if(type === 'leaves' || type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) t.transparent = true; 
         texCache[cacheKey] = t; return t;
     }
 
@@ -278,7 +283,6 @@
         return new THREE.MeshBasicMaterial({ map: t, transparent: true, polygonOffset: true, polygonOffsetFactor: -1, depthWrite: false });
     });
 
-    // Generate Background Dirt
     genTex('dirt'); document.querySelectorAll('.dirt-bg').forEach(el => el.style.backgroundImage = `url(${imgDataUrls['dirt_0']})`);
 
     // --- 3. UI, INVENTORY, & LOGIC ---
@@ -307,7 +311,7 @@
         if(type === 'crafting_table') { genTex('ctTop'); genTex('ctSide'); } else if(type === 'wood') { genTex('woodTop'); genTex('wood'); } else if(type === 'grass') { genTex('grass'); genTex('grassSide'); } else if (type === 'farmland') { genTex('farmlandTop'); genTex('dirt'); } else if (type === 'furnace') { genTex('furnaceTop'); genTex('furnaceSide'); genTex('furnaceFront'); } else genTex(type, dmgLevel);
         
         let html = '';
-        if(type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
+        if(type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
             let cacheKey = type + '_' + dmgLevel;
             html = `<div class="item-2d" style="background-image:url(${imgDataUrls[cacheKey]})"></div>`;
         } else {
@@ -317,7 +321,7 @@
         }
 
         if(type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
-            let maxD = type.startsWith('stone_') ? 131 : 59;
+            let maxD = type.startsWith('iron_') ? 250 : (type.startsWith('stone_') ? 131 : 59);
             if (damage > 0) {
                 let pct = (maxD - damage) / maxD; let color = pct > 0.5 ? '#0f0' : (pct > 0.2 ? '#fa0' : '#f00');
                 html += `<div style="position:absolute;bottom:2px;left:4px;width:28px;height:4px;background:#000;border:1px solid #222;box-sizing:border-box;"><div style="width:${pct*100}%;height:100%;background:${color};"></div></div>`;
@@ -378,7 +382,7 @@
       }
     }
 
-    const smeltingRecipes = {'cobblestone': 'stone', 'wood': 'charcoal', 'coal_ore': 'coal'};
+    const smeltingRecipes = {'cobblestone': 'stone', 'wood': 'charcoal', 'coal_ore': 'coal', 'iron_ore': 'iron_ingot'};
 
     function getFuelTime(item) {
         if(!item || !item.type) return 0;
@@ -438,11 +442,13 @@
       let c3 = crafting3x3.map(s => s.type); let tot3 = crafting3x3.filter(c => c.type).length;
       if (tot3 === 1 && c3.includes('wood')) { updateSlotDOM(out3, {type:'planks', count:4}); out3.onclick = () => processCraft(crafting3x3, 'planks', 4); }
       else if (tot3 === 1 && c3.includes('coal_block')) { updateSlotDOM(out3, {type:'coal', count:9}); out3.onclick = () => processCraft(crafting3x3, 'coal', 9); }
+      else if (tot3 === 1 && c3.includes('iron_block')) { updateSlotDOM(out3, {type:'iron_ingot', count:9}); out3.onclick = () => processCraft(crafting3x3, 'iron_ingot', 9); }
       else if (tot3 === 2 && ((c3[0]==='planks'&&c3[3]==='planks')||(c3[1]==='planks'&&c3[4]==='planks')||(c3[2]==='planks'&&c3[5]==='planks')||(c3[3]==='planks'&&c3[6]==='planks')||(c3[4]==='planks'&&c3[7]==='planks')||(c3[5]==='planks'&&c3[8]==='planks'))) { updateSlotDOM(out3, {type:'stick', count:4}); out3.onclick = () => processCraft(crafting3x3, 'stick', 4); }
       else if (tot3 === 2 && (((c3[0]==='coal'||c3[0]==='charcoal')&&c3[3]==='stick')||((c3[1]==='coal'||c3[1]==='charcoal')&&c3[4]==='stick')||((c3[2]==='coal'||c3[2]==='charcoal')&&c3[5]==='stick')||((c3[3]==='coal'||c3[3]==='charcoal')&&c3[6]==='stick')||((c3[4]==='coal'||c3[4]==='charcoal')&&c3[7]==='stick')||((c3[5]==='coal'||c3[5]==='charcoal')&&c3[8]==='stick'))) { updateSlotDOM(out3, {type:'torch', count:4}); out3.onclick = () => processCraft(crafting3x3, 'torch', 4); }
       else if (tot3 === 4) { let p = 'planks'; if ((c3[0]===p&&c3[1]===p&&c3[3]===p&&c3[4]===p) || (c3[1]===p&&c3[2]===p&&c3[4]===p&&c3[5]===p) || (c3[3]===p&&c3[4]===p&&c3[6]===p&&c3[7]===p) || (c3[4]===p&&c3[5]===p&&c3[7]===p&&c3[8]===p)) { updateSlotDOM(out3, {type:'crafting_table', count:1}); out3.onclick = () => processCraft(crafting3x3, 'crafting_table', 1); } }
       else if (tot3 === 8 && c3[4] === null && c3.every((v, i) => i === 4 || v === 'cobblestone')) { updateSlotDOM(out3, {type:'furnace', count:1}); out3.onclick = () => processCraft(crafting3x3, 'furnace', 1); }
       else if (tot3 === 9 && !c3.includes(null) && c3.every(v=>v==='coal')) { updateSlotDOM(out3, {type:'coal_block', count:1}); out3.onclick = () => processCraft(crafting3x3, 'coal_block', 1); }
+      else if (tot3 === 9 && !c3.includes(null) && c3.every(v=>v==='iron_ingot')) { updateSlotDOM(out3, {type:'iron_block', count:1}); out3.onclick = () => processCraft(crafting3x3, 'iron_block', 1); }
       
       let p='planks', s='stick';
       let checkPick = (m1, m2) => (c3[0]===m1||c3[0]===m2) && (c3[1]===m1||c3[1]===m2) && (c3[2]===m1||c3[2]===m2) && c3[4]===s && c3[7]===s && !c3[3] && !c3[5] && !c3[6] && !c3[8];
@@ -453,14 +459,19 @@
 
       if(checkPick(p,p)) { updateSlotDOM(out3, {type:'wooden_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_pickaxe', 1); }
       else if(checkPick('cobblestone','stone')) { updateSlotDOM(out3, {type:'stone_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_pickaxe', 1); }
+      else if(checkPick('iron_ingot','iron_ingot')) { updateSlotDOM(out3, {type:'iron_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'iron_pickaxe', 1); }
       else if(checkAxe(p,p)) { updateSlotDOM(out3, {type:'wooden_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_axe', 1); }
       else if(checkAxe('cobblestone','stone')) { updateSlotDOM(out3, {type:'stone_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_axe', 1); }
+      else if(checkAxe('iron_ingot','iron_ingot')) { updateSlotDOM(out3, {type:'iron_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'iron_axe', 1); }
       else if(checkHoe(p,p)) { updateSlotDOM(out3, {type:'wooden_hoe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_hoe', 1); }
       else if(checkHoe('cobblestone','stone')) { updateSlotDOM(out3, {type:'stone_hoe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_hoe', 1); }
+      else if(checkHoe('iron_ingot','iron_ingot')) { updateSlotDOM(out3, {type:'iron_hoe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'iron_hoe', 1); }
       else if(checkShovel(p,p)) { updateSlotDOM(out3, {type:'wooden_shovel', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_shovel', 1); }
       else if(checkShovel('cobblestone','stone')) { updateSlotDOM(out3, {type:'stone_shovel', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_shovel', 1); }
+      else if(checkShovel('iron_ingot','iron_ingot')) { updateSlotDOM(out3, {type:'iron_shovel', count:1}); out3.onclick = () => processCraft(crafting3x3, 'iron_shovel', 1); }
       else if(checkSword(p,p)) { updateSlotDOM(out3, {type:'wooden_sword', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_sword', 1); }
       else if(checkSword('cobblestone','stone')) { updateSlotDOM(out3, {type:'stone_sword', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_sword', 1); }
+      else if(checkSword('iron_ingot','iron_ingot')) { updateSlotDOM(out3, {type:'iron_sword', count:1}); out3.onclick = () => processCraft(crafting3x3, 'iron_sword', 1); }
     }
 
     function processCraft(arr, resultType, amount) { playSound('click'); arr.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount, 0); }
@@ -476,9 +487,9 @@
     rnd.shadowMap.enabled = true; rnd.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(rnd.domElement);
     
-    // ADJUSTED LIGHTING & SHADOWS
-    const amb = new THREE.AmbientLight(0xffffff, 0.6); sc.add(amb); 
-    const sun = new THREE.DirectionalLight(0xffeedd, 0.7); 
+    // TWEAKED LIGHTING FOR DARK CAVES
+    const amb = new THREE.AmbientLight(0xffffff, 0.35); sc.add(amb); 
+    const sun = new THREE.DirectionalLight(0xffeedd, 0.75); 
     sun.castShadow = true; 
     sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
     sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
@@ -492,15 +503,15 @@
     const dynamicBlocks = new Map();
     const chunks = new Map();
     const CHUNK_SIZE = 8, RENDER_DIST = 4; 
+    const transparentBlocks = ['leaves', 'torch']; // Fix for leaves hiding wood!
 
-    // IMPROVED TERRAIN MATH
+    // CAVE & TERRAIN MATH
     function getSurfaceH(x, z) {
         let h = Math.sin(x*0.02)*10 + Math.cos(z*0.02)*10; 
         h += Math.sin(x*0.08 + z*0.05)*3; 
         return Math.floor(h);
     }
     
-    // TRUE 3D CAVE WORMS
     function isCaveNoise(x, y, z) {
         let n1 = Math.sin(x*0.08) + Math.cos(y*0.08) + Math.sin(z*0.08);
         let n2 = Math.cos(x*0.13 - y*0.11) + Math.sin(z*0.13 + x*0.05);
@@ -513,7 +524,7 @@
         return t && t !== 'torch'; 
     }
 
-    // Advanced Chunk Mesher
+    // Advanced Chunk Mesher with Depth Occlusion
     class Chunk {
         constructor(cx, cz) {
             this.cx = cx; this.cz = cz;
@@ -524,26 +535,27 @@
         }
         update() {
             while(this.group.children.length > 0) {
-                let m = this.group.children[0];
-                this.group.remove(m);
-                if(m.dispose) m.dispose();
+                let m = this.group.children[0]; this.group.remove(m); if(m.dispose) m.dispose();
             }
-            this.meshes = {};
-            let counts = {};
-            let blocks = [];
+            this.meshes = {}; let counts = {}; let blocks = [];
             for(let x=0; x<CHUNK_SIZE; x++){
                 for(let z=0; z<CHUNK_SIZE; z++){
-                    let ax = this.cx*CHUNK_SIZE + x;
-                    let az = this.cz*CHUNK_SIZE + z;
-                    for(let y=getSurfaceH(ax,az)+5; y>=-46; y--){
+                    let ax = this.cx*CHUNK_SIZE + x; let az = this.cz*CHUNK_SIZE + z;
+                    let surfaceH = getSurfaceH(ax,az);
+                    for(let y=surfaceH+5; y>=-46; y--){
                         let t = voxels.get(`${ax},${y},${az}`);
                         if(t && t !== 'torch' && t !== 'furnace') {
-                            let exposed = !voxels.has(`${ax+1},${y},${az}`) || !voxels.has(`${ax-1},${y},${az}`) ||
-                                          !voxels.has(`${ax},${y+1},${az}`) || !voxels.has(`${ax},${y-1},${az}`) ||
-                                          !voxels.has(`${ax},${y},${az+1}`) || !voxels.has(`${ax},${y},${az-1}`);
+                            // Check exposed status taking transparent blocks into account
+                            let exposed = false;
+                            const adjs = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+                            for(let off of adjs) {
+                                let nType = voxels.get(`${ax+off[0]},${y+off[1]},${az+off[2]}`);
+                                if(!nType || transparentBlocks.includes(nType)) { exposed = true; break; }
+                            }
+
                             if(exposed) {
                                 counts[t] = (counts[t] || 0) + 1;
-                                blocks.push({x: ax, y: y, z: az, t: t});
+                                blocks.push({x: ax, y: y, z: az, t: t, sH: surfaceH});
                             }
                         }
                     }
@@ -559,17 +571,23 @@
 
                 let im = new THREE.InstancedMesh(boxG, mat, counts[t]);
                 im.castShadow = true; im.receiveShadow = true;
-                this.group.add(im);
-                this.meshes[t] = { mesh: im, idx: 0 };
+                this.group.add(im); this.meshes[t] = { mesh: im, idx: 0 };
             }
             let dummy = new THREE.Object3D();
             for(let b of blocks) {
                 dummy.position.set(b.x, b.y, b.z); dummy.updateMatrix();
                 let minfo = this.meshes[b.t];
                 minfo.mesh.setMatrixAt(minfo.idx, dummy.matrix);
+                
+                // Depth-Shading for pitch black caves
+                let sky = true;
+                for(let cy=b.y+1; cy<=b.sH+1; cy++){ let type = voxels.get(`${b.x},${cy},${b.z}`); if(type && type!=='leaves' && type!=='torch') { sky=false; break; } }
+                let l = sky ? 1.0 : Math.max(0.05, 0.7 - (b.sH - b.y)*0.05);
+                minfo.mesh.setColorAt(minfo.idx, new THREE.Color(l, l, l));
+
                 minfo.idx++;
             }
-            for(let t in this.meshes) { this.meshes[t].mesh.instanceMatrix.needsUpdate = true; }
+            for(let t in this.meshes) { this.meshes[t].mesh.instanceMatrix.needsUpdate = true; if(this.meshes[t].mesh.instanceColor) this.meshes[t].mesh.instanceColor.needsUpdate = true; }
             this.dirty = false;
         }
     }
@@ -647,17 +665,20 @@
                 let absX = cx * CHUNK_SIZE + x, absZ = cz * CHUNK_SIZE + z; 
                 let h = getSurfaceH(absX, absZ);
                 
-                // OVERWRITE PROTECTION: Only place ground if it doesn't exist
                 if(!voxels.has(`${absX},${h},${absZ}`)) voxels.set(`${absX},${h},${absZ}`, 'grass');
                 
                 for(let y=h-1; y>=-45; y--) {
                     let k = `${absX},${y},${absZ}`;
-                    if (!voxels.has(k)) { // OVERWRITE PROTECTION
+                    if (!voxels.has(k)) { 
                         if (!isCaveNoise(absX, y, absZ)) {
                             if (y >= h-3) voxels.set(k, 'dirt');
                             else {
-                                let isCoal = (Math.sin(absX*0.6) + Math.cos(y*0.6) + Math.sin(absZ*0.6)) > 2.2;
-                                if (isCoal && y < h - 4 && y > -35) voxels.set(k, 'coal_ore');
+                                // Tighter Coal & Deep Iron Ores
+                                let isCoal = (Math.sin(absX*0.8) + Math.cos(y*0.8) + Math.sin(absZ*0.8)) > 2.5;
+                                let isIron = (Math.sin(absX*0.9+10) + Math.cos(y*0.9+10) + Math.sin(absZ*0.9+10)) > 2.5 && y < -10;
+                                
+                                if (isCoal && y < h - 4) voxels.set(k, 'coal_ore');
+                                else if (isIron) voxels.set(k, 'iron_ore');
                                 else voxels.set(k, 'stone');
                             }
                         }
@@ -741,6 +762,10 @@
             pos.addScaledVector(dir, step);
             let bx = Math.round(pos.x), by = Math.round(pos.y), bz = Math.round(pos.z); let k = `${bx},${by},${bz}`;
             if(voxels.has(k)) {
+                // Torch Hitbox Fix! Ray passes through if not aiming near center
+                if(voxels.get(k) === 'torch') {
+                    if (Math.abs(pos.x - bx) > 0.25 || Math.abs(pos.z - bz) > 0.25) continue;
+                }
                 let nx = Math.max(-1, Math.min(1, lastBx - bx)), ny = Math.max(-1, Math.min(1, lastBy - by)), nz = Math.max(-1, Math.min(1, lastBz - bz));
                 if(Math.abs(nx) + Math.abs(ny) + Math.abs(nz) !== 1) {
                     if (Math.abs(dir.x) > Math.abs(dir.y) && Math.abs(dir.x) > Math.abs(dir.z)) { nx = -Math.sign(dir.x); ny=0; nz=0; } else if (Math.abs(dir.y) > Math.abs(dir.z)) { ny = -Math.sign(dir.y); nx=0; nz=0; } else { nz = -Math.sign(dir.z); nx=0; ny=0; }
@@ -757,7 +782,7 @@
             let dir = new THREE.Vector3(); cam.getWorldDirection(dir); let dropPos = cameraGroup.position.clone().addScaledVector(dir, 1.2); dropPos.y += 0.2; 
             let drop, mat;
             
-            if (type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) { 
+            if (type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) { 
                 let group = new THREE.Group();
                 let tex = genTex(type, dmgLevel);
                 let matFront = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide});
@@ -774,7 +799,7 @@
                 else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'}); }
                 drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), mat); drop.castShadow = true;
             }
-            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe') || type==='stick' || type==='charcoal' || type==='coal' || type==='torch', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
+            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe') || type==='stick' || type==='charcoal' || type==='coal' || type==='iron_ingot' || type==='torch', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
         }
     }
 
@@ -789,7 +814,6 @@
       cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.22; cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.22;
       globalTick++;
 
-      // Snapped Shadows Fix (Prevents Shimmering)
       let camIntX = Math.floor(cameraGroup.position.x);
       let camIntZ = Math.floor(cameraGroup.position.z);
       sun.position.set(camIntX + 30, 100, camIntZ + 30);
@@ -801,7 +825,6 @@
           generateChunkVolume(c.x, c.z); let chunk = new Chunk(c.x, c.z); chunk.update(); chunks.set(`${c.x},${c.z}`, chunk);
       }
 
-      // Garbage Collection for Chunks (THE LAG FIX)
       if(globalTick % 60 === 0) {
           let pX = Math.floor(cameraGroup.position.x / CHUNK_SIZE);
           let pZ = Math.floor(cameraGroup.position.z / CHUNK_SIZE);
@@ -886,7 +909,6 @@
             yVel = 0; cameraGroup.position.y = Math.round(nextY) - 0.75; 
         } else { cameraGroup.position.y = nextY; }
 
-        // REMOVED BOUNCING
         cam.position.y = 0;
 
         if(isSolidVoxel(Math.round(cameraGroup.position.x), Math.round(cameraGroup.position.y - 1.6), Math.round(cameraGroup.position.z)) && isMoving && gameState === "PLAYING") {
@@ -899,7 +921,10 @@
           if(d.velDir) { d.mesh.position.x += d.velDir.x; d.mesh.position.z += d.velDir.z; d.velDir.multiplyScalar(0.9); }
           if(isSolidVoxel(Math.round(d.mesh.position.x), Math.floor(d.mesh.position.y - 0.2), Math.round(d.mesh.position.z))) { d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; d.velDir.x=0; d.velDir.z=0; }
           if(!d.is2D) { d.mesh.rotation.y += 0.03; d.mesh.rotation.x += 0.01; } else { d.mesh.rotation.y += 0.05; }
-          if(Date.now() - d.spawnTime > 1500 && cameraGroup.position.distanceTo(d.mesh.position) < 2.5) { d.mesh.position.lerp(cameraGroup.position, 0.25); if(cameraGroup.position.distanceTo(d.mesh.position) < 0.7) { playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); addToInventory(d.type, 1, d.damage); } }
+          
+          // Item Pickup Fix! Attracts to feet, not eyes
+          let pFeet = cameraGroup.position.clone(); pFeet.y -= 1.5;
+          if(Date.now() - d.spawnTime > 1500 && pFeet.distanceTo(d.mesh.position) < 2.5) { d.mesh.position.lerp(pFeet, 0.25); if(pFeet.distanceTo(d.mesh.position) < 0.7) { playSound('click'); sc.remove(d.mesh); drops.splice(i, 1); addToInventory(d.type, 1, d.damage); } }
         });
 
         if(miningTarget && gameState === "PLAYING") {
@@ -913,16 +938,18 @@
                 let name = miningTarget.name;
                 let isPick = activeType && activeType.endsWith('_pickaxe'); let isAxe = activeType && activeType.endsWith('_axe');
                 let isShovel = activeType && activeType.endsWith('_shovel'); let isSword = activeType && activeType.endsWith('_sword'); let isHoe = activeType && activeType.endsWith('_hoe');
+                let isIronPick = activeType === 'iron_pickaxe';
+                let isStonePick = activeType === 'stone_pickaxe';
                 
                 let hardness = 2.5; let canHarvest = true;
-                if (name === 'stone' || name === 'cobblestone' || name === 'furnace' || name === 'coal_ore' || name === 'coal_block') {
-                    if (activeType === 'stone_pickaxe') { hardness = 1.0; } else if (activeType === 'wooden_pickaxe') { hardness = 1.6; } else { hardness = 10.0; canHarvest = false; }
+                if (name === 'stone' || name === 'cobblestone' || name === 'furnace' || name === 'coal_ore' || name === 'coal_block' || name === 'iron_ore' || name === 'iron_block') {
+                    if (isIronPick) { hardness = 0.5; } else if (isStonePick) { hardness = 1.0; if (name === 'iron_ore' || name === 'iron_block') canHarvest = false; } else if (activeType === 'wooden_pickaxe') { hardness = 1.6; if (name === 'iron_ore' || name === 'iron_block') canHarvest = false; } else { hardness = 10.0; canHarvest = false; }
                 } else if (name === 'wood' || name === 'planks' || name === 'crafting_table') { 
-                    if (activeType === 'stone_axe') { hardness = 0.5; } else if (activeType === 'wooden_axe') { hardness = 0.8; } else { hardness = 2.0; }
+                    if (activeType === 'iron_axe') { hardness = 0.25; } else if (activeType === 'stone_axe') { hardness = 0.5; } else if (activeType === 'wooden_axe') { hardness = 0.8; } else { hardness = 2.0; }
                 } else if (name === 'dirt' || name === 'grass' || name === 'farmland') { 
-                    if (activeType === 'stone_shovel') { hardness = 0.15; } else if (activeType === 'wooden_shovel') { hardness = 0.3; } else if (activeType === 'stone_hoe') { hardness = 0.5; } else if (activeType === 'wooden_hoe') { hardness = 0.55; } else { hardness = 0.6; }
+                    if (activeType === 'iron_shovel') { hardness = 0.08; } else if (activeType === 'stone_shovel') { hardness = 0.15; } else if (activeType === 'wooden_shovel') { hardness = 0.3; } else if (activeType === 'iron_hoe' || activeType === 'stone_hoe' || activeType === 'wooden_hoe') { hardness = 0.5; } else { hardness = 0.6; }
                 } else if (name === 'leaves' || name === 'torch') { 
-                    if (activeType === 'stone_sword' || activeType === 'wooden_sword') { hardness = 0.05; } else if (isHoe) { hardness = 0.1; } else { hardness = 0.2; }
+                    if (isSword) { hardness = 0.05; } else if (isHoe) { hardness = 0.1; } else { hardness = 0.2; }
                 }
 
                 miningProgress += 0.025; miningSoundTimer += 0.025;
@@ -936,14 +963,14 @@
                     if (isPick || isAxe || isShovel || isSword || isHoe) {
                         let dmgToTake = 1; if (isSword && name !== 'leaves') dmgToTake = 2; 
                         activeItem.damage = (activeItem.damage || 0) + dmgToTake;
-                        let maxD = activeType.startsWith('stone_') ? 131 : 59;
+                        let maxD = activeType.startsWith('iron_') ? 250 : (activeType.startsWith('stone_') ? 131 : 59);
                         if (activeItem.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
                         updateUI();
                     }
 
                     if(name !== 'leaves') {
                         let dropName = name === 'stone' ? 'cobblestone' : (name === 'grass' || name === 'farmland' ? 'dirt' : (name === 'coal_ore' ? 'coal' : name));
-                        if ((name === 'stone' || name === 'furnace' || name === 'coal_ore' || name === 'coal_block') && !canHarvest) dropName = null; 
+                        if ((name === 'stone' || name === 'furnace' || name === 'coal_ore' || name === 'coal_block' || name === 'iron_ore' || name === 'iron_block') && !canHarvest) dropName = null; 
                         if(dropName) { dropItemIntoWorld(dropName, 1, 0); drops[drops.length-1].mesh.position.set(miningTarget.x, miningTarget.y, miningTarget.z); drops[drops.length-1].spawnTime = Date.now() - 1500; }
                     }
                     miningTarget = null; crackMesh.visible = false;
@@ -973,7 +1000,7 @@
             let topKey = `${hit.x},${hit.y+1},${hit.z}`;
             if(!voxels.has(topKey)) {
                 removeB(hit.x, hit.y, hit.z); placeB(hit.x, hit.y, hit.z, 'farmland'); playSound('dig', 'dirt');
-                item.damage++; let maxD = item.type.startsWith('stone_') ? 131 : 59; if (item.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
+                item.damage++; let maxD = item.type.startsWith('iron_') ? 250 : (item.type.startsWith('stone_') ? 131 : 59); if (item.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
                 updateUI(); return;
             }
         }
@@ -985,7 +1012,7 @@
           if(hit.name === 'crafting_table') { setMenu('CRAFTING'); return; }
           if(hit.name === 'furnace') { activeFurnacePos = `${hit.x},${hit.y},${hit.z}`; setMenu('FURNACE'); return; }
           
-          if(item.type && item.count > 0 && item.type !== 'stick' && item.type !== 'charcoal' && item.type !== 'coal' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
+          if(item.type && item.count > 0 && item.type !== 'stick' && item.type !== 'charcoal' && item.type !== 'coal' && item.type !== 'iron_ingot' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
             let pX = hit.x + hit.normal.x, pY = hit.y + hit.normal.y, pZ = hit.z + hit.normal.z;
             let dx = pX - cameraGroup.position.x, dy = pY - (cameraGroup.position.y - 1.6), dz = pZ - cameraGroup.position.z;
             let overlapY = (cameraGroup.position.y - 1.6) < (pY + 0.5) && (cameraGroup.position.y - 0.1) > (pY - 0.5);
