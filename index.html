@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.40 - The Chunk & Lighting Update</title>
+  <title>ORANGECRAFT Alpha 1.50 - Infinite Map & Deep Caves Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -190,7 +190,7 @@
 
     // --- 2. TEXTURES & ASSETS ---
     const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Let there be light!", "More polygons!", "Water proof!", "Chunk meshing!"];
+    const authenticSplashes = ["Also try Terraria!", "Play him off, keyboard cat!", "Smooth as butter!", "More polygons!", "Water proof!", "Infinite generation!"];
 
     function getDmgLevel(type, damage) {
         if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe') && !type.endsWith('_shovel') && !type.endsWith('_sword') && !type.endsWith('_hoe'))) return 0;
@@ -465,7 +465,7 @@
 
     function processCraft(arr, resultType, amount) { playSound('click'); arr.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount, 0); }
 
-    // --- 4. 3D VOXEL ENGINE (CHUNK MESHING) ---
+    // --- 4. 3D VOXEL ENGINE (CHUNK MESHING & GC) ---
     const sc = new THREE.Scene(); const skyColor = 0x88BBEB; sc.background = new THREE.Color(skyColor); sc.fog = new THREE.Fog(skyColor, 4, 30);
 
     const cameraGroup = new THREE.Group(); sc.add(cameraGroup);
@@ -476,15 +476,15 @@
     rnd.shadowMap.enabled = true; rnd.shadowMap.type = THREE.PCFSoftShadowMap;
     document.body.appendChild(rnd.domElement);
     
-    // NEW LIGHTING
+    // ADJUSTED LIGHTING & SHADOWS
     const amb = new THREE.AmbientLight(0xffffff, 0.6); sc.add(amb); 
     const sun = new THREE.DirectionalLight(0xffeedd, 0.7); 
     sun.castShadow = true; 
-    sun.shadow.camera.left = -25; sun.shadow.camera.right = 25;
-    sun.shadow.camera.top = 25; sun.shadow.camera.bottom = -25;
-    sun.shadow.camera.near = 0.1; sun.shadow.camera.far = 100;
-    sun.shadow.bias = -0.002;
-    sun.shadow.mapSize.width = 1024; sun.shadow.mapSize.height = 1024;
+    sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
+    sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
+    sun.shadow.camera.near = 0.1; sun.shadow.camera.far = 150;
+    sun.shadow.bias = -0.001;
+    sun.shadow.mapSize.width = 2048; sun.shadow.mapSize.height = 2048;
     sc.add(sun); sc.add(sun.target);
 
     const boxG = new THREE.BoxGeometry(1, 1, 1);
@@ -493,16 +493,20 @@
     const chunks = new Map();
     const CHUNK_SIZE = 8, RENDER_DIST = 4; 
 
-    // Improved Cave Generation
+    // IMPROVED TERRAIN MATH
     function getSurfaceH(x, z) {
-        let h = Math.sin(x*0.05)*4 + Math.cos(z*0.05)*4; 
-        h += Math.sin(x*0.1 + z*0.1)*2; 
+        let h = Math.sin(x*0.02)*10 + Math.cos(z*0.02)*10; 
+        h += Math.sin(x*0.08 + z*0.05)*3; 
         return Math.floor(h);
     }
+    
+    // TRUE 3D CAVE WORMS
     function isCaveNoise(x, y, z) {
-        let n1 = Math.sin(x*0.1) + Math.cos(y*0.15) + Math.sin(z*0.1);
-        let n2 = Math.sin(x*0.05 - y*0.05) + Math.cos(z*0.05 + x*0.05);
-        return (n1*0.6 + n2*0.4) > 0.8 && y < getSurfaceH(x,z) - 2;
+        let n1 = Math.sin(x*0.08) + Math.cos(y*0.08) + Math.sin(z*0.08);
+        let n2 = Math.cos(x*0.13 - y*0.11) + Math.sin(z*0.13 + x*0.05);
+        let n3 = Math.sin(y*0.05 + z*0.07) + Math.cos(x*0.07);
+        let val = (n1 + n2 + n3);
+        return val > 1.2 && y < getSurfaceH(x,z);
     }
     function isSolidVoxel(x, y, z) { 
         let t = voxels.get(`${x},${y},${z}`);
@@ -642,19 +646,24 @@
             for(let z = 0; z < CHUNK_SIZE; z++) {
                 let absX = cx * CHUNK_SIZE + x, absZ = cz * CHUNK_SIZE + z; 
                 let h = getSurfaceH(absX, absZ);
-                voxels.set(`${absX},${h},${absZ}`, 'grass');
+                
+                // OVERWRITE PROTECTION: Only place ground if it doesn't exist
+                if(!voxels.has(`${absX},${h},${absZ}`)) voxels.set(`${absX},${h},${absZ}`, 'grass');
                 
                 for(let y=h-1; y>=-45; y--) {
-                    if (!isCaveNoise(absX, y, absZ)) {
-                        if (y >= h-3) voxels.set(`${absX},${y},${absZ}`, 'dirt');
-                        else {
-                            let isCoal = (Math.sin(absX*0.6) + Math.cos(y*0.6) + Math.sin(absZ*0.6)) > 2.2;
-                            if (isCoal && y < h - 4 && y > -35) voxels.set(`${absX},${y},${absZ}`, 'coal_ore');
-                            else voxels.set(`${absX},${y},${absZ}`, 'stone');
+                    let k = `${absX},${y},${absZ}`;
+                    if (!voxels.has(k)) { // OVERWRITE PROTECTION
+                        if (!isCaveNoise(absX, y, absZ)) {
+                            if (y >= h-3) voxels.set(k, 'dirt');
+                            else {
+                                let isCoal = (Math.sin(absX*0.6) + Math.cos(y*0.6) + Math.sin(absZ*0.6)) > 2.2;
+                                if (isCoal && y < h - 4 && y > -35) voxels.set(k, 'coal_ore');
+                                else voxels.set(k, 'stone');
+                            }
                         }
                     }
                 }
-                voxels.set(`${absX},-46,${absZ}`, 'bedrock');
+                if (!voxels.has(`${absX},-46,${absZ}`)) voxels.set(`${absX},-46,${absZ}`, 'bedrock');
                 
                 if(Math.random() < 0.005) { 
                     for(let t=1; t<=4; t++) voxels.set(`${absX},${h+t},${absZ}`, 'wood'); 
@@ -771,7 +780,7 @@
 
     const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.002, 1.002, 1.002), crackMats[0]); crackMesh.renderOrder = 1; sc.add(crackMesh); crackMesh.visible = false;
 
-    let keys = {}, pVel = new THREE.Vector3(), yVel = 0, stepTimer = 0, bobTimer = 0, globalTick = 0;
+    let keys = {}, pVel = new THREE.Vector3(), yVel = 0, stepTimer = 0, globalTick = 0;
 
     function animate() {
       requestAnimationFrame(animate);
@@ -780,9 +789,11 @@
       cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.22; cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.22;
       globalTick++;
 
-      // Follow player with Sun Target for Dynamic Shadows
-      sun.position.set(cameraGroup.position.x + 20, 100, cameraGroup.position.z + 20);
-      sun.target.position.copy(cameraGroup.position);
+      // Snapped Shadows Fix (Prevents Shimmering)
+      let camIntX = Math.floor(cameraGroup.position.x);
+      let camIntZ = Math.floor(cameraGroup.position.z);
+      sun.position.set(camIntX + 30, 100, camIntZ + 30);
+      sun.target.position.set(camIntX, 0, camIntZ);
       sun.target.updateMatrixWorld();
 
       if(gameState === "PLAYING" && gameplayChunkQueue.length > 0) {
@@ -790,11 +801,20 @@
           generateChunkVolume(c.x, c.z); let chunk = new Chunk(c.x, c.z); chunk.update(); chunks.set(`${c.x},${c.z}`, chunk);
       }
 
-      // Update dirty chunks
-      let dirtyUpdateCount = 0;
-      for (let [k, c] of chunks.entries()) {
-          if (c.dirty && dirtyUpdateCount < 1) { c.update(); dirtyUpdateCount++; }
+      // Garbage Collection for Chunks (THE LAG FIX)
+      if(globalTick % 60 === 0) {
+          let pX = Math.floor(cameraGroup.position.x / CHUNK_SIZE);
+          let pZ = Math.floor(cameraGroup.position.z / CHUNK_SIZE);
+          for(let [k, chunk] of chunks.entries()) {
+              if (Math.abs(chunk.cx - pX) > RENDER_DIST + 1 || Math.abs(chunk.cz - pZ) > RENDER_DIST + 1) {
+                  for(let t in chunk.meshes) { chunk.group.remove(chunk.meshes[t].mesh); chunk.meshes[t].mesh.dispose(); }
+                  sc.remove(chunk.group); chunks.delete(k);
+              }
+          }
       }
+
+      let dirtyUpdateCount = 0;
+      for (let [k, c] of chunks.entries()) { if (c.dirty && dirtyUpdateCount < 1) { c.update(); dirtyUpdateCount++; } }
 
       if(globalTick % 2 === 0) { 
           let uiNeedsUpdate = false;
@@ -866,11 +886,13 @@
             yVel = 0; cameraGroup.position.y = Math.round(nextY) - 0.75; 
         } else { cameraGroup.position.y = nextY; }
 
+        // REMOVED BOUNCING
+        cam.position.y = 0;
+
         if(isSolidVoxel(Math.round(cameraGroup.position.x), Math.round(cameraGroup.position.y - 1.6), Math.round(cameraGroup.position.z)) && isMoving && gameState === "PLAYING") {
-            let speed = Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z); stepTimer += speed; bobTimer += speed * (isSprinting ? 1.5 : 1.0);
-            cam.position.y = Math.sin(bobTimer * 10) * 0.1; 
+            let speed = Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z); stepTimer += speed; 
             if(stepTimer > (isSprinting ? 0.7 : 0.5)) { let bName = voxels.get(`${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`); playSound('step', bName || 'grass'); stepTimer = 0; }
-        } else { stepTimer = 0; cam.position.y = THREE.MathUtils.lerp(cam.position.y, 0, 0.1); }
+        } else { stepTimer = 0; }
 
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
