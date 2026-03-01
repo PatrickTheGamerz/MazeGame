@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT Alpha 1.95 - Per-Pixel Lighting & Real Math</title>
+  <title>ORANGECRAFT Alpha 2.0 - The Precision Update</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -190,7 +190,7 @@
 
     // --- 2. TEXTURES & ASSETS ---
     const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = ["Per-Pixel Lighting!", "Smarter Darkness!", "Accurate Math!", "No more stuck items!", "Water proof!", "Don't dig straight down!"];
+    const authenticSplashes = ["Emissive Materials!", "Real Mining Math!", "Trees grow on dirt!", "Items don't get stuck!", "Water proof!", "Don't dig straight down!"];
 
     function getDmgLevel(type, damage) {
         if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe') && !type.endsWith('_shovel') && !type.endsWith('_sword') && !type.endsWith('_hoe'))) return 0;
@@ -476,7 +476,7 @@
 
     function processCraft(arr, resultType, amount) { playSound('click'); arr.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount, 0); }
 
-    // --- 4. 3D VOXEL ENGINE (PER-PIXEL LIGHTING FIX) ---
+    // --- 4. 3D VOXEL ENGINE (EMISSIVE MATERIALS) ---
     const sc = new THREE.Scene(); const skyColor = 0x88BBEB; sc.background = new THREE.Color(skyColor); sc.fog = new THREE.Fog(skyColor, 4, 30);
 
     const cameraGroup = new THREE.Group(); sc.add(cameraGroup);
@@ -559,12 +559,13 @@
             }
             for(let t in counts) {
                 let mat;
-                // CHANGED ALL MATERIALS TO STANDARD FOR TRUE LIGHTING
-                if(t === 'wood'){ mat = [new THREE.MeshStandardMaterial({map: genTex('wood'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('wood'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('woodTop'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('woodTop'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('wood'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('wood'), roughness: 1.0})]; }
-                else if (t === 'crafting_table') { mat = [new THREE.MeshStandardMaterial({map: genTex('ctSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('ctSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('ctTop'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('planks'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('ctSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('ctSide'), roughness: 1.0})]; }
-                else if (t === 'farmland') { mat = [new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('farmlandTop'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0})]; }
-                else if (t === 'grass') { mat = [new THREE.MeshStandardMaterial({map: genTex('grassSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('grassSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('grass'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('grassSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('grassSide'), roughness: 1.0})]; }
-                else { mat = new THREE.MeshStandardMaterial({map: genTex(t), transparent: t==='leaves', alphaTest: 0.5, roughness: 1.0}); }
+                // ADDING EMISSIVE TO PREVENT 100% BLACK ABSORPTION
+                let em = { emissive: 0x050505 }; 
+                if(t === 'wood'){ mat = [new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em})]; }
+                else if (t === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('planks'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em})]; }
+                else if (t === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em})]; }
+                else if (t === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grass'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em})]; }
+                else { mat = new THREE.MeshLambertMaterial({map: genTex(t), transparent: t==='leaves', alphaTest: 0.5, ...em}); }
 
                 let im = new THREE.InstancedMesh(boxG, mat, counts[t]);
                 im.castShadow = true; im.receiveShadow = true;
@@ -589,10 +590,11 @@
 
     function addDynamicBlock(x, y, z, type, faceNormal=null) {
         let key = `${x},${y},${z}`; let b;
+        let em = { emissive: 0x050505 };
         if (type === 'torch') {
             b = new THREE.Group();
             let tex = genTex('torch');
-            let mat = new THREE.MeshStandardMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 1.0});
+            let mat = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, emissive: 0x222222});
             let p1 = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.6), mat); p1.rotation.y = Math.PI/4;
             let p2 = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.6), mat); p2.rotation.y = -Math.PI/4;
             p1.castShadow = true; p2.castShadow = true;
@@ -609,13 +611,13 @@
             } else { tY -= 0.2; }
             b.position.set(tX, tY, tZ);
             
-            // STRONG TORCH LIGHT (Massive boost for StandardMaterial)
-            let tLight = new THREE.PointLight(0xffddaa, 3.5, 18, 1); 
+            // STRONG TORCH LIGHT WITH DECAY
+            let tLight = new THREE.PointLight(0xffcd88, 2.5, 20, 1.2); 
             b.add(tLight); b.light = tLight;
             b.type = 'torch';
         } else if (type === 'furnace') {
             let dir = new THREE.Vector3(); cam.getWorldDirection(dir);
-            let mSide = new THREE.MeshStandardMaterial({map: genTex('furnaceSide'), roughness: 1.0}), mTop = new THREE.MeshStandardMaterial({map: genTex('furnaceTop'), roughness: 1.0}), mFront = new THREE.MeshStandardMaterial({map: genTex('furnaceFront'), roughness: 1.0});
+            let mSide = new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), ...em}), mTop = new THREE.MeshLambertMaterial({map: genTex('furnaceTop'), ...em}), mFront = new THREE.MeshLambertMaterial({map: genTex('furnaceFront'), ...em});
             let mat = [mSide, mSide, mTop, mTop, mSide, mSide];
             let fIdx = 4; if(Math.abs(dir.x) > Math.abs(dir.z)) { if(dir.x > 0) fIdx = 1; else fIdx = 0; } else { if(dir.z > 0) fIdx = 5; else fIdx = 4; }
             mat[fIdx] = mFront;
@@ -651,9 +653,7 @@
         markChunkDirty(x, z); markChunkDirty(x+1, z); markChunkDirty(x-1, z); markChunkDirty(x, z+1); markChunkDirty(x, z-1);
         
         let topKey = `${x},${y+1},${z}`;
-        if(voxels.get(topKey) === 'torch') {
-            removeB(x, y+1, z); dropItemIntoWorld('torch', 1, 0); drops[drops.length-1].mesh.position.set(x, y+1, z);
-        }
+        if(voxels.get(topKey) === 'torch') { removeB(x, y+1, z); dropItemIntoWorld('torch', 1, 0); drops[drops.length-1].mesh.position.set(x, y+1, z); }
     }
 
     function generateChunkVolume(cx, cz) {
@@ -676,7 +676,7 @@
                 if (!voxels.has(`${absX},-46,${absZ}`)) voxels.set(`${absX},-46,${absZ}`, 'bedrock');
                 
                 if(Math.random() < 0.005) { 
-                    voxels.set(`${absX},${h},${absZ}`, 'dirt'); // FIX: Dirt under tree trunk
+                    voxels.set(`${absX},${h},${absZ}`, 'dirt'); // FIX: Grass to Dirt under trunk
                     for(let t=1; t<=4; t++) voxels.set(`${absX},${h+t},${absZ}`, 'wood'); 
                     for(let ly=3; ly<=4; ly++) { 
                         for(let lx=-2; lx<=2; lx++) { 
@@ -697,21 +697,20 @@
             }
         }
         
-        // Coal Ore (Reduced Spawn Rate)
-        for(let i=0; i<10; i++) {
+        // Reduced Ore Generation
+        for(let i=0; i<12; i++) {
             let ox = cx * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oz = cz * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
-            let oy = Math.floor(Math.random() * 40) - 35; 
+            let oy = Math.floor(Math.random() * 40) - 35; // y between -35 and +5
             for(let v=0; v<4; v++) {
                 if (voxels.get(`${ox},${oy},${oz}`) === 'stone') voxels.set(`${ox},${oy},${oz}`, 'coal_ore');
                 ox += Math.floor(Math.random()*3)-1; oy += Math.floor(Math.random()*3)-1; oz += Math.floor(Math.random()*3)-1;
             }
         }
-        // Iron Ore
-        for(let i=0; i<18; i++) {
+        for(let i=0; i<10; i++) {
             let ox = cx * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oz = cz * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
-            let oy = Math.floor(Math.random() * 35) - 45; 
+            let oy = Math.floor(Math.random() * 35) - 45; // y between -45 and -10
             for(let v=0; v<3; v++) {
                 if (voxels.get(`${ox},${oy},${oz}`) === 'stone') voxels.set(`${ox},${oy},${oz}`, 'iron_ore');
                 ox += Math.floor(Math.random()*3)-1; oy += Math.floor(Math.random()*3)-1; oz += Math.floor(Math.random()*3)-1;
@@ -786,22 +785,23 @@
         for(let j=0; j<amount; j++) {
             let dir = new THREE.Vector3(); cam.getWorldDirection(dir); let dropPos = cameraGroup.position.clone().addScaledVector(dir, 1.2); dropPos.y += 0.2; 
             let drop, mat;
+            let em = { emissive: 0x050505 };
             
             if (type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) { 
                 let group = new THREE.Group();
                 let tex = genTex(type, dmgLevel);
-                let matFront = new THREE.MeshStandardMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 1.0});
+                let matFront = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, ...em});
                 let pGeo = new THREE.PlaneGeometry(0.5, 0.5);
                 for(let i=0; i<5; i++) { let mesh = new THREE.Mesh(pGeo, matFront); mesh.position.z = (i - 2.0) * 0.015; mesh.castShadow = true; group.add(mesh); }
                 drop = group;
             } 
             else { 
-                if (type === 'wood') { mat = [new THREE.MeshStandardMaterial({map: genTex('wood'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('wood'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('woodTop'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('woodTop'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('wood'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('wood'), roughness: 1.0})]; }
-                else if (type === 'crafting_table') { mat = [new THREE.MeshStandardMaterial({map: genTex('ctSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('ctSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('ctTop'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('planks'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('ctSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('ctSide'), roughness: 1.0})]; }
-                else if (type === 'grass') { mat = [new THREE.MeshStandardMaterial({map: genTex('grassSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('grassSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('grass'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('grassSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('grassSide'), roughness: 1.0})]; }
-                else if (type === 'farmland') { mat = [new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('farmlandTop'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('dirt'), roughness: 1.0})]; }
-                else if (type === 'furnace') { mat = [new THREE.MeshStandardMaterial({map: genTex('furnaceSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('furnaceSide'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('furnaceTop'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('furnaceTop'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('furnaceFront'), roughness: 1.0}), new THREE.MeshStandardMaterial({map: genTex('furnaceSide'), roughness: 1.0})]; }
-                else { mat = new THREE.MeshStandardMaterial({map: genTex(type), transparent: type==='leaves', roughness: 1.0}); }
+                if (type === 'wood') { mat = [new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('woodTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em}), new THREE.MeshLambertMaterial({map: genTex('wood'), ...em})]; }
+                else if (type === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('planks'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em})]; }
+                else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grass'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em})]; }
+                else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em})]; }
+                else if (type === 'furnace') { mat = [new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceFront'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), ...em})]; }
+                else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves', ...em}); }
                 drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), mat); drop.castShadow = true;
             }
             drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe') || type==='stick' || type==='charcoal' || type==='coal' || type==='iron_ingot' || type==='torch', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
@@ -825,28 +825,34 @@
       sun.target.position.set(camIntX, 0, camIntZ);
       sun.target.updateMatrixWorld();
       
-      // FIX: Smarter Eye Adjustment (3x3 grid check around player)
+      // SMART ENCLOSURE DETECTION (Eye Adjustment)
       let pX = Math.floor(cameraGroup.position.x);
-      let pY = Math.floor(cameraGroup.position.y);
       let pZ = Math.floor(cameraGroup.position.z);
-      let skyVisible = false;
+      let pY = Math.floor(cameraGroup.position.y);
+      let sY = getSurfaceH(pX, pZ);
       
-      for(let dx=-1; dx<=1; dx++) {
-          for(let dz=-1; dz<=1; dz++) {
-              let sY = getSurfaceH(pX+dx, pZ+dz);
-              let blocked = false;
-              for(let cy=pY; cy<=sY+2; cy++) {
+      let isEnclosed = true;
+      for(let dx = -1; dx <= 1; dx++) {
+          for(let dz = -1; dz <= 1; dz++) {
+              let hitSky = true;
+              for(let cy = pY; cy <= pY + 15; cy++) {
                   let t = voxels.get(`${pX+dx},${cy},${pZ+dz}`);
-                  if(t && t!=='torch' && t!=='leaves') { blocked=true; break; }
+                  if(t && t !== 'torch' && t !== 'leaves') { hitSky = false; break; }
               }
-              if(!blocked) { skyVisible=true; break; }
+              if (hitSky) { isEnclosed = false; break; }
           }
-          if(skyVisible) break;
+          if (!isEnclosed) break;
       }
       
-      let targetAmbient = skyVisible ? 0.45 : 0.02;
-      let targetFogColor = skyVisible ? new THREE.Color(skyColor) : new THREE.Color(0x050505);
-
+      let targetAmbient = 0.45;
+      let targetFogColor = new THREE.Color(skyColor);
+      let depth = (sY - pY);
+      
+      if (isEnclosed && depth >= 0) {
+          let darkness = Math.max(0.04, 0.25 - (depth * 0.015)); 
+          targetAmbient = darkness;
+          targetFogColor.setHex(0x050505);
+      }
       amb.intensity = THREE.MathUtils.lerp(amb.intensity, targetAmbient, 0.05);
       sc.fog.color.lerp(targetFogColor, 0.05);
       sc.background.lerp(targetFogColor, 0.05);
@@ -881,7 +887,7 @@
               let litNow = fd.burnTime > 0;
               if (fd.lit !== litNow) {
                   fd.lit = litNow; fd.material[fd.frontIdx].map = genTex(litNow ? 'furnaceFrontLit' : 'furnaceFront'); fd.material[fd.frontIdx].needsUpdate = true;
-                  if (litNow) { let coords = key.split(',').map(Number); let light = new THREE.PointLight(0xffa500, 3.5, 18, 1); light.position.set(coords[0], coords[1], coords[2]); sc.add(light); fd.light = light; } else { if (fd.light) { sc.remove(fd.light); fd.light = null; } }
+                  if (litNow) { let coords = key.split(',').map(Number); let light = new THREE.PointLight(0xffa500, 2.0, 16, 1.2); light.position.set(coords[0], coords[1], coords[2]); sc.add(light); fd.light = light; } else { if (fd.light) { sc.remove(fd.light); fd.light = null; } }
               }
               if(gameState === "FURNACE" && activeFurnacePos === key) uiNeedsUpdate = true;
             }
@@ -944,20 +950,19 @@
 
         if(isSolidVoxel(Math.round(cameraGroup.position.x), Math.round(cameraGroup.position.y - 1.6), Math.round(cameraGroup.position.z)) && isMoving && gameState === "PLAYING") {
             let speed = Math.sqrt(pVel.x*pVel.x + pVel.z*pVel.z); stepTimer += speed; 
-            if(stepTimer > (isSSprint? 0.7 : 0.5)) { let bName = voxels.get(`${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`); playSound('step', bName || 'grass'); stepTimer = 0; }
+            if(stepTimer > (isSprinting ? 0.7 : 0.5)) { let bName = voxels.get(`${Math.round(cameraGroup.position.x)},${Math.round(cameraGroup.position.y - 1.6)},${Math.round(cameraGroup.position.z)}`); playSound('step', bName || 'grass'); stepTimer = 0; }
         } else { stepTimer = 0; }
 
+        // ITEM PHYSICS & PHASING (Leaves Fix)
         drops.forEach((d, i) => {
           d.velY -= 0.01; d.mesh.position.y += d.velY;
           if(d.velDir) { d.mesh.position.x += d.velDir.x; d.mesh.position.z += d.velDir.z; d.velDir.multiplyScalar(0.9); }
           
-          // FIX: Non-clipping collision physics for items (Ignores leaves!)
-          let fallX = Math.round(d.mesh.position.x);
-          let fallY = Math.floor(d.mesh.position.y - 0.2);
-          let fallZ = Math.round(d.mesh.position.z);
-          let bAtItem = voxels.get(`${fallX},${fallY},${fallZ}`);
-          if(bAtItem && bAtItem !== 'torch' && bAtItem !== 'leaves') { 
-              d.velY = 0; d.mesh.position.y = fallY + 0.65; d.velDir.x=0; d.velDir.z=0; 
+          let floorType = voxels.get(`${Math.round(d.mesh.position.x)},${Math.floor(d.mesh.position.y - 0.2)},${Math.round(d.mesh.position.z)}`);
+          if(isSolidVoxel(Math.round(d.mesh.position.x), Math.floor(d.mesh.position.y - 0.2), Math.round(d.mesh.position.z))) { 
+              if (floorType !== 'leaves' && floorType !== 'torch') {
+                  d.velY = 0; d.mesh.position.y = Math.floor(d.mesh.position.y-0.2) + 0.65; d.velDir.x=0; d.velDir.z=0; 
+              }
           }
           if(!d.is2D) { d.mesh.rotation.y += 0.03; d.mesh.rotation.x += 0.01; } else { d.mesh.rotation.y += 0.05; }
           
@@ -975,7 +980,7 @@
             } else {
                 let name = miningTarget.name;
                 
-                // EXACT MINECRAFT MATH FORMULA (No more super-speed bugs)
+                // EXACT MINECRAFT MINING LOGIC
                 let baseHardness = 1.0; let isCorrectTool = false; let toolSpeed = 1.0; let canHarvest = false;
                 let activeSafeType = activeType || '';
                 
@@ -1003,9 +1008,7 @@
                     baseHardness = 0.5; if (activeSafeType.endsWith('_shovel')) isCorrectTool = true; canHarvest = true;
                 } else if (['grass', 'farmland'].includes(name)) {
                     baseHardness = 0.6; if (activeSafeType.endsWith('_shovel')) isCorrectTool = true; canHarvest = true;
-                } else if (['wood'].includes(name)) {
-                    baseHardness = 2.0; if (activeSafeType.endsWith('_axe')) isCorrectTool = true; canHarvest = true;
-                } else if (['planks', 'crafting_table'].includes(name)) {
+                } else if (['wood', 'planks', 'crafting_table'].includes(name)) {
                     baseHardness = 2.0; if (activeSafeType.endsWith('_axe')) isCorrectTool = true; canHarvest = true;
                 } else if (['leaves'].includes(name)) {
                     baseHardness = 0.2; if (activeSafeType.endsWith('_hoe') || activeSafeType.endsWith('_sword')) isCorrectTool = true; canHarvest = true;
@@ -1016,15 +1019,12 @@
                     baseHardness = 9999; canHarvest = false;
                 }
 
-                // Apply accurate ticks-to-mine formula (at 60 FPS)
-                let timeToMine;
-                if (isCorrectTool) timeToMine = (baseHardness * 1.5) / toolSpeed;
-                else timeToMine = (baseHardness * 5.0);
-                if (baseHardness === 0.0) timeToMine = 0.01;
-                
-                let damagePerTick = 1.0 / (timeToMine * 60);
+                // TRUE TICK SPEED MATH (Seconds -> Frames at 60fps)
+                let timeToMine = isCorrectTool ? ((baseHardness * 1.5) / toolSpeed) : (baseHardness * 5.0);
+                if (baseHardness === 0.0) timeToMine = 0.05;
+                let damagePerTick = 1.0 / (timeToMine * 60.0);
 
-                miningProgress += damagePerTick; miningSoundTimer += damagePerTick * 2.5;
+                miningProgress += damagePerTick; miningSoundTimer += damagePerTick;
                 
                 if(miningSoundTimer > 0.4) { playSound('dig', name); miningSoundTimer = 0; }
                 
@@ -1046,7 +1046,6 @@
                         if (!canHarvest) dropName = null; 
                         if(dropName) { 
                             dropItemIntoWorld(dropName, 1, 0); 
-                            // Center spawn the item directly on the broken block coordinates
                             drops[drops.length-1].mesh.position.set(miningTarget.x, miningTarget.y, miningTarget.z); 
                             drops[drops.length-1].spawnTime = Date.now() - 1500; 
                         }
@@ -1089,7 +1088,7 @@
         else if(e.button === 2) {
           if(hit.name === 'crafting_table') { setMenu('CRAFTING'); return; }
           if(hit.name === 'furnace') { activeFurnacePos = `${hit.x},${hit.y},${hit.z}`; setMenu('FURNACE'); return; }
-          if(item.type === 'torch' && hit.normal.y === -1) return;
+          if(item.type === 'torch' && hit.normal.y === -1) return; // No ceiling torches
           
           if(item.type && item.count > 0 && item.type !== 'stick' && item.type !== 'charcoal' && item.type !== 'coal' && item.type !== 'iron_ingot' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
             let pX = hit.x + hit.normal.x, pY = hit.y + hit.normal.y, pZ = hit.z + hit.normal.z;
