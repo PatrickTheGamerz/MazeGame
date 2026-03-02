@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT - 1.01.2</title>
+  <title>ORANGECRAFT - 1.01.3</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -50,8 +50,16 @@
     .f-arrow { width:22px; height:16px; background:#555; position:relative; margin-top:10px; clip-path: polygon(0 20%, 60% 20%, 60% 0, 100% 50%, 60% 100%, 60% 80%, 0 80%);}
     .f-arrow-fill { width:0%; height:100%; background:#fff; position:absolute; top:0; left:0;}
 
-    /* New Armor Slot styling */
     .armor-slot { background-image: radial-gradient(circle, #777 20%, transparent 20%); background-size: 10px 10px; background-position: center; }
+
+    /* New Menu Styles */
+    .menu-panel { background: rgba(0,0,0,0.5); border: 2px solid #555; width: 600px; height: 350px; display:flex; flex-direction:column; align-items:center; padding: 20px; overflow-y:auto; margin-bottom: 20px;}
+    .pack-container { display:flex; width:100%; gap: 20px; height: 100%;}
+    .pack-list { flex: 1; border: 2px solid #444; background: rgba(0,0,0,0.7); display:flex; flex-direction:column; overflow-y:auto; padding: 5px; }
+    .pack-item { display:flex; padding: 10px; background: #333; border: 2px solid #555; margin-bottom: 5px; align-items:center; gap: 10px; cursor:pointer;}
+    .pack-item.locked { cursor: default; border-color: #888; background: #444; }
+    .pack-icon { width: 48px; height: 48px; background: #111; border: 2px solid #000; }
+    .options-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -69,18 +77,70 @@
         <div class="splash" id="splash-text"></div>
     </div>
     <div class="btn" onclick="playSound('click'); startGame()">Singleplayer</div>
-    <div class="btn" onclick="playSound('click'); setMenu('SUB_MENU', 'Multiplayer')">Multiplayer</div>
-    <div class="btn" onclick="playSound('click'); setMenu('SUB_MENU', 'Texture Packs')">Texture Packs</div>
+    <div class="btn" onclick="playSound('click'); setMenu('MULTIPLAYER')">Multiplayer</div>
+    <div class="btn" onclick="playSound('click'); setMenu('TEXTURE_PACKS')">Texture Packs</div>
     <div style="display:flex; justify-content:center; gap:8px;">
-        <div class="btn btn-half" onclick="playSound('click'); setMenu('SUB_MENU', 'Options')">Options...</div>
-        <div class="btn btn-half" onclick="playSound('click'); window.close(); alert('Close the tab to exit!');">Quit Game</div>
+        <div class="btn btn-half" onclick="playSound('click'); setMenu('OPTIONS')">Options...</div>
+        <div class="btn btn-half" onclick="playSound('click'); window.location.href='about:blank'; window.close();">Quit Game</div>
     </div>
   </div>
 
-  <div id="sub-menu" class="menu-overlay dirt-bg" style="z-index: 9000;">
-    <div class="title" id="sub-menu-title" style="font-size: 2.5rem; margin-bottom: 40px; color:#fff; text-shadow:4px 4px 0 #000; font-family:sans-serif;">Menu</div>
-    <div style="color: #aaa; margin-bottom: 30px;">(This feature is coming in a future update!)</div>
-    <div class="btn" style="width: 200px;" onclick="playSound('click'); setMenu('MAIN_MENU')">Done</div>
+  <div id="multiplayer-menu" class="menu-overlay dirt-bg" style="z-index: 9000;">
+    <div class="title" style="font-size: 2rem; margin-bottom: 10px; color:#fff; text-shadow:2px 2px 0 #000; font-family:sans-serif;">Play Multiplayer</div>
+    <div class="menu-panel" style="width: 700px;">
+        <div style="width: 100%; text-align: left; color: #aaa; margin-bottom: 10px;">Scanning for games on your local network...</div>
+        <div style="width: 100%; display:flex; flex-direction:column; gap:5px;"></div>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <div class="btn btn-half" style="color:#777; border-color:#333; cursor:default;">Join Server</div>
+        <div class="btn btn-half" style="color:#777; border-color:#333; cursor:default;">Direct Connect</div>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <div class="btn btn-half" style="color:#777; border-color:#333; cursor:default;">Add Server</div>
+        <div class="btn btn-half" onclick="playSound('click'); setMenu('MAIN_MENU')">Cancel</div>
+    </div>
+  </div>
+
+  <div id="texture-packs-menu" class="menu-overlay dirt-bg" style="z-index: 9000;">
+    <div class="title" style="font-size: 2rem; margin-bottom: 20px; color:#fff; text-shadow:2px 2px 0 #000; font-family:sans-serif;">Select Resource Packs</div>
+    <div class="menu-panel" style="width: 800px; height: 400px; background: transparent; border:none; padding:0;">
+        <div class="pack-container">
+            <div style="flex:1; display:flex; flex-direction:column;">
+                <div style="text-align:center; margin-bottom:5px; font-weight:bold;">Available Packs</div>
+                <div class="pack-list">
+                    <div style="text-align:center; color:#777; margin-top: 20px;">No custom packs found in folder.</div>
+                </div>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column;">
+                <div style="text-align:center; margin-bottom:5px; font-weight:bold;">Selected Packs</div>
+                <div class="pack-list">
+                    <div class="pack-item locked">
+                        <div class="pack-icon dirt-bg"></div>
+                        <div>
+                            <div style="font-weight:bold;">Default</div>
+                            <div style="font-size: 0.8em; color:#aaa;">The default look of Orangecraft.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="btn" style="width: 400px;" onclick="playSound('click'); setMenu('MAIN_MENU')">Done</div>
+  </div>
+
+  <div id="options-menu" class="menu-overlay dirt-bg" style="z-index: 9000;">
+    <div class="title" style="font-size: 2rem; margin-bottom: 20px; color:#fff; text-shadow:2px 2px 0 #000; font-family:sans-serif;">Options</div>
+    <div class="menu-panel" style="background:transparent; border:none; width: 750px;">
+        <div class="options-grid">
+            <div class="btn">FOV: 75</div>
+            <div class="btn">Render Distance: 4 Chunks</div>
+            <div class="btn">Graphics: Fancy</div>
+            <div class="btn">Smooth Lighting: Maximum</div>
+            <div class="btn">Sensitivity: 100%</div>
+            <div class="btn">Music: 100%</div>
+        </div>
+    </div>
+    <div class="btn" style="width: 400px;" onclick="playSound('click'); setMenu('MAIN_MENU')">Done</div>
   </div>
 
   <div id="loading-screen" class="menu-overlay dirt-bg" style="z-index: 9999;">
@@ -99,7 +159,6 @@
   <div id="inventory-screen" class="menu-overlay">
     <div class="inv-container" id="inv-box">
       <div style="display:flex; justify-content:space-between; margin-bottom:10px; width:100%;">
-        
         <div style="display:flex; gap:10px;">
             <div style="display:flex; flex-direction:column; gap:4px;">
                 <div class="inv-slot armor-slot" id="armor-0"></div>
@@ -194,7 +253,7 @@
             let noise = audioCtx.createBufferSource(); noise.buffer = buffer; 
             noise.playbackRate.value = 0.85 + Math.random() * 0.3;
             let filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; 
-            if (blockName === 'stone' || blockName === 'cobblestone' || blockName === 'bedrock' || blockName === 'furnace' || blockName === 'coal_ore' || blockName === 'coal_block' || blockName === 'iron_ore' || blockName === 'iron_block') { filter.frequency.value = 1800; filter.type = 'highpass'; } 
+            if (blockName === 'stone' || blockName === 'cobblestone' || blockName === 'bedrock' || blockName === 'furnace' || blockName === 'coal_ore' || blockName === 'coal_block' || blockName === 'iron_ore' || blockName === 'iron_block' || blockName === 'gold_ore') { filter.frequency.value = 1800; filter.type = 'highpass'; } 
             else if (blockName === 'wood' || blockName === 'planks' || blockName === 'crafting_table' || blockName === 'torch') { filter.frequency.value = 600; } 
             else if (blockName === 'leaves') { filter.frequency.value = 2500; filter.type = 'bandpass'; } 
             else { filter.frequency.value = 350; } 
@@ -222,11 +281,11 @@
 
     // --- 2. TEXTURES & ASSETS ---
     const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = ["Version 1.01.2!", "Panorama Menu!", "Beautiful Mountains!", "Symmetrical Cracks!", "Better UI!"];
+    const authenticSplashes = ["Version 1.01.3!", "Butter Tools!", "Deep Dark Tunnels!", "Diagonal Ingots!", "Rare Ores!"];
 
     function getDmgLevel(type, damage) {
         if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe') && !type.endsWith('_shovel') && !type.endsWith('_sword') && !type.endsWith('_hoe'))) return 0;
-        let maxD = type.startsWith('iron_') ? 250 : (type.startsWith('stone_') ? 131 : 59);
+        let maxD = type.startsWith('iron_') ? 250 : (type.startsWith('stone_') ? 131 : (type.startsWith('golden_') ? 32 : 59));
         if (damage > maxD * 0.75) return 2; if (damage > maxD * 0.4) return 1; return 0;
     }
 
@@ -242,70 +301,46 @@
         const pWood = {'H':'#5c3a21', 'h':'#9c774a', 'S':'#36200b', 's':'#8a5c34', '_':null};
         const pStone = {'H':'#4a4a4a', 'h':'#828282', 'S':'#36200b', 's':'#8a5c34', '_':null};
         const pIron = {'H':'#d8d8d8', 'h':'#f5f5f5', 'S':'#36200b', 's':'#8a5c34', '_':null};
+        const pGold = {'H':'#fceba6', 'h':'#f8d13b', 'S':'#36200b', 's':'#8a5c34', '_':null};
         const pFurn = {'C':'#5a5a5a', 'B':'#6a6a6a', 'A':'#828282', 'D':'#4a4a4a', 'X':'#111', 'O':'#ffa500', 'Y':'#ffff00', 'W':'#ffffff'};
 
         if (type === 'stone') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e'}, 'ABACACABABAACABA'+'CABAABACABCAABAC'+'AABACABAABACABAA'+'BACABAABACABAACA'+'ACABCAABACABCAAB'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABAACA'+'ACABAACABCAABACA'+'CABAABACABAABACA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); } 
         else if (type === 'coal_ore') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#111', 'x':'#333'}, 'ABACACABABAACABA'+'CABAABxCABCAABAC'+'AABAXxBAABACABAA'+'BACxXXxBACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACxBAABACABCA'+'BACABXxBACABACAB'+'ABCAAxACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACxXxCABCAxXABCA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
         else if (type === 'iron_ore') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#eac9b6', 'x':'#d8af93'}, 'ABACACABABAACABA'+'CABAABXCABCAABAC'+'AABACxBAABACABAA'+'BACABAABACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABXxBACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACABAACABCAABACA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
+        else if (type === 'gold_ore') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#fceba6', 'x':'#f8d13b'}, 'ABACACABABAACABA'+'CABAABXCABCAABAC'+'AABACxBAABACABAA'+'BACABAABACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABXxBACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACABAACABCAABACA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
         else if (type === 'iron_block') { drawPixelMap(ctx, {'A':'#ffffff','B':'#e5e5e5','C':'#d8d8d8','D':'#cccccc'}, 'BBBBBBBBBBBBBBBB'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BCCCCCCCCCCCCCCD'+'CDDDDDDDDDDDDDDD'); }
         else if (type.endsWith('_pickaxe')) {
             let mapArr = ("__HHHHHHH_______"+"_HhhhhhhhH______"+"HhH__sS__HhH____"+"HH___sS___HH____"+"_____sS_________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________"+"________________"+"________________").split('');
             if (dmgLevel >= 1) { mapArr[2*16+11] = '_'; mapArr[3*16+10] = '_'; } if (dmgLevel >= 2) { mapArr[2*16+0] = '_'; mapArr[3*16+0] = '_'; mapArr[3*16+1] = '_'; }
-            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : pStone), mapArr.join(''));
+            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : (type.startsWith('golden') ? pGold : pStone)), mapArr.join(''));
         } else if (type.endsWith('_axe')) {
             let mapArr = ("__HHHH__________"+"_HhhhhH_________"+"_HhhhhH_________"+"_HhhH_sS________"+"__HH__sS________"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________"+"________________").split('');
             if (dmgLevel >= 1) { mapArr[2*16+6] = '_'; mapArr[3*16+5] = '_'; } if (dmgLevel >= 2) { mapArr[1*16+1] = '_'; mapArr[4*16+2] = '_'; }
-            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : pStone), mapArr.join(''));
+            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : (type.startsWith('golden') ? pGold : pStone)), mapArr.join(''));
         } else if (type.endsWith('_shovel')) {
             let mapArr = ("_______HHH______"+"______HhhhH_____"+"______HhhhH_____"+"_______HhH______"+"________sS______"+"_______sS_______"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________").split('');
             if (dmgLevel >= 1) { mapArr[1*16+6] = '_'; mapArr[2*16+6] = '_'; } if (dmgLevel >= 2) { mapArr[1*16+10] = '_'; mapArr[3*16+9] = '_'; }
-            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : pStone), mapArr.join(''));
+            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : (type.startsWith('golden') ? pGold : pStone)), mapArr.join(''));
         } else if (type.endsWith('_sword')) {
             let mapArr = ("______________H_"+"_____________HhH"+"____________HhhH"+"___________HhhH_"+"__________HhhH__"+"_________HhhH___"+"________HhhH____"+"_______HhhH_____"+"__HH__HhhH______"+"_HhhH_HhH_______"+"HhHhhHH_H_______"+"HhhHh_sS________"+"_HH__sS_________"+"____sS__________"+"___sS___________"+"___S____________").split('');
             if (dmgLevel >= 1) { mapArr[1*16+14] = '_'; mapArr[2*16+13] = '_'; } if (dmgLevel >= 2) { mapArr[3*16+12] = '_'; mapArr[4*16+11] = '_'; }
-            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : pStone), mapArr.join(''));
+            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : (type.startsWith('golden') ? pGold : pStone)), mapArr.join(''));
         } else if (type.endsWith('_hoe')) {
             let mapArr = ("____HHHHH_______"+"___HhhhhhH______"+"___HhH__HhH_____"+"___HH____sS_____"+"_________sS_____"+"________sS______"+"_______sS_______"+"______sS________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________").split('');
             if (dmgLevel >= 1) { mapArr[1*16+9] = '_'; mapArr[2*16+9] = '_'; } if (dmgLevel >= 2) { mapArr[1*16+3] = '_'; mapArr[3*16+3] = '_'; }
-            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : pStone), mapArr.join(''));
+            drawPixelMap(ctx, type.startsWith('wood') ? pWood : (type.startsWith('iron') ? pIron : (type.startsWith('golden') ? pGold : pStone)), mapArr.join(''));
         } else if (type === 'iron_ingot') {
-            // REDRAWN 1:1 IRON INGOT
-            drawPixelMap(ctx, {'B':'#555','C':'#fff','D':'#ccc','_':null}, 
-            '________________'+
-            '________________'+
-            '________________'+
-            '________________'+
-            '_______BB_______'+
-            '______BCCB______'+
-            '_____BCCCCB_____'+
-            '____BCCCCCCB____'+
-            '...BCCCCCCCCB...'+
-            '...BDDDDDDDDB...'+
-            '...BDDDDDDDDB...'+
-            '....BBBBBBBB....'+
-            '________________'+
-            '________________'+
-            '________________'+
-            '________________');
+            drawPixelMap(ctx, {'A':'#000','B':'#555','C':'#fff','D':'#ccc','_':null}, 
+            '________________'+'_____________B__'+'____________BDB_'+'___________BDCB_'+'__________BDCCB_'+'_________BDCCCB_'+'________BDCCCCB_'+'_______BDCCCCB_B'+'______BDCCCCB_BD'+'_____BDCCCCB_BDD'+'____BDCCCCB_BDDD'+'___BDCCCCB_BDDD_'+'__BDCCCCB_BDDD__'+'_BCCCCCCB_B_____'+'__BBBBBBBB______'+'________________');
+        } else if (type === 'gold_ingot') {
+            drawPixelMap(ctx, {'A':'#000','B':'#b5840b','C':'#fceba6','D':'#f8d13b','_':null}, 
+            '________________'+'_____________B__'+'____________BDB_'+'___________BDCB_'+'__________BDCCB_'+'_________BDCCCB_'+'________BDCCCCB_'+'_______BDCCCCB_B'+'______BDCCCCB_BD'+'_____BDCCCCB_BDD'+'____BDCCCCB_BDDD'+'___BDCCCCB_BDDD_'+'__BDCCCCB_BDDD__'+'_BCCCCCCB_B_____'+'__BBBBBBBB______'+'________________');
         } else if (type === 'raw_iron') {
-            // REDRAWN 1:1 RAW IRON
             drawPixelMap(ctx, {'B':'#333','C':'#eac9b6','D':'#d8af93','_':null}, 
-            '________________'+
-            '________________'+
-            '......BB........'+
-            '.....BCCB.BB....'+
-            '....BCCCBBCCB...'+
-            '...BCCCCBCCCB...'+
-            '...BCCCCCCDCB...'+
-            '....BDCCCCDCB...'+
-            '.....BBDDDCB....'+
-            '.......BBBB.....'+
-            '________________'+
-            '________________'+
-            '________________'+
-            '________________'+
-            '________________'+
-            '________________');
+            '________________'+'________________'+'......BB........'+'.....BCCB.BB....'+'....BCCCBBCCB...'+'...BCCCCBCCCB...'+'...BCCCCCCDCB...'+'....BDCCCCDCB...'+'.....BBDDDCB....'+'.......BBBB.....'+'________________'+'________________'+'________________'+'________________'+'________________'+'________________');
+        } else if (type === 'raw_gold') {
+            drawPixelMap(ctx, {'B':'#b5840b','C':'#fceba6','D':'#f8d13b','_':null}, 
+            '________________'+'________________'+'......BB........'+'.....BCCB.BB....'+'....BCCCBBCCB...'+'...BCCCCBCCCB...'+'...BCCCCCCDCB...'+'....BDCCCCDCB...'+'.....BBDDDCB....'+'.......BBBB.....'+'________________'+'________________'+'________________'+'________________'+'________________'+'________________');
         } else if (type === 'coal') {
             drawPixelMap(ctx, {'A':'#000','B':'#111','C':'#222','D':'#333','_':null}, '________________'+'________________'+'______BCC_______'+'_____CDABC______'+'____CCABABC_____'+'___BCBABABBC____'+'___CCAAABABC____'+'____CBABABBC____'+'_____BCAACC_____'+'______BCCC______'+'________________'+'________________'+'________________'+'________________'+'________________'+'________________');
         } else if (type === 'charcoal') {
@@ -339,26 +374,20 @@
         else if (type === 'leaves') { ctx.clearRect(0,0,16,16); for(let x=0; x<16; x++) { for(let y=0; y<16; y++) { if((x+y)%2===0 || Math.random()>0.7) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); } } } }
 
         imgDataUrls[cacheKey] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; 
-        if(type === 'leaves' || type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'raw_iron' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) t.transparent = true; 
+        if(type === 'leaves' || type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'gold_ingot' || type === 'raw_iron' || type === 'raw_gold' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) t.transparent = true; 
         texCache[cacheKey] = t; return t;
     }
 
-    // SYMMETRICAL CRACKS
     const crackMats = Array(10).fill(null).map((_, i) => {
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false; ctx.fillStyle = "rgba(0,0,0,0.85)";
-        
-        let cx = 7.5, cy = 7.5; 
-        let stageProgress = i / 9.0;
+        let cx = 7.5, cy = 7.5; let stageProgress = i / 9.0;
         if(i > 0) {
             ctx.fillRect(7, 7, 2, 2);
             for(let a=0; a<Math.PI*2; a+=Math.PI/4) {
                 let len = Math.floor(stageProgress * 8);
-                for(let dist=1; dist<=len; dist++) {
-                    if(Math.random() < 0.8) ctx.fillRect(Math.floor(cx + Math.cos(a)*dist), Math.floor(cy + Math.sin(a)*dist), 1, 1);
-                }
+                for(let dist=1; dist<=len; dist++) { if(Math.random() < 0.8) ctx.fillRect(Math.floor(cx + Math.cos(a)*dist), Math.floor(cy + Math.sin(a)*dist), 1, 1); }
             }
         }
-        
         const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; 
         return new THREE.MeshBasicMaterial({ map: t, transparent: true, polygonOffset: true, polygonOffsetFactor: -1, depthWrite: false });
     });
@@ -391,7 +420,7 @@
         if(type === 'crafting_table') { genTex('ctTop'); genTex('ctSide'); } else if(type === 'wood') { genTex('woodTop'); genTex('wood'); } else if(type === 'grass') { genTex('grass'); genTex('grassSide'); } else if (type === 'farmland') { genTex('farmlandTop'); genTex('dirt'); } else if (type === 'furnace') { genTex('furnaceTop'); genTex('furnaceSide'); genTex('furnaceFront'); } else genTex(type, dmgLevel);
         
         let html = '';
-        if(type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'raw_iron' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
+        if(type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'gold_ingot' || type === 'raw_iron' || type === 'raw_gold' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
             let cacheKey = type + '_' + dmgLevel;
             html = `<div class="item-2d" style="background-image:url(${imgDataUrls[cacheKey]})"></div>`;
         } else {
@@ -401,7 +430,7 @@
         }
 
         if(type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
-            let maxD = type.startsWith('iron_') ? 250 : (type.startsWith('stone_') ? 131 : 59);
+            let maxD = type.startsWith('iron_') ? 250 : (type.startsWith('stone_') ? 131 : (type.startsWith('golden_') ? 32 : 59));
             if (damage > 0) {
                 let pct = (maxD - damage) / maxD; let color = pct > 0.5 ? '#0f0' : (pct > 0.2 ? '#fa0' : '#f00');
                 html += `<div style="position:absolute;bottom:2px;left:4px;width:28px;height:4px;background:#000;border:1px solid #222;box-sizing:border-box;"><div style="width:${pct*100}%;height:100%;background:${color};"></div></div>`;
@@ -462,7 +491,7 @@
       }
     }
 
-    const smeltingRecipes = {'cobblestone': 'stone', 'wood': 'charcoal', 'coal_ore': 'coal', 'raw_iron': 'iron_ingot'};
+    const smeltingRecipes = {'cobblestone': 'stone', 'wood': 'charcoal', 'coal_ore': 'coal', 'raw_iron': 'iron_ingot', 'raw_gold': 'gold_ingot'};
 
     function getFuelTime(item) {
         if(!item || !item.type) return 0;
@@ -477,7 +506,6 @@
 
     function handleSlotAction(arr, idx, e, isFuelSlot = false) {
       e.stopPropagation(); let slot = arr[idx]; let maxStack = (slot.type && (slot.type.endsWith('_pickaxe') || slot.type.endsWith('_axe') || slot.type.endsWith('_shovel') || slot.type.endsWith('_sword') || slot.type.endsWith('_hoe'))) ? 1 : 64;
-      
       if(dragItem && isFuelSlot && getFuelTime(dragItem.item) <= 0) return; 
 
       playSound('click');
@@ -540,18 +568,27 @@
       if(checkPick(p,p)) { updateSlotDOM(out3, {type:'wooden_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_pickaxe', 1); }
       else if(checkPick('cobblestone','stone')) { updateSlotDOM(out3, {type:'stone_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_pickaxe', 1); }
       else if(checkPick('iron_ingot','iron_ingot')) { updateSlotDOM(out3, {type:'iron_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'iron_pickaxe', 1); }
+      else if(checkPick('gold_ingot','gold_ingot')) { updateSlotDOM(out3, {type:'golden_pickaxe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'golden_pickaxe', 1); }
+      
       else if(checkAxe(p,p)) { updateSlotDOM(out3, {type:'wooden_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_axe', 1); }
       else if(checkAxe('cobblestone','stone')) { updateSlotDOM(out3, {type:'stone_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_axe', 1); }
       else if(checkAxe('iron_ingot','iron_ingot')) { updateSlotDOM(out3, {type:'iron_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'iron_axe', 1); }
+      else if(checkAxe('gold_ingot','gold_ingot')) { updateSlotDOM(out3, {type:'golden_axe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'golden_axe', 1); }
+      
       else if(checkHoe(p,p)) { updateSlotDOM(out3, {type:'wooden_hoe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_hoe', 1); }
       else if(checkHoe('cobblestone','stone')) { updateSlotDOM(out3, {type:'stone_hoe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_hoe', 1); }
       else if(checkHoe('iron_ingot','iron_ingot')) { updateSlotDOM(out3, {type:'iron_hoe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'iron_hoe', 1); }
+      else if(checkHoe('gold_ingot','gold_ingot')) { updateSlotDOM(out3, {type:'golden_hoe', count:1}); out3.onclick = () => processCraft(crafting3x3, 'golden_hoe', 1); }
+      
       else if(checkShovel(p,p)) { updateSlotDOM(out3, {type:'wooden_shovel', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_shovel', 1); }
       else if(checkShovel('cobblestone','stone')) { updateSlotDOM(out3, {type:'stone_shovel', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_shovel', 1); }
       else if(checkShovel('iron_ingot','iron_ingot')) { updateSlotDOM(out3, {type:'iron_shovel', count:1}); out3.onclick = () => processCraft(crafting3x3, 'iron_shovel', 1); }
+      else if(checkShovel('gold_ingot','gold_ingot')) { updateSlotDOM(out3, {type:'golden_shovel', count:1}); out3.onclick = () => processCraft(crafting3x3, 'golden_shovel', 1); }
+      
       else if(checkSword(p,p)) { updateSlotDOM(out3, {type:'wooden_sword', count:1}); out3.onclick = () => processCraft(crafting3x3, 'wooden_sword', 1); }
       else if(checkSword('cobblestone','stone')) { updateSlotDOM(out3, {type:'stone_sword', count:1}); out3.onclick = () => processCraft(crafting3x3, 'stone_sword', 1); }
       else if(checkSword('iron_ingot','iron_ingot')) { updateSlotDOM(out3, {type:'iron_sword', count:1}); out3.onclick = () => processCraft(crafting3x3, 'iron_sword', 1); }
+      else if(checkSword('gold_ingot','gold_ingot')) { updateSlotDOM(out3, {type:'golden_sword', count:1}); out3.onclick = () => processCraft(crafting3x3, 'golden_sword', 1); }
     }
 
     function processCraft(arr, resultType, amount) { playSound('click'); arr.forEach(c => { if(c.count > 0) c.count--; }); addToInventory(resultType, amount, 0); }
@@ -584,7 +621,6 @@
     const CHUNK_SIZE = 8, RENDER_DIST = 4; 
     const transparentBlocks = ['leaves', 'torch'];
 
-    // MOUNTAINS AND VALLEYS
     function getSurfaceH(x, z) {
         let h = Math.sin(x*0.015)*15 + Math.cos(z*0.015)*15; 
         h += Math.sin(x*0.05 + z*0.04)*5; 
@@ -592,16 +628,17 @@
         return Math.floor(h);
     }
     
-    // REDESIGNED CAVE NOISE (Tunnels & Rooms)
+    // TIGHTER, DEEPER CAVE TUNNELS
     function isCaveNoise(x, y, z) {
-        let n1 = Math.sin(x*0.08) + Math.cos(y*0.08) + Math.sin(z*0.08);
-        let n2 = Math.cos(x*0.1) + Math.sin(y*0.1) - Math.cos(z*0.1);
+        let n1 = Math.sin(x*0.1) + Math.cos(y*0.1) + Math.sin(z*0.1);
+        let n2 = Math.cos(x*0.15) + Math.sin(y*0.15) - Math.cos(z*0.15);
         let n3 = Math.sin(x*0.05) * Math.sin(y*0.02) * Math.cos(z*0.05);
         
         let val = Math.abs(n1 + n2);
-        let isTunnel = val < 0.3; 
-        let isRoom = n3 > 0.05 && val < 0.7;
-        return (isTunnel || isRoom) && y < getSurfaceH(x,z) - 4; 
+        let isTunnel = val < 0.2; 
+        let isRoom = n3 > 0.1 && val < 0.5;
+        // Deep underground requirement
+        return (isTunnel || isRoom) && y < getSurfaceH(x,z) - 10; 
     }
     function isSolidVoxel(x, y, z) { 
         let t = voxels.get(`${x},${y},${z}`);
@@ -782,22 +819,32 @@
             }
         }
         
-        // Much Rarer Ore Generation
-        for(let i=0; i<8; i++) {
+        // RARER ORES (Coal & Iron decreased, Gold added deeply)
+        for(let i=0; i<6; i++) {
             let ox = cx * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oz = cz * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oy = Math.floor(Math.random() * 40) - 35; 
-            for(let v=0; v<4; v++) {
+            for(let v=0; v<3; v++) {
                 if (voxels.get(`${ox},${oy},${oz}`) === 'stone') voxels.set(`${ox},${oy},${oz}`, 'coal_ore');
                 ox += Math.floor(Math.random()*3)-1; oy += Math.floor(Math.random()*3)-1; oz += Math.floor(Math.random()*3)-1;
             }
         }
-        for(let i=0; i<5; i++) {
+        for(let i=0; i<4; i++) {
             let ox = cx * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oz = cz * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
             let oy = Math.floor(Math.random() * 35) - 45; 
             for(let v=0; v<3; v++) {
                 if (voxels.get(`${ox},${oy},${oz}`) === 'stone') voxels.set(`${ox},${oy},${oz}`, 'iron_ore');
+                ox += Math.floor(Math.random()*3)-1; oy += Math.floor(Math.random()*3)-1; oz += Math.floor(Math.random()*3)-1;
+            }
+        }
+        // GOLD ORE (Very Rare, Deep only -45 to -25)
+        for(let i=0; i<2; i++) {
+            let ox = cx * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
+            let oz = cz * CHUNK_SIZE + Math.floor(Math.random() * CHUNK_SIZE);
+            let oy = Math.floor(Math.random() * 20) - 45; 
+            for(let v=0; v<2; v++) {
+                if (voxels.get(`${ox},${oy},${oz}`) === 'stone') voxels.set(`${ox},${oy},${oz}`, 'gold_ore');
                 ox += Math.floor(Math.random()*3)-1; oy += Math.floor(Math.random()*3)-1; oz += Math.floor(Math.random()*3)-1;
             }
         }
@@ -859,7 +906,7 @@
         }
     }
 
-    function setMenu(s, title = '') {
+    function setMenu(s) {
       if(gameState === "INV" || gameState === "CRAFTING") { let arr = gameState === "INV" ? crafting2x2 : crafting3x3; arr.forEach(c => { if(c.count > 0) { dropItemIntoWorld(c.type, c.count, c.damage); c.count = 0; c.type = null; c.damage = 0; } }); }
       if(gameState === "FURNACE") { activeFurnacePos = null; }
       if(s !== "LOADING") {
@@ -867,7 +914,17 @@
           document.getElementById('hud').style.display = (s === "PLAYING" || s === "INV" || s === "CRAFTING" || s === "FURNACE") ? 'flex' : 'none';
           document.getElementById('crosshair').style.display = s === "PLAYING" ? 'block' : 'none';
           if(s === "PLAYING") document.body.requestPointerLock();
-          else { document.exitPointerLock(); if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex'; else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex'; else if(s === "CRAFTING") document.getElementById('crafting-table-screen').style.display = 'flex'; else if (s === "FURNACE") document.getElementById('furnace-screen').style.display = 'flex'; else if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex'; else if(s === "SUB_MENU") { document.getElementById('sub-menu').style.display = 'flex'; document.getElementById('sub-menu-title').innerText = title; } }
+          else { 
+              document.exitPointerLock(); 
+              if(s === "PAUSE_MENU") document.getElementById('pause-menu').style.display = 'flex'; 
+              else if(s === "INV") document.getElementById('inventory-screen').style.display = 'flex'; 
+              else if(s === "CRAFTING") document.getElementById('crafting-table-screen').style.display = 'flex'; 
+              else if (s === "FURNACE") document.getElementById('furnace-screen').style.display = 'flex'; 
+              else if(s === "MAIN_MENU") document.getElementById('main-menu').style.display = 'flex'; 
+              else if(s === "MULTIPLAYER") document.getElementById('multiplayer-menu').style.display = 'flex'; 
+              else if(s === "TEXTURE_PACKS") document.getElementById('texture-packs-menu').style.display = 'flex'; 
+              else if(s === "OPTIONS") document.getElementById('options-menu').style.display = 'flex'; 
+          }
           updateUI();
       }
     }
@@ -898,7 +955,7 @@
             let drop, mat;
             let em = { emissive: 0x050505 };
             
-            if (type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'raw_iron' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) { 
+            if (type === 'stick' || type === 'charcoal' || type === 'coal' || type === 'iron_ingot' || type === 'gold_ingot' || type === 'raw_iron' || type === 'raw_gold' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) { 
                 let group = new THREE.Group();
                 let tex = genTex(type, dmgLevel);
                 let matFront = new THREE.MeshLambertMaterial({map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, ...em});
@@ -915,7 +972,7 @@
                 else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves', ...em}); }
                 drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), mat); drop.castShadow = true;
             }
-            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe') || type==='stick' || type==='charcoal' || type==='coal' || type==='iron_ingot' || type==='raw_iron' || type==='torch', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
+            drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe') || type==='stick' || type==='charcoal' || type==='coal' || type==='iron_ingot' || type==='gold_ingot' || type==='raw_iron' || type==='raw_gold' || type==='torch', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
         }
     }
 
@@ -927,8 +984,8 @@
       requestAnimationFrame(animate);
       if(gameState === "LOADING") return;
 
-      if(gameState === "MAIN_MENU" || gameState === "SUB_MENU") {
-          targetRotation.y += 0.001; // SLOW PANORAMA ROTATION
+      if(gameState !== "PLAYING" && gameState !== "PAUSE_MENU" && gameState !== "INV" && gameState !== "CRAFTING" && gameState !== "FURNACE") {
+          targetRotation.y += 0.001; 
       }
 
       cam.rotation.x += (targetRotation.x - cam.rotation.x) * 0.22; cam.rotation.y += (targetRotation.y - cam.rotation.y) * 0.22;
@@ -1023,7 +1080,7 @@
           }
       }
 
-      if(gameState !== "MAIN_MENU" && gameState !== "SUB_MENU" && gameState !== "PAUSE_MENU") {
+      if(gameState === "PLAYING") {
         let pX = Math.floor(cameraGroup.position.x / CHUNK_SIZE), pZ = Math.floor(cameraGroup.position.z / CHUNK_SIZE);
         for(let x = pX - RENDER_DIST; x <= pX + RENDER_DIST; x++) { for(let z = pZ - RENDER_DIST; z <= pZ + RENDER_DIST; z++) { let cKey = `${x},${z}`; if(!chunks.has(cKey)) { gameplayChunkQueue.push({x, z}); chunks.set(cKey, true); } } }
 
@@ -1033,10 +1090,8 @@
         cam.fov = THREE.MathUtils.lerp(cam.fov, isSprinting ? 85 : 75, 0.1); cam.updateProjectionMatrix();
         let accel = isSprinting ? 0.014 : 0.011; let friction = 0.85; pVel.x *= friction; pVel.z *= friction; 
         
-        if(gameState === "PLAYING") {
-          if(keys['KeyW']) { pVel.x += dir.x * accel; pVel.z += dir.z * accel; } if(keys['KeyS']) { pVel.x -= dir.x * accel; pVel.z -= dir.z * accel; }
-          if(keys['KeyA']) { pVel.x += side.x * accel; pVel.z += side.z * accel; } if(keys['KeyD']) { pVel.x -= side.x * accel; pVel.z -= side.z * accel; }
-        }
+        if(keys['KeyW']) { pVel.x += dir.x * accel; pVel.z += dir.z * accel; } if(keys['KeyS']) { pVel.x -= dir.x * accel; pVel.z -= dir.z * accel; }
+        if(keys['KeyA']) { pVel.x += side.x * accel; pVel.z += side.z * accel; } if(keys['KeyD']) { pVel.x -= side.x * accel; pVel.z -= side.z * accel; }
 
         let px = cameraGroup.position.x, pz = cameraGroup.position.z;
         let footY = Math.round(cameraGroup.position.y - 1.5), headY = Math.round(cameraGroup.position.y - 0.5); let margin = 0.4; 
@@ -1095,17 +1150,21 @@
                 if (activeSafeType.endsWith('_axe')) toolClass = 'axe';
                 if (activeSafeType.endsWith('_shovel')) toolClass = 'shovel';
                 if (activeSafeType.endsWith('_sword')) toolClass = 'sword';
+                if (activeSafeType.endsWith('_hoe')) toolClass = 'hoe';
 
-                if (activeSafeType.startsWith('wooden_')) toolSpeed = 1.5;
-                if (activeSafeType.startsWith('stone_')) toolSpeed = 3.0;
-                if (activeSafeType.startsWith('iron_')) toolSpeed = 5.0;
+                if (activeSafeType.startsWith('wooden_')) toolSpeed = 2.0;
+                if (activeSafeType.startsWith('stone_')) toolSpeed = 4.0;
+                if (activeSafeType.startsWith('iron_')) toolSpeed = 6.0;
+                if (activeSafeType.startsWith('golden_')) toolSpeed = 8.0; // GOLD IS THE FASTEST!
 
                 if (['stone', 'cobblestone', 'furnace'].includes(name)) {
                     baseHardness = 1.5; if (toolClass === 'pickaxe') isCorrectTool = true; canHarvest = isCorrectTool;
                 } else if (['coal_ore'].includes(name)) {
                     baseHardness = 3.0; if (toolClass === 'pickaxe') isCorrectTool = true; canHarvest = isCorrectTool;
                 } else if (['iron_ore'].includes(name)) {
-                    baseHardness = 3.0; if (toolClass === 'pickaxe') { isCorrectTool = true; canHarvest = activeSafeType !== 'wooden_pickaxe'; }
+                    baseHardness = 3.0; if (toolClass === 'pickaxe') { isCorrectTool = true; canHarvest = (activeSafeType.startsWith('stone_') || activeSafeType.startsWith('iron_')); }
+                } else if (['gold_ore'].includes(name)) {
+                    baseHardness = 3.0; if (toolClass === 'pickaxe') { isCorrectTool = true; canHarvest = activeSafeType.startsWith('iron_'); }
                 } else if (['coal_block', 'iron_block'].includes(name)) {
                     baseHardness = 5.0; if (toolClass === 'pickaxe') { isCorrectTool = true; canHarvest = activeSafeType !== 'wooden_pickaxe'; }
                 } else if (['dirt', 'grass', 'farmland'].includes(name)) {
@@ -1121,9 +1180,8 @@
                     baseHardness = 9999; canHarvest = false;
                 }
 
-                // 1.5x multiplier for Hand or Correct tool. 5.0x penalty for wrong tool on rock.
                 let timeToMine = isCorrectTool ? ((baseHardness * 1.5) / toolSpeed) : (baseHardness * 1.5);
-                if (!isCorrectTool && toolClass !== 'hand' && ['stone', 'cobblestone', 'coal_ore', 'iron_ore', 'furnace'].includes(name)) timeToMine = baseHardness * 5.0;
+                if (!isCorrectTool && toolClass !== 'hand' && ['stone', 'cobblestone', 'coal_ore', 'iron_ore', 'gold_ore', 'furnace'].includes(name)) timeToMine = baseHardness * 5.0;
                 if (baseHardness === 0.0) timeToMine = 0.05;
                 let damagePerTick = 1.0 / (timeToMine * 60.0);
 
@@ -1139,13 +1197,13 @@
                     if (['pickaxe', 'axe', 'shovel', 'sword', 'hoe'].includes(toolClass) && activeSafeType !== '') {
                         let dmgToTake = 1; if (toolClass === 'sword' && name !== 'leaves') dmgToTake = 2; 
                         activeItem.damage = (activeItem.damage || 0) + dmgToTake;
-                        let maxD = activeSafeType.startsWith('iron_') ? 250 : (activeSafeType.startsWith('stone_') ? 131 : 59);
+                        let maxD = activeSafeType.startsWith('iron_') ? 250 : (activeSafeType.startsWith('stone_') ? 131 : (activeSafeType.startsWith('golden_') ? 32 : 59));
                         if (activeItem.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
                         updateUI();
                     }
 
                     if(name !== 'leaves') {
-                        let dropName = name === 'stone' ? 'cobblestone' : (name === 'grass' || name === 'farmland' ? 'dirt' : (name === 'coal_ore' ? 'coal' : (name === 'iron_ore' ? 'raw_iron' : name)));
+                        let dropName = name === 'stone' ? 'cobblestone' : (name === 'grass' || name === 'farmland' ? 'dirt' : (name === 'coal_ore' ? 'coal' : (name === 'iron_ore' ? 'raw_iron' : (name === 'gold_ore' ? 'raw_gold' : name))));
                         if (!canHarvest) dropName = null; 
                         if(dropName) { 
                             dropItemIntoWorld(dropName, 1, 0); 
@@ -1183,7 +1241,7 @@
             let topKey = `${hit.x},${hit.y+1},${hit.z}`;
             if(!voxels.has(topKey)) {
                 removeB(hit.x, hit.y, hit.z); placeB(hit.x, hit.y, hit.z, 'farmland'); playSound('dig', 'dirt');
-                item.damage++; let maxD = item.type.startsWith('iron_') ? 250 : (item.type.startsWith('stone_') ? 131 : 59); if (item.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
+                item.damage++; let maxD = item.type.startsWith('iron_') ? 250 : (item.type.startsWith('stone_') ? 131 : (item.type.startsWith('golden_') ? 32 : 59)); if (item.damage >= maxD) { playSound('tool_break'); inventory[activeSlot] = {type: null, count: 0, damage: 0}; }
                 updateUI(); return;
             }
         }
@@ -1196,7 +1254,7 @@
           if(hit.name === 'furnace') { activeFurnacePos = `${hit.x},${hit.y},${hit.z}`; setMenu('FURNACE'); return; }
           if(item.type === 'torch' && hit.normal.y === -1) return; // No ceiling torches
           
-          if(item.type && item.count > 0 && item.type !== 'stick' && item.type !== 'charcoal' && item.type !== 'coal' && item.type !== 'iron_ingot' && item.type !== 'raw_iron' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
+          if(item.type && item.count > 0 && item.type !== 'stick' && item.type !== 'charcoal' && item.type !== 'coal' && item.type !== 'iron_ingot' && item.type !== 'gold_ingot' && item.type !== 'raw_iron' && item.type !== 'raw_gold' && !item.type.endsWith('_pickaxe') && !item.type.endsWith('_axe') && !item.type.endsWith('_shovel') && !item.type.endsWith('_sword') && !item.type.endsWith('_hoe')) { 
             let pX = hit.x + hit.normal.x, pY = hit.y + hit.normal.y, pZ = hit.z + hit.normal.z;
             let dx = pX - cameraGroup.position.x, dy = pY - (cameraGroup.position.y - 1.6), dz = pZ - cameraGroup.position.z;
             let overlapY = (cameraGroup.position.y - 1.6) < (pY + 0.5) && (cameraGroup.position.y - 0.1) > (pY - 0.5);
