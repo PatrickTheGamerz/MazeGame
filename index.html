@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ORANGECRAFT - 1.01.4</title>
+  <title>ORANGECRAFT - 1.01.5</title>
   <style>
     body{margin:0;overflow:hidden;background:#000;font-family:'Courier New',Courier,monospace;user-select:none;color:#fff}
     #vhs-master { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1000; overflow:hidden; mix-blend-mode: overlay; }
@@ -55,7 +55,7 @@
     /* Menus & Worlds */
     .menu-panel { background: rgba(0,0,0,0.5); border: 2px solid #555; width: 600px; height: 350px; display:flex; flex-direction:column; align-items:center; padding: 20px; overflow-x:hidden; overflow-y:auto; margin-bottom: 20px;}
     .pack-container { display:flex; width:100%; gap: 20px; height: 100%;}
-    .pack-list { flex: 1; border: 2px solid #444; background: rgba(0,0,0,0.7); display:flex; flex-direction:column; overflow-y:auto; padding: 5px; }
+    .pack-list { flex: 1; border: 2px solid #444; background: rgba(0,0,0,0.7); display:flex; flex-direction:column; overflow-y:auto; padding: 5px; min-height: 200px;}
     .pack-item { display:flex; padding: 10px; background: #333; border: 2px solid #555; margin-bottom: 5px; align-items:center; gap: 10px; cursor:pointer; user-select:none;}
     .pack-item:hover:not(.locked) { background: #444; border-color:#fff; }
     .pack-item.locked { cursor: default; border-color: #888; background: #444; }
@@ -110,6 +110,7 @@
     <div style="text-align:left; width:360px;">World Name</div>
     <input type="text" id="new-world-name" class="input-field" value="New World" maxlength="20">
     <div class="btn" id="btn-world-type" onclick="playSound('click'); toggleWorldType()">World Type: Default</div>
+    <div class="btn" id="btn-world-diff" onclick="playSound('click'); toggleWorldDiff()">Difficulty: Normal</div>
     <div style="display:flex; justify-content:center; margin-top: 20px;">
         <div class="btn btn-half" onclick="playSound('click'); createNewWorld()">Create New World</div>
         <div class="btn btn-half" onclick="playSound('click'); setMenu('SINGLEPLAYER')">Cancel</div>
@@ -131,6 +132,7 @@
     </div>
   </div>
 
+  <input type="file" id="pack-import" style="display:none;" accept=".zip" onchange="importPack(event)">
   <div id="texture-packs-menu" class="menu-overlay dirt-bg" style="z-index: 9000;">
     <div class="title" style="font-size: 2rem; margin-bottom: 20px; color:#fff; text-shadow:2px 2px 0 #000; font-family:sans-serif;">Select Resource Packs</div>
     <div class="menu-panel" style="width: 800px; height: 400px; background: transparent; border:none; padding:0;">
@@ -162,8 +164,8 @@
         </div>
     </div>
     <div style="display:flex; justify-content:center;">
-        <div class="btn btn-half" onclick="playSound('click'); alert('Opening simulated Resource Pack folder...')">Open Pack Folder</div>
-        <div class="btn btn-half" onclick="playSound('click'); setMenu('MAIN_MENU')">Done</div>
+        <div class="btn btn-half" onclick="playSound('click'); document.getElementById('pack-import').click();">Open Pack Folder</div>
+        <div class="btn btn-half" onclick="playSound('click'); applyTexturePacks();">Done</div>
     </div>
   </div>
 
@@ -176,7 +178,6 @@
             <div class="btn" id="opt-graphics" onclick="playSound('click'); cycleOpt('graphics')">Graphics: Fancy</div>
             <div class="btn" id="opt-lighting" onclick="playSound('click'); cycleOpt('lighting')">Smooth Lighting: Max</div>
             <div class="btn" id="opt-music" onclick="playSound('click'); cycleOpt('music')">Music: ON</div>
-            <div class="btn" id="opt-diff" onclick="playSound('click'); cycleOpt('diff')">Difficulty: Normal</div>
         </div>
     </div>
     <div class="btn" style="width: 400px;" onclick="playSound('click'); setMenu('MAIN_MENU')">Done</div>
@@ -268,6 +269,7 @@
     let activeWorldId = null;
     let selectedWorldListId = null;
     let newWorldType = "DEFAULT";
+    let newWorldDiff = 1; // 1 = Normal, 0 = Peaceful
     let modifiedBlocks = {}; // delta saving
     
     function loadWorldList() {
@@ -280,7 +282,7 @@
             let w = savedWorlds[k];
             let div = document.createElement('div');
             div.className = 'world-item' + (selectedWorldListId === k ? ' selected' : '');
-            div.innerHTML = `<div class="world-item-title">${w.name}</div><div class="world-item-desc">${w.type} Mode • Saved Data</div>`;
+            div.innerHTML = `<div class="world-item-title">${w.name}</div><div class="world-item-desc">${w.type} Mode • ${w.diff===1?'Normal':'Peaceful'}</div>`;
             div.onclick = () => { selectedWorldListId = k; loadWorldList(); };
             div.ondblclick = () => { selectedWorldListId = k; playSelectedWorld(); };
             container.appendChild(div);
@@ -293,10 +295,15 @@
         document.getElementById('btn-world-type').innerText = "World Type: " + (newWorldType==="DEFAULT"?"Default":"Superflat");
     }
 
+    function toggleWorldDiff() {
+        newWorldDiff = 1 - newWorldDiff;
+        document.getElementById('btn-world-diff').innerText = "Difficulty: " + (newWorldDiff ? "Normal" : "Peaceful");
+    }
+
     function createNewWorld() {
         let name = document.getElementById('new-world-name').value.trim() || "New World";
         let id = 'world_' + Date.now();
-        savedWorlds[id] = { name: name, type: newWorldType, inventory: null, pos: null, modifiedBlocks: {} };
+        savedWorlds[id] = { name: name, type: newWorldType, diff: newWorldDiff, inventory: null, pos: null, modifiedBlocks: {} };
         localStorage.setItem('orangecraft_worlds', JSON.stringify(savedWorlds));
         selectedWorldListId = id;
         playSelectedWorld();
@@ -332,20 +339,40 @@
     }
 
     // --- 0.5 OPTIONS & TEXTURE PACK UI ---
-    let optFov = 75, optRender = 4, optGraphics = 1, optLighting = 1, optMusic = true, optDiff = 1;
+    let optFov = 75, optRender = 4, optGraphics = 1, optLighting = 1, optMusic = true;
+    let isProgrammerArt = false; let texCache = {}; let imgDataUrls = {};
+
     function cycleOpt(type) {
         if(type==='fov') { optFov = optFov===75?90: (optFov===90?110:75); document.getElementById('opt-fov').innerText = "FOV: " + (optFov===75?"Normal":optFov===90?"90":"Quake Pro"); cam.fov = optFov; cam.updateProjectionMatrix(); }
         if(type==='render') { optRender = optRender===2?4: (optRender===4?6:2); document.getElementById('opt-render').innerText = "Render Distance: " + optRender; RENDER_DIST = optRender; }
         if(type==='graphics') { optGraphics = 1-optGraphics; document.getElementById('opt-graphics').innerText = "Graphics: " + (optGraphics?"Fancy":"Fast"); }
         if(type==='lighting') { optLighting = 1-optLighting; document.getElementById('opt-lighting').innerText = "Smooth Lighting: " + (optLighting?"Max":"Off"); }
         if(type==='music') { optMusic = !optMusic; document.getElementById('opt-music').innerText = "Music: " + (optMusic?"ON":"OFF"); if(!optMusic && audioCtx) audioCtx.suspend(); else if(optMusic && audioCtx) audioCtx.resume(); }
-        if(type==='diff') { optDiff = optDiff===1?0:1; document.getElementById('opt-diff').innerText = "Difficulty: " + (optDiff?"Normal":"Peaceful"); }
     }
     
     function togglePack(el) {
         let parent = el.parentElement.id;
         if(parent === 'available-packs') document.getElementById('selected-packs').appendChild(el);
         else document.getElementById('available-packs').appendChild(el);
+    }
+
+    function importPack(e) {
+        let file = e.target.files[0];
+        if(file) alert("Simulated import successful!\nLoaded resource pack: " + file.name);
+    }
+
+    function applyTexturePacks() {
+        let programmerArtActive = document.getElementById('selected-packs').contains(document.getElementById('pack-programmer-art'));
+        if(isProgrammerArt !== programmerArtActive) {
+            isProgrammerArt = programmerArtActive;
+            // Clear texture caches to force regeneration with Old Textures
+            for(let k in texCache) delete texCache[k];
+            for(let k in imgDataUrls) delete imgDataUrls[k];
+            // Flag all chunks to re-render using the new materials
+            for(let [k, c] of chunks.entries()) { c.dirty = true; }
+            updateUI(); // Re-render inventory icons
+        }
+        setMenu('MAIN_MENU');
     }
 
     // --- 1. DYNAMIC AUDIO SYSTEM ---
@@ -407,8 +434,7 @@
     }
 
     // --- 2. TEXTURES & ASSETS ---
-    const texCache = {}; const imgDataUrls = {};
-    const authenticSplashes = ["Version 1.01.4!", "Real Saving!", "DIAMONDS!", "Superflat Worlds!", "Interactive Options!"];
+    const authenticSplashes = ["Version 1.01.5!", "Bug Fixes Galore!", "Collision fixed!", "Programmer Art!", "Gravity works!"];
 
     function getDmgLevel(type, damage) {
         if(!type || (!type.endsWith('_pickaxe') && !type.endsWith('_axe') && !type.endsWith('_shovel') && !type.endsWith('_sword') && !type.endsWith('_hoe'))) return 0;
@@ -421,10 +447,11 @@
     }
 
     function genTex(type, dmgLevel = 0) {
-        let cacheKey = type + '_' + dmgLevel;
+        let cacheKey = type + '_' + dmgLevel + (isProgrammerArt ? '_old' : '');
         if(texCache[cacheKey]) return texCache[cacheKey];
         const canvas = document.createElement('canvas'); canvas.width = 16; canvas.height = 16; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
 
+        // Programmer Art Palettes
         const pWood = {'H':'#5c3a21', 'h':'#9c774a', 'S':'#36200b', 's':'#8a5c34', '_':null};
         const pStone = {'H':'#4a4a4a', 'h':'#828282', 'S':'#36200b', 's':'#8a5c34', '_':null};
         const pIron = {'H':'#d8d8d8', 'h':'#f5f5f5', 'S':'#36200b', 's':'#8a5c34', '_':null};
@@ -432,14 +459,17 @@
         const pDiamond = {'H':'#bce3f0', 'h':'#33ebcb', 'S':'#36200b', 's':'#8a5c34', '_':null};
         const pFurn = {'C':'#5a5a5a', 'B':'#6a6a6a', 'A':'#828282', 'D':'#4a4a4a', 'X':'#111', 'O':'#ffa500', 'Y':'#ffff00', 'W':'#ffffff'};
 
-        if (type === 'stone') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e'}, 'ABACACABABAACABA'+'CABAABACABCAABAC'+'AABACABAABACABAA'+'BACABAABACABAACA'+'ACABCAABACABCAAB'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABAACA'+'ACABAACABCAABACA'+'CABAABACABAABACA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); } 
-        else if (type === 'coal_ore') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#111', 'x':'#333'}, 'ABACACABABAACABA'+'CABAABxCABCAABAC'+'AABAXxBAABACABAA'+'BACxXXxBACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACxBAABACABCA'+'BACABXxBACABACAB'+'ABCAAxACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACxXxCABCAxXABCA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
-        else if (type === 'iron_ore') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#eac9b6', 'x':'#d8af93'}, 'ABACACABABAACABA'+'CABAABXCABCAABAC'+'AABACxBAABACABAA'+'BACABAABACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABXxBACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACABAACABCAABACA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
-        else if (type === 'gold_ore') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#fceba6', 'x':'#f8d13b'}, 'ABACACABABAACABA'+'CABAABXCABCAABAC'+'AABACxBAABACABAA'+'BACABAABACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABXxBACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACABAACABCAABACA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
-        else if (type === 'diamond_ore') { drawPixelMap(ctx, {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#bce3f0', 'x':'#33ebcb'}, 'ABACACABABAACABA'+'CABAABXCABCAABAC'+'AABACxBAABACABAA'+'BACABAABACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABXxBACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACABAACABCAABACA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
+        if (type === 'stone') { drawPixelMap(ctx, isProgrammerArt ? {'A':'#666', 'B':'#555', 'C':'#777'} : {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e'}, 'ABACACABABAACABA'+'CABAABACABCAABAC'+'AABACABAABACABAA'+'BACABAABACABAACA'+'ACABCAABACABCAAB'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABAABACABAACA'+'ACABAACABCAABACA'+'CABAABACABAABACA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); } 
+        else if (type === 'coal_ore') { drawPixelMap(ctx, isProgrammerArt ? {'A':'#666', 'B':'#555', 'C':'#777', 'X':'#000', 'x':'#222'} : {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#111', 'x':'#333'}, 'ABACACABABAACABA'+'CABAABxCABCAABAC'+'AABAXxBAABACABAA'+'BACxXXxBACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACxBAABACABCA'+'BACABXxBACABACAB'+'ABCAAxACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACxXxCABCAxXABCA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
+        else if (type === 'iron_ore') { drawPixelMap(ctx, isProgrammerArt ? {'A':'#666', 'B':'#555', 'C':'#777', 'X':'#f1d8c1', 'x':'#cda07b'} : {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#eac9b6', 'x':'#d8af93'}, 'ABACACABABAACABA'+'CABAABXCABCAABAC'+'AABACxBAABACABAA'+'BACABAABACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABXxBACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACABAACABCAABACA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
+        else if (type === 'gold_ore') { drawPixelMap(ctx, isProgrammerArt ? {'A':'#666', 'B':'#555', 'C':'#777', 'X':'#ffee00', 'x':'#ffaa00'} : {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#fceba6', 'x':'#f8d13b'}, 'ABACACABABAACABA'+'CABAABXCABCAABAC'+'AABACxBAABACABAA'+'BACABAABACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABXxBACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACABAACABCAABACA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
+        else if (type === 'diamond_ore') { drawPixelMap(ctx, isProgrammerArt ? {'A':'#666', 'B':'#555', 'C':'#777', 'X':'#55ffff', 'x':'#00aaaa'} : {'A':'#7d7d7d', 'B':'#686868', 'C':'#8e8e8e', 'X':'#bce3f0', 'x':'#33ebcb'}, 'ABACACABABAACABA'+'CABAABXCABCAABAC'+'AABACxBAABACABAA'+'BACABAABACABAACA'+'ACABxXACABCAABAC'+'CABAABACABAABACA'+'AABACABAABACABCA'+'BACABXxBACABACAB'+'ABCAABACABCAABAC'+'CABAABACABAABACA'+'AABACABAABxCABCA'+'BACxBAABACXxAACA'+'ACABAACABCAABACA'+'CABxXACABAABACAA'+'AABACABAABACABAA'+'BACABCAABACABAAC'); }
         else if (type.endsWith('_block') && type !== 'coal_block') {
             let p = type==='iron_block'?{'A':'#ffffff','B':'#e5e5e5','C':'#d8d8d8','D':'#cccccc'} : (type==='gold_block'?{'A':'#fff5a6','B':'#fceba6','C':'#f8d13b','D':'#c4a329'} : {'A':'#e0f7fa','B':'#bce3f0','C':'#33ebcb','D':'#25ab94'});
-            drawPixelMap(ctx, p, 'BBBBBBBBBBBBBBBB'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BCCCCCCCCCCCCCCD'+'CDDDDDDDDDDDDDDD'); 
+            if(isProgrammerArt && type==='iron_block') p = {'A':'#fff','B':'#eee','C':'#ddd','D':'#aaa'};
+            drawPixelMap(ctx, p, isProgrammerArt ? 
+            'BBBBBBBBBBBBBBBB'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BCCCCCCCCCCCCCCD'+'CDDDDDDDDDDDDDDD' :
+            'BBBBBBBBBBBBBBBB'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BAAAAAAAAAAAAAAC'+'BCCCCCCCCCCCCCCD'+'CDDDDDDDDDDDDDDD'); 
         }
         else if (type.endsWith('_pickaxe')) {
             let mapArr = ("__HHHHHHH_______"+"_HhhhhhhhH______"+"HhH__sS__HhH____"+"HH___sS___HH____"+"_____sS_________"+"_____sS_________"+"____sS__________"+"___sS___________"+"__sS____________"+"_sS_____________"+"sS______________"+"S_______________"+"________________"+"________________"+"________________"+"________________").split('');
@@ -487,23 +517,23 @@
         } else if (type === 'stick') {
             ctx.fillStyle = '#36200b'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 2, 2); } ctx.fillStyle = '#8a5c34'; for(let i=2; i<14; i++) { ctx.fillRect(15-i, i, 1, 1); } 
         } else if (type === 'cobblestone' || type === 'furnaceSide') { 
-            drawPixelMap(ctx, {'D':'#4a4a4a', 'C':'#5a5a5a', 'B':'#6a6a6a', 'A':'#828282'}, 'DDDDDDDDDDDDDDDD'+'DBBBBBBDCBBBBBBD'+'DBAAAABDCAAAAABD'+'DBAAABBDCAABABBD'+'DBBBBBBDCBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DCBBBBDCBBBBBBBD'+'DCAAABDCAAAAAABD'+'DCAABBDCAAAAABBD'+'DCBBBBDCBBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DBBBBBBBCBBBBBBD'+'DBAAAAABCBAAAABD'+'DBAAAAABCAAAAABD'+'DBBBBBBBCBBBBBBD'+'DDDDDDDDDDDDDDDD'); 
+            drawPixelMap(ctx, isProgrammerArt ? {'D':'#111', 'C':'#444', 'B':'#666', 'A':'#999'} : {'D':'#4a4a4a', 'C':'#5a5a5a', 'B':'#6a6a6a', 'A':'#828282'}, 'DDDDDDDDDDDDDDDD'+'DBBBBBBDCBBBBBBD'+'DBAAAABDCAAAAABD'+'DBAAABBDCAABABBD'+'DBBBBBBDCBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DCBBBBDCBBBBBBBD'+'DCAAABDCAAAAAABD'+'DCAABBDCAAAAABBD'+'DCBBBBDCBBBBBBBD'+'DDDDDDDDDDDDDDDD'+'DBBBBBBBCBBBBBBD'+'DBAAAAABCBAAAABD'+'DBAAAAABCAAAAABD'+'DBBBBBBBCBBBBBBD'+'DDDDDDDDDDDDDDDD'); 
         }
         else if (type === 'dirt' || type === 'grassSide') {
-            drawPixelMap(ctx, {'A':'#866043', 'B':'#755138', 'C':'#9b7150', 'D':'#63432b'}, 'ABACAAABDBAACAAB'+'BAADACBAAABACBDA'+'CBBAAABACDAAAACA'+'AACDBAACBAABDAAB'+'DBACAACDBAABACDB'+'AABDCAAAACDBBAAA'+'ACBAABDCBAAAACBA'+'BAAACBAAABDCBAAB'+'ABDCBAAACBAAABDC'+'CBAAABDCBAAACBAA'+'AAABACBAAABDCAAB'+'ACDBAAACDBAAABAC'+'BAAACDBAAACDBAAA'+'ABDCAAAACDBAAACA'+'CBAAABDCAAAACDBA'+'AABDCAAAACDBAAAB');
-            if(type === 'grassSide') { ctx.fillStyle = '#74BC39'; ctx.fillRect(0,0,16,3); let fringes = [2,3,2,4,2,3,1,2,3,2,4,3,2,1,2,3]; for(let x=0; x<16; x++) { ctx.fillStyle = '#74BC39'; ctx.fillRect(x, 3, 1, fringes[x]); ctx.fillStyle = '#5A962A'; ctx.fillRect(x, 3+fringes[x], 1, 1); } }
+            drawPixelMap(ctx, isProgrammerArt ? {'A':'#724e33', 'B':'#62432a', 'C':'#895b3a', 'D':'#503520'} : {'A':'#866043', 'B':'#755138', 'C':'#9b7150', 'D':'#63432b'}, 'ABACAAABDBAACAAB'+'BAADACBAAABACBDA'+'CBBAAABACDAAAACA'+'AACDBAACBAABDAAB'+'DBACAACDBAABACDB'+'AABDCAAAACDBBAAA'+'ACBAABDCBAAAACBA'+'BAAACBAAABDCBAAB'+'ABDCBAAACBAAABDC'+'CBAAABDCBAAACBAA'+'AAABACBAAABDCAAB'+'ACDBAAACDBAAABAC'+'BAAACDBAAACDBAAA'+'ABDCAAAACDBAAACA'+'CBAAABDCAAAACDBA'+'AABDCAAAACDBAAAB');
+            if(type === 'grassSide') { ctx.fillStyle = isProgrammerArt ? '#41B21F' : '#74BC39'; ctx.fillRect(0,0,16,3); let fringes = [2,3,2,4,2,3,1,2,3,2,4,3,2,1,2,3]; for(let x=0; x<16; x++) { ctx.fillStyle = isProgrammerArt ? '#41B21F' : '#74BC39'; ctx.fillRect(x, 3, 1, fringes[x]); ctx.fillStyle = isProgrammerArt ? '#2A8610' : '#5A962A'; ctx.fillRect(x, 3+fringes[x], 1, 1); } }
         } else if (type === 'bedrock') { drawPixelMap(ctx, {'A':'#333333', 'B':'#111111', 'C':'#555555', 'D':'#222222'}, 'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'+'AABDAACDDBAAACDB'+'CDBABDBACDABBDCA'+'AACDDBCAACDDBDBA'+'BDDCAABDAACDDBAA'); }
         else if (type === 'ctTop') { drawPixelMap(ctx, {'A':'#b07f4f', 'B':'#593a20', 'C':'#8a603c'}, 'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAABBBBBBBBBBAAA'+'AAABCCCCCCCCBAAA'+'AAABCBBBBBBCBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBCCCCCBBAAA'+'AAABCBBBBBBCBAAA'+'AAABCCCCCCCCBAAA'+'AAABBBBBBBBBBAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'); }
         else if (type === 'ctSide') { drawPixelMap(ctx, {'A':'#a88154', 'B':'#593c20', 'C':'#7a7a7a', 'D':'#e0e0e0', 'E':'#593a20'}, 'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'BBBBBBBBBBBBBBBB'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAACCACAA'+'AAAAAAAAAACCCCAA'+'AAAAAAAAAAADCAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAEAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'+'AAAAAAAAAAAAAAAA'); }
-        else if (type === 'grass') { ctx.fillStyle = '#74BC39'; ctx.fillRect(0,0,16,16); for(let i=0; i<120; i++) { ctx.fillStyle=Math.random()>0.5?'#63A32E':'#85D444'; ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); } }
+        else if (type === 'grass') { ctx.fillStyle = isProgrammerArt ? '#41B21F' : '#74BC39'; ctx.fillRect(0,0,16,16); for(let i=0; i<120; i++) { ctx.fillStyle=Math.random()>0.5? (isProgrammerArt ? '#2A8610' : '#63A32E'): (isProgrammerArt ? '#66FF33' : '#85D444'); ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1); } }
         else if (type === 'farmlandTop') { ctx.fillStyle = '#6e4c33'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#5c3a21'; for(let y=2;y<16;y+=4) ctx.fillRect(0,y,16,2); }
         else if (type === 'planks') { ctx.fillStyle = '#b48f5e'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#9c774a'; for(let y=0; y<16; y+=4) { ctx.fillRect(0, y+3, 16, 1); ctx.fillStyle = '#7a5a35'; ctx.fillRect(0, y+4, 16, 1); ctx.fillStyle = '#9c774a'; ctx.fillRect(Math.random()*16, y+1, 4, 1); ctx.fillRect(Math.random()*16, y+2, 3, 1); } ctx.fillStyle = '#6b4b2b'; ctx.fillRect(3,0,1,3); ctx.fillRect(11,4,1,3); ctx.fillRect(5,8,1,3); ctx.fillRect(13,12,1,3); }
         else if (type === 'wood') { ctx.fillStyle = '#3d2b1c'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#5c442c'; for(let x=0; x<16; x+=2) { ctx.fillRect(x, 0, 1, 16); if(Math.random()>0.3) ctx.fillRect(x+1, Math.random()*16, 1, 3); } }
         else if (type === 'woodTop') { ctx.fillStyle = '#412e1c'; ctx.fillRect(0,0,16,16); ctx.fillStyle = '#b7935f'; ctx.fillRect(1,1,14,14); ctx.fillStyle = '#a17e4d'; ctx.fillRect(2,2,12,12); ctx.fillStyle = '#b7935f'; ctx.fillRect(3,3,10,10); ctx.fillStyle = '#a17e4d'; ctx.fillRect(5,5,6,6); ctx.fillStyle = '#b7935f'; ctx.fillRect(6,6,4,4); ctx.fillStyle = '#a17e4d'; ctx.fillRect(7,7,2,2); }
-        else if (type === 'leaves') { ctx.clearRect(0,0,16,16); for(let x=0; x<16; x++) { for(let y=0; y<16; y++) { if((x+y)%2===0 || Math.random()>0.7) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); } } } }
+        else if (type === 'leaves') { ctx.clearRect(0,0,16,16); let isSolidLeaves = isProgrammerArt; if(isSolidLeaves) { ctx.fillStyle='#1e5416'; ctx.fillRect(0,0,16,16); } for(let x=0; x<16; x++) { for(let y=0; y<16; y++) { if((x+y)%2===0 || Math.random()>0.7) { ctx.fillStyle = Math.random()>0.5 ? '#2d7a22' : '#1e5416'; ctx.fillRect(x,y,1,1); } } } }
 
         imgDataUrls[cacheKey] = canvas.toDataURL(); const t = new THREE.CanvasTexture(canvas); t.magFilter = THREE.NearestFilter; 
-        if(type === 'leaves' || type === 'stick' || type === 'charcoal' || type === 'coal' || type.endsWith('_ingot') || type.startsWith('raw_') || type === 'diamond' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) t.transparent = true; 
+        if((type === 'leaves' && !isProgrammerArt) || type === 'stick' || type === 'charcoal' || type === 'coal' || type.endsWith('_ingot') || type.startsWith('raw_') || type === 'diamond' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) t.transparent = true; 
         texCache[cacheKey] = t; return t;
     }
 
@@ -550,12 +580,13 @@
         
         let html = '';
         if(type === 'stick' || type === 'charcoal' || type === 'coal' || type.endsWith('_ingot') || type.startsWith('raw_') || type === 'diamond' || type === 'torch' || type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
-            let cacheKey = type + '_' + dmgLevel;
+            let cacheKey = type + '_' + dmgLevel + (isProgrammerArt ? '_old' : '');
             html = `<div class="item-2d" style="background-image:url(${imgDataUrls[cacheKey]})"></div>`;
         } else {
             let top = type === 'wood' ? 'woodTop' : (type === 'crafting_table' ? 'ctTop' : (type === 'grass' ? 'grass' : (type === 'farmland' ? 'farmlandTop' : (type === 'furnace' ? 'furnaceTop' : type))));
             let side = type === 'wood' ? 'wood' : (type === 'crafting_table' ? 'ctSide' : (type === 'grass' ? 'grassSide' : (type === 'farmland' ? 'dirt' : (type === 'furnace' ? 'furnaceFront' : type))));
-            html = `<div class="item-3d"><div class="face top" style="background-image:url(${imgDataUrls[top+'_0']})"></div><div class="face right" style="background-image:url(${imgDataUrls[side+'_0']})"></div><div class="face front" style="background-image:url(${imgDataUrls[side+'_0']})"></div></div>`;
+            let suf = isProgrammerArt ? '_old' : '';
+            html = `<div class="item-3d"><div class="face top" style="background-image:url(${imgDataUrls[top+'_0'+suf]})"></div><div class="face right" style="background-image:url(${imgDataUrls[side+'_0'+suf]})"></div><div class="face front" style="background-image:url(${imgDataUrls[side+'_0'+suf]})"></div></div>`;
         }
 
         if(type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe')) {
@@ -778,9 +809,11 @@
         let isRoom = n3 > 0.1 && val < 0.5;
         return (isTunnel || isRoom) && y < getSurfaceH(x,z) - 10; 
     }
+    
+    // FIX FOR INVISIBLE SOLID AIR BLOCKS
     function isSolidVoxel(x, y, z) { 
         let t = voxels.get(`${x},${y},${z}`);
-        return t && t !== 'torch'; 
+        return t && t !== 'torch' && t !== 'AIR'; 
     }
 
     class Chunk {
@@ -802,12 +835,12 @@
                     let surfaceH = getSurfaceH(ax,az);
                     for(let y=surfaceH+5; y>=-60; y--){
                         let t = voxels.get(`${ax},${y},${az}`);
-                        if(t && t !== 'torch' && t !== 'furnace') {
+                        if(t && t !== 'torch' && t !== 'furnace' && t !== 'AIR') {
                             let exposed = false;
                             const adjs = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
                             for(let off of adjs) {
                                 let nType = voxels.get(`${ax+off[0]},${y+off[1]},${az+off[2]}`);
-                                if(!nType || transparentBlocks.includes(nType)) { exposed = true; break; }
+                                if(!nType || nType === 'AIR' || transparentBlocks.includes(nType)) { exposed = true; break; }
                             }
                             if (transparentBlocks.includes(t)) exposed = true;
 
@@ -826,7 +859,7 @@
                 else if (t === 'crafting_table') { mat = [new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('planks'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('ctSide'), ...em})]; }
                 else if (t === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em})]; }
                 else if (t === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grass'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em})]; }
-                else { mat = new THREE.MeshLambertMaterial({map: genTex(t), transparent: t==='leaves', alphaTest: 0.5, ...em}); }
+                else { mat = new THREE.MeshLambertMaterial({map: genTex(t), transparent: t==='leaves'&&!isProgrammerArt, alphaTest: 0.5, ...em}); }
 
                 let im = new THREE.InstancedMesh(boxG, mat, counts[t]);
                 im.castShadow = true; im.receiveShadow = true;
@@ -928,14 +961,14 @@
                 let h = getSurfaceH(absX, absZ);
                 
                 if(isSuperflat) {
-                    for(let y=h; y>=-3; y--) {
+                    for(let y=0; y>=-3; y--) {
                         let k = `${absX},${y},${absZ}`;
                         if(!voxels.has(k)) {
                             if(modifiedBlocks[k]) { if(modifiedBlocks[k] !== 'AIR') voxels.set(k, modifiedBlocks[k]); }
                             else {
                                 if(y===0) voxels.set(k, 'grass');
+                                else if(y===-1 || y===-2) voxels.set(k, 'dirt');
                                 else if(y===-3) voxels.set(k, 'bedrock');
-                                else voxels.set(k, 'dirt');
                             }
                         }
                     }
@@ -1137,7 +1170,7 @@
                 else if (type === 'grass') { mat = [new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grass'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('grassSide'), ...em})]; }
                 else if (type === 'farmland') { mat = [new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('farmlandTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em}), new THREE.MeshLambertMaterial({map: genTex('dirt'), ...em})]; }
                 else if (type === 'furnace') { mat = [new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceTop'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceFront'), ...em}), new THREE.MeshLambertMaterial({map: genTex('furnaceSide'), ...em})]; }
-                else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves', ...em}); }
+                else { mat = new THREE.MeshLambertMaterial({map: genTex(type), transparent: type==='leaves'&&!isProgrammerArt, ...em}); }
                 drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), mat); drop.castShadow = true;
             }
             drop.position.copy(dropPos); sc.add(drop); drops.push({mesh: drop, type: type, damage: damage, velY: 0.15, is2D: type.endsWith('_pickaxe') || type.endsWith('_axe') || type.endsWith('_shovel') || type.endsWith('_sword') || type.endsWith('_hoe') || type==='stick' || type==='charcoal' || type==='coal' || type.endsWith('_ingot') || type.startsWith('raw_') || type==='diamond' || type==='torch', velDir: dir.multiplyScalar(0.25).add(new THREE.Vector3((Math.random()-0.5)*0.1, 0, (Math.random()-0.5)*0.1)), spawnTime: Date.now()});
